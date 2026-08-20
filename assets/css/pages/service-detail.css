@@ -389,8 +389,8 @@
   }
 
   /* --------------------------------------------------------------------------
-     Map + detail, side by side above the tablet band. Below it the map is
-     already gone, so the single column only ever holds the detail card.
+     In the 52-64em band the map and the card stack, so the card is centred and
+     held to a comfortable measure rather than run edge to edge.
      -------------------------------------------------------------------------- */
   .layer__detail {
     width: 100%;
@@ -402,6 +402,12 @@
   .layer__viz {
     grid-template-columns: 26rem minmax(0, 1fr);
     justify-items: stretch;
+  }
+
+  /* Once they sit side by side the card takes everything the ring leaves,
+     instead of stopping at 30rem and leaving the right of the band empty. */
+  .layer__detail {
+    max-width: none;
   }
 }
 
