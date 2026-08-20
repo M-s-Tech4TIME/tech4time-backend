@@ -77,12 +77,18 @@
 }
 
 /* The marker, sitting on the rail. Drawn on the box so it tracks the box's
-   edge when the entry flips sides. */
+   edge when the entry flips sides.
+
+   The border width in every offset below is not a fudge. An absolutely
+   positioned element is laid out against its containing block's PADDING box,
+   so an offset of -2.25rem here starts from inside the box's 1px border and
+   lands the marker 1px past the rail — to the right on odd entries and,
+   mirrored, to the left on even ones. Adding the border back cancels it. */
 .timeline__box::after {
   content: "";
   position: absolute;
   top: var(--dot);
-  left: -2.25rem;
+  left: calc(-2.25rem - var(--border-width));
   width: 1.1rem;
   height: 1.1rem;
   transform: translate(-50%, -50%);
@@ -139,7 +145,7 @@
   }
 
   .timeline__box::after {
-    left: calc(var(--gap) / -2);
+    left: calc(var(--gap) / -2 - var(--border-width));
   }
 
   /* Even entries: the same row, mirrored. */
@@ -155,7 +161,7 @@
 
   .timeline__item:nth-child(even) .timeline__box::after {
     left: auto;
-    right: calc(var(--gap) / -2);
+    right: calc(var(--gap) / -2 - var(--border-width));
     transform: translate(50%, -50%);
   }
 }
