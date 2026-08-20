@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Cloud Infrastructure — OpenStack Private Cloud | Tech4TIME</title>
+<meta name="description" content="Private and hybrid cloud on OpenStack from Tech4TIME: architecture, migration, container platforms, SDN, monitoring, disaster recovery and managed operations.">
+<link rel="canonical" href="https://tech4time.bd/pages/services/cloud-infrastructure/">
+
+<!-- Crawling. Large image previews and full snippets are allowed so rich
+     results can use the branded share card. -->
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+
+<!-- Security. NOTE: X-Frame-Options and X-Content-Type-Options are ignored in
+     <meta> by every browser — they are set for real in .htaccess, which is the
+     authoritative source. Referrer-Policy and CSP genuinely do work here, and
+     are kept as defence in depth in case the host strips response headers. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="Tech4TIME">
+<meta property="og:title" content="Cloud and Infrastructure Services Catalogue">
+<meta property="og:description" content="Private and hybrid cloud on OpenStack from Tech4TIME: architecture, migration, container platforms, SDN, monitoring, disaster recovery and managed operations.">
+<meta property="og:url" content="https://tech4time.bd/pages/services/cloud-infrastructure/">
+<meta property="og:image" content="https://tech4time.bd/assets/images/og/tech4time-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Tech4TIME — Orchestrating Technology with Time">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cloud and Infrastructure Services Catalogue">
+<meta name="twitter:description" content="Private and hybrid cloud on OpenStack from Tech4TIME: architecture, migration, container platforms, SDN, monitoring, disaster recovery and managed operations.">
+<meta name="twitter:image" content="https://tech4time.bd/assets/images/og/tech4time-og.png">
+<meta name="twitter:image:alt" content="Tech4TIME — Orchestrating Technology with Time">
+
+<!-- Icons -->
+<link rel="icon" href="/assets/images/favicon/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/assets/images/favicon/favicon-48.png">
+<link rel="icon" type="image/png" sizes="96x96" href="/assets/images/favicon/favicon-96.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafafa">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0b0c">
+
+<!-- Fonts. Preloaded because the latin subset is on the critical render path;
+     the -ext subset is not preloaded since most pages never reference it. -->
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- Styles, in cascade order -->
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/theme.css">
+<link rel="stylesheet" href="/assets/css/layout.css">
+<link rel="stylesheet" href="/assets/css/components.css">
+<link rel="stylesheet" href="/assets/css/animations.css">
+<link rel="stylesheet" href="/assets/css/pages/service-detail.css">
+
+<!-- Colour mode, applied before first paint to avoid a flash of the wrong
+     theme. Deliberately NOT deferred; see the comment in the file itself. -->
+<script src="/assets/js/theme-init.js"></script>
+
+<!-- Base structured data, identical on every page. Per-page BreadcrumbList and
+     any page-specific schema (Service, JobPosting, ContactPage…) go in their own
+     block after this one.
+
+     Contact details, addresses and social profiles are taken from the NextJS
+     Footer component, which carries the live values. The Organization schema in
+     the NextJS root layout lists placeholder social URLs (facebook.com/tech4time,
+     twitter.com/tech4time, linkedin.com/company/tech4time, github.com/tech4time)
+     that do not match the real profiles the footer links to; the real ones are
+     used here. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://tech4time.bd/#organization",
+      "name": "Tech4TIME",
+      "alternateName": "M/s. Tech4TIME",
+      "url": "https://tech4time.bd/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://tech4time.bd/assets/images/logo/logo-light-540.png",
+        "width": 540,
+        "height": 192
+      },
+      "image": "https://tech4time.bd/assets/images/og/tech4time-og.png",
+      "description": "Open-Source and enterprise-grade cybersecurity, software development, cloud infrastructure and IT solutions. Orchestrate, build, maintain and protect your business.",
+      "slogan": "Orchestrating Technology with Time",
+      "foundingDate": "2018-05-15",
+      "email": "info@tech4time.bd",
+      "areaServed": "Worldwide",
+      "knowsLanguage": "en",
+      "address": [
+        {
+          "@type": "PostalAddress",
+          "streetAddress": "278/3, Manikdi",
+          "addressLocality": "Dhaka",
+          "postalCode": "1206",
+          "addressCountry": "BD"
+        },
+        {
+          "@type": "PostalAddress",
+          "streetAddress": "68100 Batu Caves",
+          "addressLocality": "Selangor",
+          "addressCountry": "MY"
+        },
+        {
+          "@type": "PostalAddress",
+          "streetAddress": "367, Avenue Louise",
+          "addressLocality": "Brussels",
+          "addressCountry": "BE"
+        }
+      ],
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "telephone": "+8801320571562",
+          "email": "info@tech4time.bd",
+          "contactType": "customer service",
+          "areaServed": "BD",
+          "availableLanguage": ["English"]
+        },
+        {
+          "@type": "ContactPoint",
+          "telephone": "+8801881873463",
+          "email": "info@tech4time.bd",
+          "contactType": "customer service",
+          "areaServed": "BD",
+          "availableLanguage": ["English"]
+        },
+        {
+          "@type": "ContactPoint",
+          "telephone": "+8801847313835",
+          "email": "info@tech4time.bd",
+          "contactType": "customer service",
+          "areaServed": "BD",
+          "availableLanguage": ["English"]
+        },
+        {
+          "@type": "ContactPoint",
+          "telephone": "+60198527096",
+          "email": "info@tech4time.bd",
+          "contactType": "customer service",
+          "areaServed": "MY",
+          "availableLanguage": ["English"]
+        }
+      ],
+      "sameAs": [
+        "https://www.linkedin.com/company/tech4time-bd/",
+        "https://github.com/M-s-Tech4TIME"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://tech4time.bd/#website",
+      "url": "https://tech4time.bd/",
+      "name": "Tech4TIME",
+      "description": "Cybersecurity, software development, cloud infrastructure and HR solutions.",
+      "publisher": { "@id": "https://tech4time.bd/#organization" },
+      "inLanguage": "en"
+    },
+    {
+      "@type": "ProfessionalService",
+      "@id": "https://tech4time.bd/#service",
+      "name": "Tech4TIME",
+      "url": "https://tech4time.bd/",
+      "image": "https://tech4time.bd/assets/images/og/tech4time-og.png",
+      "parentOrganization": { "@id": "https://tech4time.bd/#organization" },
+      "priceRange": "$$",
+      "areaServed": "Worldwide",
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+          "opens": "09:00",
+          "closes": "18:00",
+          "description": "Bangladesh office"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "opens": "09:00",
+          "closes": "18:00",
+          "description": "Malaysia office"
+        }
+      ],
+      "serviceType": [
+        "Cybersecurity Services",
+        "Software Development",
+        "Cloud Infrastructure",
+        "IT Consulting",
+        "Managed Services",
+        "Human Resources as a Service",
+        "DevOps Services",
+        "Security Operations Center"
+      ],
+      "knowsAbout": [
+        "Cybersecurity",
+        "Penetration Testing",
+        "Security Operations Center",
+        "Incident Response",
+        "Digital Forensics",
+        "Software Development",
+        "DevSecOps",
+        "Cloud Computing",
+        "OpenStack",
+        "Kubernetes",
+        "IT Staffing",
+        "HR as a Service"
+      ]
+    }
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://tech4time.bd/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Services",
+      "item": "https://tech4time.bd/pages/services/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Cloud Infrastructure",
+      "item": "https://tech4time.bd/pages/services/cloud-infrastructure/"
+    }
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Cloud Infrastructure",
+  "serviceType": "Cloud Infrastructure",
+  "url": "https://tech4time.bd/pages/services/cloud-infrastructure/",
+  "provider": {
+    "@type": "Organization",
+    "name": "Tech4TIME",
+    "url": "https://tech4time.bd/"
+  },
+  "areaServed": [
+    "BD",
+    "MY",
+    "BE"
+  ],
+  "description": "Private and hybrid cloud design on OpenStack, container orchestration, software-defined networking, cloud operations and disaster recovery.",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Cloud Infrastructure Solutions",
+    "itemListElement": [
+      {
+        "@type": "OfferCatalog",
+        "name": "Cloud Design & Strategy",
+        "url": "https://tech4time.bd/pages/services/cloud-infrastructure/#layer-cloud-design"
+      },
+      {
+        "@type": "OfferCatalog",
+        "name": "Platform Solutions",
+        "url": "https://tech4time.bd/pages/services/cloud-infrastructure/#layer-platform-services"
+      },
+      {
+        "@type": "OfferCatalog",
+        "name": "Operations & Management",
+        "url": "https://tech4time.bd/pages/services/cloud-infrastructure/#layer-operations-management"
+      },
+      {
+        "@type": "OfferCatalog",
+        "name": "Security & Compliance",
+        "url": "https://tech4time.bd/pages/services/cloud-infrastructure/#layer-security-compliance"
+      },
+      {
+        "@type": "OfferCatalog",
+        "name": "Optimization & Enablement",
+        "url": "https://tech4time.bd/pages/services/cloud-infrastructure/#layer-optimization-training"
+      }
+    ]
+  }
+}
+</script>
+</head>
+
+<body class="page">
+<!-- icon-sprite:start -->
+<svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="arrow-right" viewBox="0 0 448 512"><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></symbol>
+  <symbol id="arrow-up" viewBox="0 0 384 512"><path d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 141.2V448c0 17.7 14.3 32 32 32s32-14.3 32-32V141.2L329.4 246.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z"/></symbol>
+  <symbol id="calendar-check" viewBox="0 0 448 512"><path d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zM329 305c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-95 95-47-47c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L329 305z"/></symbol>
+  <symbol id="chart-bar" viewBox="0 0 512 512"><path d="M32 32c17.7 0 32 14.3 32 32V400c0 8.8 7.2 16 16 16H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H80c-44.2 0-80-35.8-80-80V64C0 46.3 14.3 32 32 32zm96 96c0-17.7 14.3-32 32-32l192 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-192 0c-17.7 0-32-14.3-32-32zm32 64H288c17.7 0 32 14.3 32 32s-14.3 32-32 32H160c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 96H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H160c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/></symbol>
+  <symbol id="chart-line" viewBox="0 0 512 512"><path d="M64 64c0-17.7-14.3-32-32-32S0 46.3 0 64V400c0 44.2 35.8 80 80 80H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H80c-8.8 0-16-7.2-16-16V64zm406.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L320 210.7l-57.4-57.4c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L240 221.3l57.4 57.4c12.5 12.5 32.8 12.5 45.3 0l128-128z"/></symbol>
+  <symbol id="check" viewBox="0 0 448 512"><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></symbol>
+  <symbol id="clock" viewBox="0 0 512 512"><path d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></symbol>
+  <symbol id="cloud" viewBox="0 0 640 512"><path d="M0 336c0 79.5 64.5 144 144 144H512c70.7 0 128-57.3 128-128c0-61.9-44-113.6-102.4-125.4c4.1-10.7 6.4-22.4 6.4-34.6c0-53-43-96-96-96c-19.7 0-38.1 6-53.3 16.2C367 64.2 315.3 32 256 32C167.6 32 96 103.6 96 192c0 2.7 .1 5.4 .2 8.1C40.2 219.8 0 273.2 0 336z"/></symbol>
+  <symbol id="cogs" viewBox="0 0 640 512"><path d="M308.5 135.3c7.1-6.3 9.9-16.2 6.2-25c-2.3-5.3-4.8-10.5-7.6-15.5L304 89.4c-3-5-6.3-9.9-9.8-14.6c-5.7-7.6-15.7-10.1-24.7-7.1l-28.2 9.3c-10.7-8.8-23-16-36.2-20.9L199 27.1c-1.9-9.3-9.1-16.7-18.5-17.8C173.9 8.4 167.2 8 160.4 8h-.7c-6.8 0-13.5 .4-20.1 1.2c-9.4 1.1-16.6 8.6-18.5 17.8L115 56.1c-13.3 5-25.5 12.1-36.2 20.9L50.5 67.8c-9-3-19-.5-24.7 7.1c-3.5 4.7-6.8 9.6-9.9 14.6l-3 5.3c-2.8 5-5.3 10.2-7.6 15.6c-3.7 8.7-.9 18.6 6.2 25l22.2 19.8C32.6 161.9 32 168.9 32 176s.6 14.1 1.7 20.9L11.5 216.7c-7.1 6.3-9.9 16.2-6.2 25c2.3 5.3 4.8 10.5 7.6 15.6l3 5.2c3 5.1 6.3 9.9 9.9 14.6c5.7 7.6 15.7 10.1 24.7 7.1l28.2-9.3c10.7 8.8 23 16 36.2 20.9l6.1 29.1c1.9 9.3 9.1 16.7 18.5 17.8c6.7 .8 13.5 1.2 20.4 1.2s13.7-.4 20.4-1.2c9.4-1.1 16.6-8.6 18.5-17.8l6.1-29.1c13.3-5 25.5-12.1 36.2-20.9l28.2 9.3c9 3 19 .5 24.7-7.1c3.5-4.7 6.8-9.5 9.8-14.6l3.1-5.4c2.8-5 5.3-10.2 7.6-15.5c3.7-8.7 .9-18.6-6.2-25l-22.2-19.8c1.1-6.8 1.7-13.8 1.7-20.9s-.6-14.1-1.7-20.9l22.2-19.8zM112 176a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zM504.7 500.5c6.3 7.1 16.2 9.9 25 6.2c5.3-2.3 10.5-4.8 15.5-7.6l5.4-3.1c5-3 9.9-6.3 14.6-9.8c7.6-5.7 10.1-15.7 7.1-24.7l-9.3-28.2c8.8-10.7 16-23 20.9-36.2l29.1-6.1c9.3-1.9 16.7-9.1 17.8-18.5c.8-6.7 1.2-13.5 1.2-20.4s-.4-13.7-1.2-20.4c-1.1-9.4-8.6-16.6-17.8-18.5L583.9 307c-5-13.3-12.1-25.5-20.9-36.2l9.3-28.2c3-9 .5-19-7.1-24.7c-4.7-3.5-9.6-6.8-14.6-9.9l-5.3-3c-5-2.8-10.2-5.3-15.6-7.6c-8.7-3.7-18.6-.9-25 6.2l-19.8 22.2c-6.8-1.1-13.8-1.7-20.9-1.7s-14.1 .6-20.9 1.7l-19.8-22.2c-6.3-7.1-16.2-9.9-25-6.2c-5.3 2.3-10.5 4.8-15.6 7.6l-5.2 3c-5.1 3-9.9 6.3-14.6 9.9c-7.6 5.7-10.1 15.7-7.1 24.7l9.3 28.2c-8.8 10.7-16 23-20.9 36.2L315.1 313c-9.3 1.9-16.7 9.1-17.8 18.5c-.8 6.7-1.2 13.5-1.2 20.4s.4 13.7 1.2 20.4c1.1 9.4 8.6 16.6 17.8 18.5l29.1 6.1c5 13.3 12.1 25.5 20.9 36.2l-9.3 28.2c-3 9-.5 19 7.1 24.7c4.7 3.5 9.5 6.8 14.6 9.8l5.4 3.1c5 2.8 10.2 5.3 15.5 7.6c8.7 3.7 18.6 .9 25-6.2l19.8-22.2c6.8 1.1 13.8 1.7 20.9 1.7s14.1-.6 20.9-1.7l19.8 22.2zM464 304a48 48 0 1 1 0 96 48 48 0 1 1 0-96z"/></symbol>
+  <symbol id="database" viewBox="0 0 448 512"><path d="M448 80v48c0 44.2-100.3 80-224 80S0 172.2 0 128V80C0 35.8 100.3 0 224 0S448 35.8 448 80zM393.2 214.7c20.8-7.4 39.9-16.9 54.8-28.6V288c0 44.2-100.3 80-224 80S0 332.2 0 288V186.1c14.9 11.8 34 21.2 54.8 28.6C99.7 230.7 159.5 240 224 240s124.3-9.3 169.2-25.3zM0 346.1c14.9 11.8 34 21.2 54.8 28.6C99.7 390.7 159.5 400 224 400s124.3-9.3 169.2-25.3c20.8-7.4 39.9-16.9 54.8-28.6V432c0 44.2-100.3 80-224 80S0 476.2 0 432V346.1z"/></symbol>
+  <symbol id="dharmachakra" viewBox="0 0 512 512"><path d="M337.8 205.7l48.6-42.5c13.8 19.3 23.4 41.9 27.4 66.2l-64.4 4.3c-2.4-10.1-6.4-19.5-11.6-28zm140.1 19.5c-5.3-38.8-20.6-74.5-43.2-104.3l.8-.7C449 108.4 449.7 87.6 437 75s-33.4-12-45.2 1.5l-.7 .8c-29.8-22.6-65.5-37.9-104.3-43.2l.1-1.1c1.2-17.9-13-33-30.9-33s-32.1 15.2-30.9 33l.1 1.1c-38.8 5.3-74.5 20.6-104.3 43.2l-.7-.8C108.4 63 87.6 62.3 75 75s-12 33.4 1.5 45.2l.8 .7c-22.6 29.8-37.9 65.5-43.2 104.3l-1.1-.1c-17.9-1.2-33 13-33 30.9s15.2 32.1 33 30.9l1.1-.1c5.3 38.8 20.6 74.5 43.2 104.3l-.8 .7C63 403.6 62.3 424.4 75 437s33.4 12 45.2-1.5l.7-.8c29.8 22.6 65.5 37.9 104.3 43.2l-.1 1.1c-1.2 17.9 13 33 30.9 33s32.1-15.2 30.9-33l-.1-1.1c38.8-5.3 74.5-20.6 104.3-43.2l.7 .8c11.8 13.5 32.5 14.2 45.2 1.5s12-33.4-1.5-45.2l-.8-.7c22.6-29.8 37.9-65.5 43.2-104.3l1.1 .1c17.9 1.2 33-13 33-30.9s-15.2-32.1-33-30.9l-1.1 .1zM163.2 125.6c19.3-13.8 41.9-23.4 66.2-27.5l4.3 64.4c-10 2.4-19.5 6.4-28 11.6l-42.5-48.6zm-65 103.8c4.1-24.4 13.7-46.9 27.5-66.2l48.6 42.5c-5.3 8.5-9.2 18-11.6 28l-64.4-4.3zm27.5 119.4c-13.8-19.3-23.4-41.9-27.5-66.2l64.4-4.3c2.4 10 6.4 19.5 11.6 28l-48.6 42.5zm103.8 65c-24.4-4.1-46.9-13.7-66.2-27.4l42.5-48.6c8.5 5.3 18 9.2 28 11.6l-4.3 64.4zm119.4-27.4c-19.3 13.8-41.9 23.4-66.2 27.4l-4.3-64.4c10-2.4 19.5-6.4 28-11.6l42.5 48.6zm65-103.8c-4.1 24.4-13.7 46.9-27.4 66.2l-48.6-42.5c5.3-8.5 9.2-18 11.6-28l64.4 4.3zm-65-156.9l-42.5 48.6c-8.5-5.3-18-9.2-28-11.6l4.3-64.4c24.4 4.1 46.9 13.7 66.2 27.5zM256 224a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></symbol>
+  <symbol id="envelope" viewBox="0 0 512 512"><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z"/></symbol>
+  <symbol id="exchange-alt" viewBox="0 0 512 512"><path d="M32 96l320 0V32c0-12.9 7.8-24.6 19.8-29.6s25.7-2.2 34.9 6.9l96 96c6 6 9.4 14.1 9.4 22.6s-3.4 16.6-9.4 22.6l-96 96c-9.2 9.2-22.9 11.9-34.9 6.9s-19.8-16.6-19.8-29.6V160L32 160c-17.7 0-32-14.3-32-32s14.3-32 32-32zM480 352c17.7 0 32 14.3 32 32s-14.3 32-32 32H160v64c0 12.9-7.8 24.6-19.8 29.6s-25.7 2.2-34.9-6.9l-96-96c-6-6-9.4-14.1-9.4-22.6s3.4-16.6 9.4-22.6l96-96c9.2-9.2 22.9-11.9 34.9-6.9s19.8 16.6 19.8 29.6l0 64H480z"/></symbol>
+  <symbol id="github" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></symbol>
+  <symbol id="graduation-cap" viewBox="0 0 640 512"><path d="M320 32c-8.1 0-16.1 1.4-23.7 4.1L15.8 137.4C6.3 140.9 0 149.9 0 160s6.3 19.1 15.8 22.6l57.9 20.9C57.3 229.3 48 259.8 48 291.9v28.1c0 28.4-10.8 57.7-22.3 80.8c-6.5 13-13.9 25.8-22.5 37.6C0 442.7-.9 448.3 .9 453.4s6 8.9 11.2 10.2l64 16c4.2 1.1 8.7 .3 12.4-2s6.3-6.1 7.1-10.4c8.6-42.8 4.3-81.2-2.1-108.7C90.3 344.3 86 329.8 80 316.5V291.9c0-30.2 10.2-58.7 27.9-81.5c12.9-15.5 29.6-28 49.2-35.7l157-61.7c8.2-3.2 17.5 .8 20.7 9s-.8 17.5-9 20.7l-157 61.7c-12.4 4.9-23.3 12.4-32.2 21.6l159.6 57.6c7.6 2.7 15.6 4.1 23.7 4.1s16.1-1.4 23.7-4.1L624.2 182.6c9.5-3.4 15.8-12.5 15.8-22.6s-6.3-19.1-15.8-22.6L343.7 36.1C336.1 33.4 328.1 32 320 32zM128 408c0 35.3 86 72 192 72s192-36.7 192-72L496.7 262.6 354.5 314c-11.1 4-22.8 6-34.5 6s-23.5-2-34.5-6L143.3 262.6 128 408z"/></symbol>
+  <symbol id="headset" viewBox="0 0 512 512"><path d="M256 48C141.1 48 48 141.1 48 256v40c0 13.3-10.7 24-24 24s-24-10.7-24-24V256C0 114.6 114.6 0 256 0S512 114.6 512 256V400.1c0 48.6-39.4 88-88.1 88L313.6 488c-8.3 14.3-23.8 24-41.6 24H240c-26.5 0-48-21.5-48-48s21.5-48 48-48h32c17.8 0 33.3 9.7 41.6 24l110.4 .1c22.1 0 40-17.9 40-40V256c0-114.9-93.1-208-208-208zM144 208h16c17.7 0 32 14.3 32 32V352c0 17.7-14.3 32-32 32H144c-35.3 0-64-28.7-64-64V272c0-35.3 28.7-64 64-64zm224 0c35.3 0 64 28.7 64 64v48c0 35.3-28.7 64-64 64H352c-17.7 0-32-14.3-32-32V240c0-17.7 14.3-32 32-32h16z"/></symbol>
+  <symbol id="link" viewBox="0 0 640 512"><path d="M579.8 267.7c56.5-56.5 56.5-148 0-204.5c-50-50-128.8-56.5-186.3-15.4l-1.6 1.1c-14.4 10.3-17.7 30.3-7.4 44.6s30.3 17.7 44.6 7.4l1.6-1.1c32.1-22.9 76-19.3 103.8 8.6c31.5 31.5 31.5 82.5 0 114L422.3 334.8c-31.5 31.5-82.5 31.5-114 0c-27.9-27.9-31.5-71.8-8.6-103.8l1.1-1.6c10.3-14.4 6.9-34.4-7.4-44.6s-34.4-6.9-44.6 7.4l-1.1 1.6C206.5 251.2 213 330 263 380c56.5 56.5 148 56.5 204.5 0L579.8 267.7zM60.2 244.3c-56.5 56.5-56.5 148 0 204.5c50 50 128.8 56.5 186.3 15.4l1.6-1.1c14.4-10.3 17.7-30.3 7.4-44.6s-30.3-17.7-44.6-7.4l-1.6 1.1c-32.1 22.9-76 19.3-103.8-8.6C74 372 74 321 105.5 289.5L217.7 177.2c31.5-31.5 82.5-31.5 114 0c27.9 27.9 31.5 71.8 8.6 103.9l-1.1 1.6c-10.3 14.4-6.9 34.4 7.4 44.6s34.4 6.9 44.6-7.4l1.1-1.6C433.5 260.8 427 182 377 132c-56.5-56.5-148-56.5-204.5 0L60.2 244.3z"/></symbol>
+  <symbol id="linkedin" viewBox="0 0 448 512"><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></symbol>
+  <symbol id="map-marker-alt" viewBox="0 0 384 512"><path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></symbol>
+  <symbol id="moon" viewBox="0 0 384 512"><path d="M223.5 32C100 32 0 132.3 0 256S100 480 223.5 480c60.6 0 115.5-24.2 155.8-63.4c5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6c-96.9 0-175.5-78.8-175.5-176c0-65.8 36-123.1 89.3-153.3c6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"/></symbol>
+  <symbol id="network-wired" viewBox="0 0 640 512"><path d="M256 64H384v64H256V64zM240 0c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48h48v32H32c-17.7 0-32 14.3-32 32s14.3 32 32 32h96v32H80c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48H240c26.5 0 48-21.5 48-48V368c0-26.5-21.5-48-48-48H192V288H448v32H400c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48H560c26.5 0 48-21.5 48-48V368c0-26.5-21.5-48-48-48H512V288h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H352V192h48c26.5 0 48-21.5 48-48V48c0-26.5-21.5-48-48-48H240zM96 448V384H224v64H96zm320-64H544v64H416V384z"/></symbol>
+  <symbol id="phone" viewBox="0 0 512 512"><path d="M164.9 24.6c-7.7-18.6-28-28.5-47.4-23.2l-88 24C12.1 30.2 0 46 0 64C0 311.4 200.6 512 448 512c18 0 33.8-12.1 38.6-29.5l24-88c5.3-19.4-4.6-39.7-23.2-47.4l-96-40c-16.3-6.8-35.2-2.1-46.3 11.6L304.7 368C234.3 334.7 177.3 277.7 144 207.3L193.3 167c13.7-11.2 18.4-30 11.6-46.3l-40-96z"/></symbol>
+  <symbol id="redo" viewBox="0 0 512 512"><path d="M386.3 160H336c-17.7 0-32 14.3-32 32s14.3 32 32 32H464c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0s-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3s163.8-62.5 226.3 0L386.3 160z"/></symbol>
+  <symbol id="robot" viewBox="0 0 640 512"><path d="M320 0c17.7 0 32 14.3 32 32V96H472c39.8 0 72 32.2 72 72V440c0 39.8-32.2 72-72 72H168c-39.8 0-72-32.2-72-72V168c0-39.8 32.2-72 72-72H288V32c0-17.7 14.3-32 32-32zM208 384c-8.8 0-16 7.2-16 16s7.2 16 16 16h32c8.8 0 16-7.2 16-16s-7.2-16-16-16H208zm96 0c-8.8 0-16 7.2-16 16s7.2 16 16 16h32c8.8 0 16-7.2 16-16s-7.2-16-16-16H304zm96 0c-8.8 0-16 7.2-16 16s7.2 16 16 16h32c8.8 0 16-7.2 16-16s-7.2-16-16-16H400zM264 256a40 40 0 1 0 -80 0 40 40 0 1 0 80 0zm152 40a40 40 0 1 0 0-80 40 40 0 1 0 0 80zM48 224H64V416H48c-26.5 0-48-21.5-48-48V272c0-26.5 21.5-48 48-48zm544 0c26.5 0 48 21.5 48 48v96c0 26.5-21.5 48-48 48H576V224h16z"/></symbol>
+  <symbol id="rocket" viewBox="0 0 512 512"><path d="M156.6 384.9L125.7 354c-8.5-8.5-11.5-20.8-7.7-32.2c3-8.9 7-20.5 11.8-33.8L24 288c-8.6 0-16.6-4.6-20.9-12.1s-4.2-16.7 .2-24.1l52.5-88.5c13-21.9 36.5-35.3 61.9-35.3l82.3 0c2.4-4 4.8-7.7 7.2-11.3C289.1-4.1 411.1-8.1 483.9 5.3c11.6 2.1 20.6 11.2 22.8 22.8c13.4 72.9 9.3 194.8-111.4 276.7c-3.5 2.4-7.3 4.8-11.3 7.2v82.3c0 25.4-13.4 49-35.3 61.9l-88.5 52.5c-7.4 4.4-16.6 4.5-24.1 .2s-12.1-12.2-12.1-20.9V380.8c-14.1 4.9-26.4 8.9-35.7 11.9c-11.2 3.6-23.4 .5-31.8-7.8zM384 168a40 40 0 1 0 0-80 40 40 0 1 0 0 80z"/></symbol>
+  <symbol id="server" viewBox="0 0 512 512"><path d="M64 32C28.7 32 0 60.7 0 96v64c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm280 72a24 24 0 1 1 0 48 24 24 0 1 1 0-48zm48 24a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zM64 288c-35.3 0-64 28.7-64 64v64c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V352c0-35.3-28.7-64-64-64H64zm280 72a24 24 0 1 1 0 48 24 24 0 1 1 0-48zm56 24a24 24 0 1 1 48 0 24 24 0 1 1 -48 0z"/></symbol>
+  <symbol id="shield-alt" viewBox="0 0 512 512"><path d="M256 0c4.6 0 9.2 1 13.4 2.9L457.7 82.8c22 9.3 38.4 31 38.3 57.2c-.5 99.2-41.3 280.7-213.6 363.2c-16.7 8-36.1 8-52.8 0C57.3 420.7 16.5 239.2 16 140c-.1-26.2 16.3-47.9 38.3-57.2L242.7 2.9C246.8 1 251.4 0 256 0zm0 66.8V444.8C394 378 431.1 230.1 432 141.4L256 66.8l0 0z"/></symbol>
+  <symbol id="shield-virus" viewBox="0 0 512 512"><path d="M269.4 2.9C265.2 1 260.7 0 256 0s-9.2 1-13.4 2.9L54.3 82.8c-22 9.3-38.4 31-38.3 57.2c.5 99.2 41.3 280.7 213.6 363.2c16.7 8 36.1 8 52.8 0C454.7 420.7 495.5 239.2 496 140c.1-26.2-16.3-47.9-38.3-57.2L269.4 2.9zM256 112c8.8 0 16 7.2 16 16c0 33 39.9 49.5 63.2 26.2c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6C334.5 200.1 351 240 384 240c8.8 0 16 7.2 16 16s-7.2 16-16 16c-33 0-49.5 39.9-26.2 63.2c6.2 6.2 6.2 16.4 0 22.6s-16.4 6.2-22.6 0C311.9 334.5 272 351 272 384c0 8.8-7.2 16-16 16s-16-7.2-16-16c0-33-39.9-49.5-63.2-26.2c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6C177.5 311.9 161 272 128 272c-8.8 0-16-7.2-16-16s7.2-16 16-16c33 0 49.5-39.9 26.2-63.2c-6.2-6.2-6.2-16.4 0-22.6s16.4-6.2 22.6 0C200.1 177.5 240 161 240 128c0-8.8 7.2-16 16-16zM232 256a24 24 0 1 0 0-48 24 24 0 1 0 0 48zm72 32a16 16 0 1 0 -32 0 16 16 0 1 0 32 0z"/></symbol>
+  <symbol id="sun" viewBox="0 0 512 512"><path d="M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1.5 10.7-1.6 15.2L446.9 256l62.3 90.3c3.1 4.5 3.7 10.2 1.6 15.2s-6.6 8.6-11.9 9.6L391 391 371.1 498.9c-1 5.3-4.6 9.8-9.6 11.9s-10.7 1.5-15.2-1.6L256 446.9l-90.3 62.3c-4.5 3.1-10.2 3.7-15.2 1.6s-8.6-6.6-9.6-11.9L121 391 13.1 371.1c-5.3-1-9.8-4.6-11.9-9.6s-1.5-10.7 1.6-15.2L65.1 256 2.8 165.7c-3.1-4.5-3.7-10.2-1.6-15.2s6.6-8.6 11.9-9.6L121 121 140.9 13.1c1-5.3 4.6-9.8 9.6-11.9s10.7-1.5 15.2 1.6L256 65.1 346.3 2.8c4.5-3.1 10.2-3.7 15.2-1.6zM160 256a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zm224 0a128 128 0 1 0 -256 0 128 128 0 1 0 256 0z"/></symbol>
+  <symbol id="tachometer-alt" viewBox="0 0 512 512"><path d="M0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zM288 96a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zM256 416c35.3 0 64-28.7 64-64c0-17.4-6.9-33.1-18.1-44.6L366 161.7c5.3-12.1-.2-26.3-12.3-31.6s-26.3 .2-31.6 12.3L257.9 288c-.6 0-1.3 0-1.9 0c-35.3 0-64 28.7-64 64s28.7 64 64 64zM176 144a32 32 0 1 0 -64 0 32 32 0 1 0 64 0zM96 288a32 32 0 1 0 0-64 32 32 0 1 0 0 64zm352-32a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"/></symbol>
+  <symbol id="user-shield" viewBox="0 0 640 512"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c1.8 0 3.5-.2 5.3-.5c-76.3-55.1-99.8-141-103.1-200.2c-16.1-4.8-33.1-7.3-50.7-7.3H178.3zm308.8-78.3l-120 48C358 277.4 352 286.2 352 296c0 63.3 25.9 168.8 134.8 214.2c5.9 2.5 12.6 2.5 18.5 0C614.1 464.8 640 359.3 640 296c0-9.8-6-18.6-15.1-22.3l-120-48c-5.7-2.3-12.1-2.3-17.8 0zM591.4 312c-3.9 50.7-27.2 116.7-95.4 149.7V273.8L591.4 312z"/></symbol>
+  <symbol id="users" viewBox="0 0 640 512"><path d="M144 0a80 80 0 1 1 0 160A80 80 0 1 1 144 0zM512 0a80 80 0 1 1 0 160A80 80 0 1 1 512 0zM0 298.7C0 239.8 47.8 192 106.7 192h42.7c15.9 0 31 3.5 44.6 9.7c-1.3 7.2-1.9 14.7-1.9 22.3c0 38.2 16.8 72.5 43.3 96c-.2 0-.4 0-.7 0H21.3C9.6 320 0 310.4 0 298.7zM405.3 320c-.2 0-.4 0-.7 0c26.6-23.5 43.3-57.8 43.3-96c0-7.6-.7-15-1.9-22.3c13.6-6.3 28.7-9.7 44.6-9.7h42.7C592.2 192 640 239.8 640 298.7c0 11.8-9.6 21.3-21.3 21.3H405.3zM224 224a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zM128 485.3C128 411.7 187.7 352 261.3 352H378.7C452.3 352 512 411.7 512 485.3c0 14.7-11.9 26.7-26.7 26.7H154.7c-14.7 0-26.7-11.9-26.7-26.7z"/></symbol>
+</svg>
+<!-- icon-sprite:end -->
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="site-header" id="top">
+  <div class="container site-header__inner">
+    <!-- Two logo lockups, one per mode, toggled in CSS.
+         A <picture media="(prefers-color-scheme: …)"> cannot be used here: that
+         media query only ever reflects the OS setting, so it would ignore a
+         visitor who picked the opposite mode with the header toggle. The hidden
+         variant is lazy-loaded so browsers skip fetching it. -->
+    <a class="site-header__brand" href="/" aria-label="Tech4TIME — home">
+      <picture class="site-header__logo-wrap site-header__logo-wrap--light">
+        <source
+          srcset="/assets/images/logo/logo-light-180.webp 180w, /assets/images/logo/logo-light-360.webp 360w, /assets/images/logo/logo-light-540.webp 540w"
+          sizes="(max-width: 48em) 140px, 180px"
+          type="image/webp">
+        <img
+          class="site-header__logo"
+          src="/assets/images/logo/logo-light-360.png"
+          srcset="/assets/images/logo/logo-light-180.png 180w, /assets/images/logo/logo-light-360.png 360w, /assets/images/logo/logo-light-540.png 540w"
+          sizes="(max-width: 48em) 140px, 180px"
+          alt="Tech4TIME"
+          width="360"
+          height="128"
+          fetchpriority="high"
+          decoding="async">
+      </picture>
+      <picture class="site-header__logo-wrap site-header__logo-wrap--dark">
+        <source
+          srcset="/assets/images/logo/logo-dark-180.webp 180w, /assets/images/logo/logo-dark-360.webp 360w, /assets/images/logo/logo-dark-540.webp 540w"
+          sizes="(max-width: 48em) 140px, 180px"
+          type="image/webp">
+        <img
+          class="site-header__logo"
+          src="/assets/images/logo/logo-dark-360.png"
+          srcset="/assets/images/logo/logo-dark-180.png 180w, /assets/images/logo/logo-dark-360.png 360w, /assets/images/logo/logo-dark-540.png 540w"
+          sizes="(max-width: 48em) 140px, 180px"
+          alt="Tech4TIME"
+          width="360"
+          height="128"
+          loading="lazy"
+          decoding="async">
+      </picture>
+    </a>
+
+    <nav class="site-nav" id="site-nav" data-nav-drawer data-open="false" aria-label="Main">
+      <ul class="site-nav__list">
+        <li class="site-nav__item"><a class="nav-link" href="/">Home</a></li>
+        <li class="site-nav__item"><a class="nav-link" href="/pages/about/">About Us</a></li>
+        <li class="site-nav__item"><a class="nav-link" href="/pages/services/" aria-current="page">Services</a></li>
+        <li class="site-nav__item"><a class="nav-link" href="/pages/company-profile/">Company Profile</a></li>
+        <li class="site-nav__item"><a class="nav-link" href="/pages/careers/">Careers</a></li>
+        <li class="site-nav__item"><a class="nav-link" href="/pages/contact/">Contact Us</a></li>
+      </ul>
+    </nav>
+
+    <div class="site-header__actions">
+      <button
+        class="btn btn--icon"
+        type="button"
+        data-theme-toggle
+        aria-label="Switch to dark mode"
+        aria-pressed="false">
+        <svg class="icon theme-toggle__icon--moon" aria-hidden="true" focusable="false"><use href="#moon"></use></svg>
+        <svg class="icon theme-toggle__icon--sun" aria-hidden="true" focusable="false"><use href="#sun"></use></svg>
+      </button>
+
+      <button
+        class="nav-toggle"
+        type="button"
+        data-nav-toggle
+        aria-controls="site-nav"
+        aria-expanded="false"
+        aria-label="Open navigation menu">
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="page__main" id="main">
+
+  <!-- ========================== Hero banner ========================== -->
+  <section class="page-hero">
+    <div class="container page-hero__inner">
+      <h1 class="page-hero__title">Cloud Infrastructure</h1>
+      <p class="page-hero__subtitle">Cloud and Infrastructure Services Catalogue</p>
+    </div>
+  </section>
+
+  <!-- ========================= Core capability ========================= -->
+  <section class="section core-solutions" aria-labelledby="core-heading">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__eyebrow">Cloud &amp; Infrastructure</span>
+        <h2 class="section__title" id="core-heading">The Capability We Build</h2>
+        <p class="section__lead">
+          Comprehensive OpenStack-based cloud, from the first architecture diagram
+          through to the team that runs it at three in the morning.
+        </p>
+      </div>
+
+      <div class="core-solutions__grid">
+        <article class="core-card">
+          <span class="core-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#cloud"></use></svg></span>
+          <h3 class="core-card__title">Private Cloud You Actually Own</h3>
+          <p class="core-card__text">
+            Built on OpenStack and open standards rather than a proprietary stack, on
+            your hardware or ours. You get the elasticity, self-service and automation
+            of a public provider while the data stays on infrastructure you control —
+            and there is no vendor holding the exit.
+          </p>
+        </article>
+
+        <article class="core-card">
+          <span class="core-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#redo"></use></svg></span>
+          <h3 class="core-card__title">Run, Monitored and Recoverable</h3>
+          <p class="core-card__text">
+            A platform is only as good as the operations around it. Automation and
+            orchestration, monitoring with alerting that means something, tenancy and
+            compliance boundaries between teams, and disaster recovery that has been
+            rehearsed — not just documented.
+          </p>
+        </article>
+      </div>
+
+      <p class="core-solutions__note">
+        Every group below is drawn from the capability list we publish on the
+        services page.
+        <a href="/pages/services/#cloud-infrastructure">See the full list<svg class="icon icon--sm" aria-hidden="true" focusable="false"><use href="#arrow-right"></use></svg></a>
+      </p>
+    </div>
+  </section>
+
+  <!-- =========================== Service layers =========================== -->
+  <section class="section section--surface layers" aria-labelledby="layers-heading">
+    <div class="container">
+      <div class="section__header">
+        <span class="section__eyebrow">Service Catalogue</span>
+        <h2 class="section__title" id="layers-heading">Design, Platform, Operations, Security and Enablement</h2>
+        <p class="section__lead">
+          Eighteen services across five groups. Everything below is on the page
+          whether or not scripting is available — the tabs only choose which group
+          is in view.
+        </p>
+      </div>
+
+      <div class="tabs tabs--cards" data-tabs>
+        <div class="tabs__list" data-tabs-list>
+          <a class="tabs__tab" href="#layer-cloud-design" data-tabs-tab>
+            <span class="tabs__tab-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#cloud"></use></svg></span>
+            <span class="tabs__tab-body">
+              <span class="tabs__tab-name">Cloud Design &amp; Strategy</span>
+              <span class="tabs__tab-text">Strategic planning and architecture for cloud environments</span>
+            </span>
+          </a>
+          <a class="tabs__tab" href="#layer-platform-services" data-tabs-tab>
+            <span class="tabs__tab-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#server"></use></svg></span>
+            <span class="tabs__tab-body">
+              <span class="tabs__tab-name">Platform Solutions</span>
+              <span class="tabs__tab-text">Core cloud infrastructure and platform services</span>
+            </span>
+          </a>
+          <a class="tabs__tab" href="#layer-operations-management" data-tabs-tab>
+            <span class="tabs__tab-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-line"></use></svg></span>
+            <span class="tabs__tab-body">
+              <span class="tabs__tab-name">Operations &amp; Management</span>
+              <span class="tabs__tab-text">Cloud operations, monitoring, and management services</span>
+            </span>
+          </a>
+          <a class="tabs__tab" href="#layer-security-compliance" data-tabs-tab>
+            <span class="tabs__tab-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
+            <span class="tabs__tab-body">
+              <span class="tabs__tab-name">Security &amp; Compliance</span>
+              <span class="tabs__tab-text">Cloud security, compliance, and governance services</span>
+            </span>
+          </a>
+          <a class="tabs__tab" href="#layer-optimization-training" data-tabs-tab>
+            <span class="tabs__tab-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#rocket"></use></svg></span>
+            <span class="tabs__tab-body">
+              <span class="tabs__tab-name">Optimization &amp; Enablement</span>
+              <span class="tabs__tab-text">Performance optimization, training, and support services</span>
+            </span>
+          </a>
+        </div>
+
+      <section class="layer tabs__panel" id="layer-cloud-design">
+        <div class="layer__header">
+          <div>
+            <h3 class="layer__title">
+              <span class="layer__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#cloud"></use></svg></span>
+              Cloud Design &amp; Strategy
+            </h3>
+            <p class="layer__text">Where the cloud is planned: private cloud architecture on OpenStack, the deployment itself, integration with anything you already run in public cloud, and moving existing workloads across.</p>
+          </div>
+          <p class="layer__count">4 Solutions</p>
+        </div>
+
+        <!-- Nodes are buttons, so pointer, keyboard and touch all reach them;
+             each one brings its card up beside the ring. Hidden under 52em,
+             where the ring is illegible and the grid below carries everything. -->
+        <div class="layer__viz" data-solution-map>
+          <ul class="soc-map soc-map--n4 soc-map--sm">
+            <li class="soc-map__hub">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#cloud"></use></svg>
+              <span class="soc-map__hub-label">DESIGN</span>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-cloud-design-private-cloud">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#cloud"></use></svg>
+                <span class="visually-hidden">Private Cloud Design &amp; Implementation</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-cloud-design-openstack-deployment">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#cogs"></use></svg>
+                <span class="visually-hidden">OpenStack Deployment &amp; Configuration</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-cloud-design-hybrid-cloud">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#link"></use></svg>
+                <span class="visually-hidden">Hybrid Cloud Integration</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-cloud-design-cloud-migration">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#exchange-alt"></use></svg>
+                <span class="visually-hidden">Cloud Migration Services</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="layer__detail" data-solution-detail>
+            <article class="tool-card tool-card--detail">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#cloud"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Private Cloud Design &amp; Implementation</h4>
+                <p class="tool-card__category">Cloud Design &amp; Strategy</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Comprehensive private cloud solutions built on OpenStack architecture.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Deliver enterprise-grade infrastructure with complete control and customization.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Capacity Planning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Hardware Selection</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Multi-node Deployment</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>High Availability</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Disaster Recovery</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">OpenStack</li>
+                <li class="tag">KVM</li>
+                <li class="tag">Ceph</li>
+                <li class="tag">OVS</li>
+                <li class="tag">Neutron</li>
+              </ul>
+            </div>
+          </article>
+          </div>
+        </div>
+
+        <div class="layer__grid">
+          <article class="tool-card" id="sol-cloud-design-private-cloud">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#cloud"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Private Cloud Design &amp; Implementation</h4>
+                <p class="tool-card__category">Cloud Design &amp; Strategy</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Comprehensive private cloud solutions built on OpenStack architecture.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Deliver enterprise-grade infrastructure with complete control and customization.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Capacity Planning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Hardware Selection</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Multi-node Deployment</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>High Availability</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Disaster Recovery</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">OpenStack</li>
+                <li class="tag">KVM</li>
+                <li class="tag">Ceph</li>
+                <li class="tag">OVS</li>
+                <li class="tag">Neutron</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-cloud-design-openstack-deployment">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#cogs"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">OpenStack Deployment &amp; Configuration</h4>
+                <p class="tool-card__category">Cloud Design &amp; Strategy</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">End-to-end OpenStack platform deployment covering core services.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Deliver fully integrated cloud infrastructure with automated provisioning.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Compute Services</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Networking</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Block Storage</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Object Storage</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Identity Management</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Nova</li>
+                <li class="tag">Neutron</li>
+                <li class="tag">Cinder</li>
+                <li class="tag">Swift</li>
+                <li class="tag">Keystone</li>
+                <li class="tag">Glance</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-cloud-design-hybrid-cloud">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#link"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Hybrid Cloud Integration</h4>
+                <p class="tool-card__category">Cloud Design &amp; Strategy</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Seamless integration between private OpenStack and public clouds.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Implement unified management interfaces and workload portability.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Unified Management</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Workload Portability</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Cloud Bursting</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Security Policies</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Consistent Architecture</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">AWS</li>
+                <li class="tag">Azure</li>
+                <li class="tag">GCP</li>
+                <li class="tag">OpenStack</li>
+                <li class="tag">Terraform</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-cloud-design-cloud-migration">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#exchange-alt"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Migration Services</h4>
+                <p class="tool-card__category">Cloud Design &amp; Strategy</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Complete migration strategy for transitioning workloads to OpenStack.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Execute migration with minimal downtime and business continuity assurance.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Assessment</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Migration Planning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Data Transfer</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Testing</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Cutover Management</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Migration Tools</li>
+                <li class="tag">Data Transfer</li>
+                <li class="tag">Application Refactoring</li>
+                <li class="tag">Testing Frameworks</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="layer tabs__panel" id="layer-platform-services">
+        <div class="layer__header">
+          <div>
+            <h3 class="layer__title">
+              <span class="layer__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#server"></use></svg></span>
+              Platform Solutions
+            </h3>
+            <p class="layer__text">What the platform actually offers your teams — compute on demand, container orchestration, storage, and the software-defined network underneath all of it.</p>
+          </div>
+          <p class="layer__count">4 Solutions</p>
+        </div>
+
+        <!-- Nodes are buttons, so pointer, keyboard and touch all reach them;
+             each one brings its card up beside the ring. Hidden under 52em,
+             where the ring is illegible and the grid below carries everything. -->
+        <div class="layer__viz" data-solution-map>
+          <ul class="soc-map soc-map--n4 soc-map--sm">
+            <li class="soc-map__hub">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#server"></use></svg>
+              <span class="soc-map__hub-label">PLATFORM</span>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-platform-services-iaas-platform">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#server"></use></svg>
+                <span class="visually-hidden">Infrastructure as a Service Platform</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-platform-services-container-platform">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#dharmachakra"></use></svg>
+                <span class="visually-hidden">Container Orchestration Platform</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-platform-services-cloud-storage">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#database"></use></svg>
+                <span class="visually-hidden">Cloud Storage Solutions</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-platform-services-network-sdn">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#network-wired"></use></svg>
+                <span class="visually-hidden">Network Virtualization &amp; SDN</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="layer__detail" data-solution-detail>
+            <article class="tool-card tool-card--detail">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#server"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Infrastructure as a Service Platform</h4>
+                <p class="tool-card__category">Platform Services</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Fully managed IaaS platform delivering on-demand compute, storage, and networking.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide self-service provisioning, automated scaling, and multi-tenancy.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Self-service Provisioning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Automated Scaling</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Resource Metering</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Multi-tenancy</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Quota Management</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">OpenStack APIs</li>
+                <li class="tag">Self-service Portal</li>
+                <li class="tag">Quota Management</li>
+                <li class="tag">RBAC</li>
+              </ul>
+            </div>
+          </article>
+          </div>
+        </div>
+
+        <div class="layer__grid">
+          <article class="tool-card" id="sol-platform-services-iaas-platform">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#server"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Infrastructure as a Service Platform</h4>
+                <p class="tool-card__category">Platform Services</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Fully managed IaaS platform delivering on-demand compute, storage, and networking.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide self-service provisioning, automated scaling, and multi-tenancy.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Self-service Provisioning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Automated Scaling</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Resource Metering</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Multi-tenancy</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Quota Management</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">OpenStack APIs</li>
+                <li class="tag">Self-service Portal</li>
+                <li class="tag">Quota Management</li>
+                <li class="tag">RBAC</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-platform-services-container-platform">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#dharmachakra"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Container Orchestration Platform</h4>
+                <p class="tool-card__category">Platform Services</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Kubernetes-based container platform integrated with OpenStack.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide cluster provisioning and comprehensive monitoring for containerized workloads.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Cluster Provisioning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Container Registry</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Automated Scaling</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Service Mesh</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Monitoring</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Kubernetes</li>
+                <li class="tag">Docker</li>
+                <li class="tag">Helm</li>
+                <li class="tag">Prometheus</li>
+                <li class="tag">Service Mesh</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-platform-services-cloud-storage">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#database"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Storage Solutions</h4>
+                <p class="tool-card__category">Platform Services</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Scalable storage infrastructure implementing OpenStack Swift and Cinder.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Deliver S3-compatible APIs with high availability and data redundancy.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Object Storage</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Block Storage</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>High Availability</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>S3 Compatibility</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Automated Tiering</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">OpenStack Swift</li>
+                <li class="tag">Cinder</li>
+                <li class="tag">Ceph</li>
+                <li class="tag">S3 API</li>
+                <li class="tag">Storage Tiering</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-platform-services-network-sdn">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#network-wired"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Network Virtualization &amp; SDN</h4>
+                <p class="tool-card__category">Platform Services</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Software-defined networking implementation using OpenStack Neutron.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide flexible network topology design and automated provisioning.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Network Segmentation</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Load Balancing</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>VPN Services</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Firewall Rules</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Centralized Management</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">OpenStack Neutron</li>
+                <li class="tag">OVS</li>
+                <li class="tag">VXLAN</li>
+                <li class="tag">Load Balancing</li>
+                <li class="tag">VPN</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="layer tabs__panel" id="layer-operations-management">
+        <div class="layer__header">
+          <div>
+            <h3 class="layer__title">
+              <span class="layer__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-line"></use></svg></span>
+              Operations &amp; Management
+            </h3>
+            <p class="layer__text">Keeping it running: automation and orchestration, monitoring, bare metal provisioning, and a disaster recovery plan that has been tested rather than written.</p>
+          </div>
+          <p class="layer__count">4 Solutions</p>
+        </div>
+
+        <!-- Nodes are buttons, so pointer, keyboard and touch all reach them;
+             each one brings its card up beside the ring. Hidden under 52em,
+             where the ring is illegible and the grid below carries everything. -->
+        <div class="layer__viz" data-solution-map>
+          <ul class="soc-map soc-map--n4 soc-map--sm">
+            <li class="soc-map__hub">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-line"></use></svg>
+              <span class="soc-map__hub-label">OPERATIONS</span>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-operations-management-cloud-automation">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#robot"></use></svg>
+                <span class="visually-hidden">Cloud Automation &amp; Orchestration</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-operations-management-cloud-monitoring">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-bar"></use></svg>
+                <span class="visually-hidden">Cloud Monitoring &amp; Operations</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-operations-management-disaster-recovery">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-virus"></use></svg>
+                <span class="visually-hidden">Disaster Recovery &amp; Business Continuity</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-operations-management-bare-metal">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#server"></use></svg>
+                <span class="visually-hidden">Bare Metal Provisioning</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="layer__detail" data-solution-detail>
+            <article class="tool-card tool-card--detail">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#robot"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Automation &amp; Orchestration</h4>
+                <p class="tool-card__category">Operations &amp; Management</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Infrastructure automation using Terraform, Ansible, and OpenStack Heat.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Implement infrastructure as code and automated workflows.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Infrastructure as Code</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Automated Workflows</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Policy-driven Provisioning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Self-healing Infrastructure</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Terraform</li>
+                <li class="tag">Ansible</li>
+                <li class="tag">OpenStack Heat</li>
+                <li class="tag">Python</li>
+                <li class="tag">CI/CD</li>
+              </ul>
+            </div>
+          </article>
+          </div>
+        </div>
+
+        <div class="layer__grid">
+          <article class="tool-card" id="sol-operations-management-cloud-automation">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#robot"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Automation &amp; Orchestration</h4>
+                <p class="tool-card__category">Operations &amp; Management</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Infrastructure automation using Terraform, Ansible, and OpenStack Heat.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Implement infrastructure as code and automated workflows.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Infrastructure as Code</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Automated Workflows</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Policy-driven Provisioning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Self-healing Infrastructure</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Terraform</li>
+                <li class="tag">Ansible</li>
+                <li class="tag">OpenStack Heat</li>
+                <li class="tag">Python</li>
+                <li class="tag">CI/CD</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-operations-management-cloud-monitoring">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-bar"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Monitoring &amp; Operations</h4>
+                <p class="tool-card__category">Operations &amp; Management</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Comprehensive monitoring platform for OpenStack environments.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide real-time performance monitoring, log aggregation, and alerting.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Performance Monitoring</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Log Aggregation</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Alerting</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Capacity Planning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Operational Analytics</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Prometheus</li>
+                <li class="tag">Grafana</li>
+                <li class="tag">ELK Stack</li>
+                <li class="tag">AlertManager</li>
+                <li class="tag">Metrics</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-operations-management-disaster-recovery">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-virus"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Disaster Recovery &amp; Business Continuity</h4>
+                <p class="tool-card__category">Operations &amp; Management</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Enterprise disaster recovery solutions with automated backup and replication.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide backup scheduling, snapshot management, and recovery optimization.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Automated Backup</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Cross-site Replication</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>RTO Optimization</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>DR Testing</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Business Continuity</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Backup Tools</li>
+                <li class="tag">Replication</li>
+                <li class="tag">Snapshot Management</li>
+                <li class="tag">Failover Automation</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-operations-management-bare-metal">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#server"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Bare Metal Provisioning</h4>
+                <p class="tool-card__category">Operations &amp; Management</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Automated bare metal server provisioning using OpenStack Ironic.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Deliver rapid deployment and hardware lifecycle management.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Automated Deployment</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Hardware Lifecycle</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>High-performance Computing</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Hybrid Environments</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">OpenStack Ironic</li>
+                <li class="tag">PXE</li>
+                <li class="tag">IPMI</li>
+                <li class="tag">Hardware Management</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="layer tabs__panel" id="layer-security-compliance">
+        <div class="layer__header">
+          <div>
+            <h3 class="layer__title">
+              <span class="layer__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
+              Security &amp; Compliance
+            </h3>
+            <p class="layer__text">Security and governance for a platform several teams share — tenancy boundaries, compliance posture, and the option to hand day-to-day operation to us entirely.</p>
+          </div>
+          <p class="layer__count">3 Solutions</p>
+        </div>
+
+        <!-- Nodes are buttons, so pointer, keyboard and touch all reach them;
+             each one brings its card up beside the ring. Hidden under 52em,
+             where the ring is illegible and the grid below carries everything. -->
+        <div class="layer__viz" data-solution-map>
+          <ul class="soc-map soc-map--n3 soc-map--sm">
+            <li class="soc-map__hub">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg>
+              <span class="soc-map__hub-label">SECURITY</span>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-security-compliance-cloud-security">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#user-shield"></use></svg>
+                <span class="visually-hidden">Cloud Security &amp; Compliance</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-security-compliance-multi-tenancy">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#users"></use></svg>
+                <span class="visually-hidden">Multi-Tenancy &amp; Resource Management</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-security-compliance-managed-services">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#headset"></use></svg>
+                <span class="visually-hidden">Cloud Managed Services</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="layer__detail" data-solution-detail>
+            <article class="tool-card tool-card--detail">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#user-shield"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Security &amp; Compliance</h4>
+                <p class="tool-card__category">Security &amp; Compliance</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Security-hardened OpenStack deployment with comprehensive controls.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Ensure compliance with industry standards through continuous auditing.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Encryption at Rest</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Encryption in Transit</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Identity Federation</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Security Monitoring</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Continuous Auditing</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Encryption</li>
+                <li class="tag">Identity Federation</li>
+                <li class="tag">Network Segmentation</li>
+                <li class="tag">Security Monitoring</li>
+              </ul>
+            </div>
+          </article>
+          </div>
+        </div>
+
+        <div class="layer__grid">
+          <article class="tool-card" id="sol-security-compliance-cloud-security">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#user-shield"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Security &amp; Compliance</h4>
+                <p class="tool-card__category">Security &amp; Compliance</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Security-hardened OpenStack deployment with comprehensive controls.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Ensure compliance with industry standards through continuous auditing.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Encryption at Rest</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Encryption in Transit</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Identity Federation</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Security Monitoring</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Continuous Auditing</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Encryption</li>
+                <li class="tag">Identity Federation</li>
+                <li class="tag">Network Segmentation</li>
+                <li class="tag">Security Monitoring</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-security-compliance-multi-tenancy">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#users"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Multi-Tenancy &amp; Resource Management</h4>
+                <p class="tool-card__category">Security &amp; Compliance</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Advanced multi-tenant architecture with secure resource isolation.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide granular quotas and chargeback capabilities.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Resource Isolation</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Granular Quotas</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Chargeback</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Usage Reporting</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Cost Allocation</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Resource Isolation</li>
+                <li class="tag">Quota Management</li>
+                <li class="tag">Chargeback</li>
+                <li class="tag">Usage Reporting</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-security-compliance-managed-services">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#headset"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Managed Services</h4>
+                <p class="tool-card__category">Security &amp; Compliance</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Fully managed OpenStack cloud operations including 24/7 monitoring.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide SLA-backed uptime guarantees and continuous optimization.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>24/7 Monitoring</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Patch Management</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Capacity Planning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Incident Response</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>SLA Management</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">24/7 Monitoring</li>
+                <li class="tag">Patch Management</li>
+                <li class="tag">Incident Response</li>
+                <li class="tag">Performance Tuning</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="layer tabs__panel" id="layer-optimization-training">
+        <div class="layer__header">
+          <div>
+            <h3 class="layer__title">
+              <span class="layer__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#rocket"></use></svg></span>
+              Optimization &amp; Enablement
+            </h3>
+            <p class="layer__text">Getting more out of what is built: performance tuning, strategy advice, and training your own engineers so the platform is not dependent on us.</p>
+          </div>
+          <p class="layer__count">3 Solutions</p>
+        </div>
+
+        <!-- Nodes are buttons, so pointer, keyboard and touch all reach them;
+             each one brings its card up beside the ring. Hidden under 52em,
+             where the ring is illegible and the grid below carries everything. -->
+        <div class="layer__viz" data-solution-map>
+          <ul class="soc-map soc-map--n3 soc-map--sm">
+            <li class="soc-map__hub">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#rocket"></use></svg>
+              <span class="soc-map__hub-label">ENABLEMENT</span>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-optimization-training-performance-optimization">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#tachometer-alt"></use></svg>
+                <span class="visually-hidden">Cloud Performance Optimization</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-optimization-training-cloud-training">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#graduation-cap"></use></svg>
+                <span class="visually-hidden">Cloud Training &amp; Enablement</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-optimization-training-cloud-consulting">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-line"></use></svg>
+                <span class="visually-hidden">Cloud Consulting &amp; Strategy</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="layer__detail" data-solution-detail>
+            <article class="tool-card tool-card--detail">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#tachometer-alt"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Performance Optimization</h4>
+                <p class="tool-card__category">Optimization &amp; Enablement</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Ongoing optimization services for resource utilization and cost efficiency.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide capacity analysis and workload placement strategies.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Capacity Analysis</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Right-sizing</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Storage Optimization</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Network Tuning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Workload Placement</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Performance Analysis</li>
+                <li class="tag">Capacity Planning</li>
+                <li class="tag">Cost Optimization</li>
+                <li class="tag">Workload Analysis</li>
+              </ul>
+            </div>
+          </article>
+          </div>
+        </div>
+
+        <div class="layer__grid">
+          <article class="tool-card" id="sol-optimization-training-performance-optimization">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#tachometer-alt"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Performance Optimization</h4>
+                <p class="tool-card__category">Optimization &amp; Enablement</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Ongoing optimization services for resource utilization and cost efficiency.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide capacity analysis and workload placement strategies.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Capacity Analysis</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Right-sizing</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Storage Optimization</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Network Tuning</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Workload Placement</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Performance Analysis</li>
+                <li class="tag">Capacity Planning</li>
+                <li class="tag">Cost Optimization</li>
+                <li class="tag">Workload Analysis</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-optimization-training-cloud-training">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#graduation-cap"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Training &amp; Enablement</h4>
+                <p class="tool-card__category">Optimization &amp; Enablement</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Comprehensive training programs for cloud administrators and developers.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide hands-on labs and certification preparation.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Administrator Training</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Developer Training</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Architect Training</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Hands-on Labs</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Certification Prep</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Training Materials</li>
+                <li class="tag">Hands-on Labs</li>
+                <li class="tag">Certification Prep</li>
+                <li class="tag">Workshop Materials</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-optimization-training-cloud-consulting">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-line"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Cloud Consulting &amp; Strategy</h4>
+                <p class="tool-card__category">Optimization &amp; Enablement</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Expert guidance on cloud strategy, architecture design, and technology selection.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Provide cloud readiness assessment and migration roadmaps.
+            </p>
+            <div class="tool-card__block">
+              <span class="tool-card__label">What it includes</span>
+              <ul class="tool-card__features" role="list">
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Cloud Readiness Assessment</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Migration Roadmaps</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Cost-Benefit Analysis</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Architectural Blueprints</li>
+                <li class="tool-card__feature"><svg class="icon icon--sm tool-card__check" aria-hidden="true" focusable="false"><use href="#check"></use></svg>Business Alignment</li>
+              </ul>
+            </div>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Technologies</span>
+              <ul class="tool-card__tags" role="list">
+                <li class="tag">Strategy Frameworks</li>
+                <li class="tag">Architecture Design</li>
+                <li class="tag">Technology Evaluation</li>
+                <li class="tag">Roadmap Planning</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ Closing CTA ============================ -->
+  <section class="cta-band" aria-labelledby="page-cta-heading">
+    <div class="container cta-band__inner">
+      <h2 class="cta-band__title" id="page-cta-heading">Ready to build your cloud?</h2>
+      <p class="cta-band__text">
+        Tell us what you are running today and where it is straining. We will come
+        back with an architecture, a migration path and a straight answer on cost.
+      </p>
+      <a class="btn btn--primary btn--lg" href="/pages/contact/">
+        <svg class="icon icon--sm" aria-hidden="true" focusable="false"><use href="#calendar-check"></use></svg>
+        Schedule a Consultation
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__main">
+      <!-- Brand -->
+      <div class="site-footer__brand">
+        <a href="/" aria-label="Tech4TIME — home">
+          <picture class="site-footer__logo-wrap site-footer__logo-wrap--light">
+            <source srcset="/assets/images/logo/logo-light-360.webp" type="image/webp">
+            <img class="site-footer__logo" src="/assets/images/logo/logo-light-360.png"
+                 alt="Tech4TIME" width="360" height="128" loading="lazy" decoding="async">
+          </picture>
+          <picture class="site-footer__logo-wrap site-footer__logo-wrap--dark">
+            <source srcset="/assets/images/logo/logo-dark-360.webp" type="image/webp">
+            <img class="site-footer__logo" src="/assets/images/logo/logo-dark-360.png"
+                 alt="Tech4TIME" width="360" height="128" loading="lazy" decoding="async">
+          </picture>
+        </a>
+        <p class="site-footer__tagline">Orchestrating Technology with Time</p>
+        <p class="site-footer__description">
+          Open-Source &amp; Enterprise-grade cybersecurity, software development, and IT
+          solutions. Orchestrate, build, maintain and protect your business with our
+          profound solutions.
+        </p>
+        <ul class="site-footer__social">
+          <li>
+            <a class="btn btn--icon" href="https://www.linkedin.com/company/tech4time-bd/"
+               target="_blank" rel="noopener noreferrer" aria-label="Tech4TIME on LinkedIn">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#linkedin"></use></svg>
+            </a>
+          </li>
+          <li>
+            <a class="btn btn--icon" href="https://github.com/M-s-Tech4TIME"
+               target="_blank" rel="noopener noreferrer" aria-label="Tech4TIME on GitHub">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#github"></use></svg>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Quick links -->
+      <nav class="site-footer__section" aria-labelledby="footer-links-heading">
+        <h2 class="site-footer__heading" id="footer-links-heading">Quick Links</h2>
+        <ul class="site-footer__list">
+          <li><a class="site-footer__link" href="/">Home</a></li>
+          <li><a class="site-footer__link" href="/pages/about/">About Us</a></li>
+          <li><a class="site-footer__link" href="/pages/company-profile/">Company Profile</a></li>
+          <li><a class="site-footer__link" href="/pages/careers/">Careers</a></li>
+          <li><a class="site-footer__link" href="/pages/resource-certifications/">Resource Certifications</a></li>
+          <li><a class="site-footer__link" href="/pages/branding-and-advertisement/">Branding &amp; Advertisement</a></li>
+          <li><a class="site-footer__link" href="/pages/contact/">Contact Us</a></li>
+        </ul>
+      </nav>
+
+      <!-- Services -->
+      <nav class="site-footer__section" aria-labelledby="footer-services-heading">
+        <h2 class="site-footer__heading" id="footer-services-heading">Our Services</h2>
+        <ul class="site-footer__list">
+          <li><a class="site-footer__link" href="/pages/services/">All Services</a></li>
+          <li><a class="site-footer__link" href="/pages/services/cybersecurity/">Cybersecurity</a></li>
+          <li><a class="site-footer__link" href="/pages/services/software-development/">Software Development</a></li>
+          <li><a class="site-footer__link" href="/pages/services/cloud-infrastructure/">Cloud Infrastructure</a></li>
+          <li><a class="site-footer__link" href="/pages/services/hr-solutions/">Human Resource Provision</a></li>
+          <li><a class="site-footer__link" href="/pages/services/#it-equipment-supply">IT Equipment Supply</a></li>
+          <li><a class="site-footer__link" href="/pages/services/#it-consultancy-training">IT Consultancy &amp; Training</a></li>
+        </ul>
+      </nav>
+
+      <!-- Contact -->
+      <div class="site-footer__section">
+        <h2 class="site-footer__heading">Contact Info</h2>
+        <address class="site-footer__contact">
+          <div class="contact-item">
+            <svg class="icon contact-item__icon" aria-hidden="true" focusable="false"><use href="#phone"></use></svg>
+            <div>
+              <span class="contact-item__label">Bangladesh</span>
+              <a href="tel:+8801320571562">+880 1320571562</a><br>
+              <a href="tel:+8801881873463">+880 1881873463</a><br>
+              <a href="tel:+8801847313835">+880 1847313835</a>
+              <span class="contact-item__note">Sunday – Thursday</span>
+
+              <span class="contact-item__label">Malaysia</span>
+              <a href="tel:+60198527096">+60 198527096</a>
+              <span class="contact-item__note">Monday – Friday</span>
+            </div>
+          </div>
+
+          <div class="contact-item">
+            <svg class="icon contact-item__icon" aria-hidden="true" focusable="false"><use href="#envelope"></use></svg>
+            <a href="mailto:info@tech4time.bd">info@tech4time.bd</a>
+          </div>
+
+          <div class="contact-item">
+            <svg class="icon contact-item__icon" aria-hidden="true" focusable="false"><use href="#map-marker-alt"></use></svg>
+            <div>
+              <span class="contact-item__label">Dhaka, Bangladesh</span>
+              278/3, Manikdi, Dhaka - 1206<br>
+              <span class="contact-item__label">Selangor, Malaysia</span>
+              68100 Batu Caves<br>
+              <span class="contact-item__label">Brussels, Belgium</span>
+              367, Avenue Louise
+            </div>
+          </div>
+
+          <div class="contact-item">
+            <svg class="icon contact-item__icon" aria-hidden="true" focusable="false"><use href="#clock"></use></svg>
+            <div>
+              <span class="contact-item__label">Bangladesh Office</span>
+              Sun – Thu: 9:00 AM – 6:00 PM
+              <span class="contact-item__label">Malaysia Office</span>
+              Mon – Fri: 9:00 AM – 6:00 PM
+            </div>
+          </div>
+        </address>
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <div>
+        <p class="site-footer__copyright">
+          &copy; <span data-current-year>2026</span> Tech4TIME. All rights reserved.
+        </p>
+        <ul class="site-footer__legal">
+          <li><a class="site-footer__link" href="/pages/privacy-policy/">Privacy Policy</a></li>
+        </ul>
+      </div>
+
+      <button class="btn btn--icon" type="button" data-back-to-top aria-label="Back to top">
+        <svg class="icon" aria-hidden="true" focusable="false"><use href="#arrow-up"></use></svg>
+      </button>
+    </div>
+  </div>
+</footer>
+
+<!-- Deferred so nothing blocks rendering. Order matters only in that main.js
+     runs last: each module registers itself on window.Tech4Time, and main.js
+     calls their init(). Pages that need no forms can omit forms.js. -->
+<script src="/assets/js/theme-toggle.js" defer></script>
+<script src="/assets/js/nav.js" defer></script>
+<script src="/assets/js/animations.js" defer></script>
+<script src="/assets/js/forms.js" defer></script>
+<script src="/assets/js/dashboard.js" defer></script>
+<script src="/assets/js/main.js" defer></script>
+</body>
+</html>

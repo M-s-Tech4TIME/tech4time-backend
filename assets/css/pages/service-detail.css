@@ -235,18 +235,21 @@
 
 /* --------------------------------------------------------------------------
    4. Node map
-   The dashboards scatter each solution around a central SOC hub and draw a
-   line back to it. Here the nodes sit on an even ring, which keeps the whole
-   thing to twelve nth-child rules and no inline styles — the CSP on this site
-   is style-src 'self', so inline style attributes would not run at all.
+   The dashboards scatter each solution around a central hub and swap a detail
+   card as you move across them. Here the nodes sit on an even ring, driven by
+   two custom properties: --n, how many nodes, and --i, which one this is. That
+   keeps the whole thing to plain classes with no inline styles — the CSP on
+   this site is style-src 'self', so per-node inline positioning could not run
+   at all.
 
-   Purely decorative: every node repeats a card below it, so the map is hidden
-   from assistive tech, and hidden outright on narrow screens where twelve
-   nodes on a ring would be illegible.
+   Panels vary from three nodes to twenty-one, so the ring comes in three sizes
+   rather than crowding twenty-one nodes onto a circle built for twelve.
+
+   Every node repeats a card in the grid below, so the ring is a shortcut, not
+   the only route to the content: it goes entirely under 52em, where a ring of
+   nodes would be illegible.
    -------------------------------------------------------------------------- */
 
-/* Under 52em the ring is illegible and the detail card beside it is only a
-   copy of one card from the grid below, so the whole apparatus goes. */
 .layer__viz {
   display: none;
 }
@@ -261,16 +264,59 @@
   }
 
   .soc-map {
+    /* Defaults suit the eight-to-fourteen node case. */
+    --n: 12;
+    --size: 26rem;
+    --radius: 10.75rem;
+    --node: 3.25rem;
+
     position: relative;
-    width: 26rem;
-    height: 26rem;
+    width: var(--size);
+    height: var(--size);
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  /* Spokes: one hairline every 30deg, masked to a ring so they neither cross
-     the hub nor run past the nodes. */
+  .soc-map--sm {
+    --size: 21rem;
+    --radius: 8rem;
+  }
+
+  .soc-map--lg {
+    --size: 32rem;
+    --radius: 13.5rem;
+    --node: 2.75rem;
+  }
+
+  .soc-map--n2 { --n: 2; }
+  .soc-map--n3 { --n: 3; }
+  .soc-map--n4 { --n: 4; }
+  .soc-map--n5 { --n: 5; }
+  .soc-map--n6 { --n: 6; }
+  .soc-map--n7 { --n: 7; }
+  .soc-map--n8 { --n: 8; }
+  .soc-map--n9 { --n: 9; }
+  .soc-map--n10 { --n: 10; }
+  .soc-map--n11 { --n: 11; }
+  .soc-map--n12 { --n: 12; }
+  .soc-map--n13 { --n: 13; }
+  .soc-map--n14 { --n: 14; }
+  .soc-map--n15 { --n: 15; }
+  .soc-map--n16 { --n: 16; }
+  .soc-map--n17 { --n: 17; }
+  .soc-map--n18 { --n: 18; }
+  .soc-map--n19 { --n: 19; }
+  .soc-map--n20 { --n: 20; }
+  .soc-map--n21 { --n: 21; }
+  .soc-map--n22 { --n: 22; }
+  .soc-map--n23 { --n: 23; }
+  .soc-map--n24 { --n: 24; }
+
+  /* Spokes: one hairline per node, masked to a ring so they neither cross the
+     hub nor run past the nodes. The gradient starts at twelve o'clock, which is
+     exactly where the --i: 0 node sits, so spokes and nodes stay in step at any
+     count. */
   .soc-map::before {
     content: "";
     position: absolute;
@@ -279,7 +325,7 @@
     background-image: repeating-conic-gradient(
       from -0.2deg,
       var(--border-strong) 0deg 0.4deg,
-      transparent 0.4deg 30deg
+      transparent 0.4deg calc(360deg / var(--n))
     );
     -webkit-mask-image: radial-gradient(closest-side, transparent 0 27%, #000 29% 80%, transparent 82%);
     mask-image: radial-gradient(closest-side, transparent 0 27%, #000 29% 80%, transparent 82%);
@@ -289,7 +335,7 @@
   .soc-map::after {
     content: "";
     position: absolute;
-    inset: 2.25rem;
+    inset: calc(var(--size) / 2 - var(--radius));
     border: var(--border-width) dashed var(--border-subtle);
     border-radius: 50%;
   }
@@ -324,35 +370,48 @@
   }
 
   .soc-map__slot {
+    /* Fallback so a slot past the last nth-child rule stacks at the top rather
+       than breaking the transform outright. */
+    --i: 0;
+
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 3.25rem;
-    height: 3.25rem;
-    margin: -1.625rem;
-    /* Fallback so a thirteenth node would stack at the top rather than break
-       the transform outright. */
-    --i: 0;
-    /* Rotate out to the ring, then counter-rotate so the icon stays upright. */
+    width: var(--node);
+    height: var(--node);
+    margin: calc(var(--node) / -2);
+    /* Out to the ring, then counter-rotate so the icon stays upright. */
     transform:
-      rotate(calc(var(--i) * 30deg))
-      translateY(-10.75rem)
-      rotate(calc(var(--i) * -30deg));
+      rotate(calc(var(--i) / var(--n) * 360deg))
+      translateY(calc(var(--radius) * -1))
+      rotate(calc(var(--i) / var(--n) * -360deg));
   }
 
-  /* Child 1 is the hub, so the twelve slots are children 2 through 13. */
-  .soc-map__slot:nth-child(2)  { --i: 0; }
-  .soc-map__slot:nth-child(3)  { --i: 1; }
-  .soc-map__slot:nth-child(4)  { --i: 2; }
-  .soc-map__slot:nth-child(5)  { --i: 3; }
-  .soc-map__slot:nth-child(6)  { --i: 4; }
-  .soc-map__slot:nth-child(7)  { --i: 5; }
-  .soc-map__slot:nth-child(8)  { --i: 6; }
-  .soc-map__slot:nth-child(9)  { --i: 7; }
-  .soc-map__slot:nth-child(10) { --i: 8; }
-  .soc-map__slot:nth-child(11) { --i: 9; }
+  /* Child 1 is the hub, so the nodes start at child 2. */
+  .soc-map__slot:nth-child(2 ) { --i: 0 ; }
+  .soc-map__slot:nth-child(3 ) { --i: 1 ; }
+  .soc-map__slot:nth-child(4 ) { --i: 2 ; }
+  .soc-map__slot:nth-child(5 ) { --i: 3 ; }
+  .soc-map__slot:nth-child(6 ) { --i: 4 ; }
+  .soc-map__slot:nth-child(7 ) { --i: 5 ; }
+  .soc-map__slot:nth-child(8 ) { --i: 6 ; }
+  .soc-map__slot:nth-child(9 ) { --i: 7 ; }
+  .soc-map__slot:nth-child(10) { --i: 8 ; }
+  .soc-map__slot:nth-child(11) { --i: 9 ; }
   .soc-map__slot:nth-child(12) { --i: 10; }
   .soc-map__slot:nth-child(13) { --i: 11; }
+  .soc-map__slot:nth-child(14) { --i: 12; }
+  .soc-map__slot:nth-child(15) { --i: 13; }
+  .soc-map__slot:nth-child(16) { --i: 14; }
+  .soc-map__slot:nth-child(17) { --i: 15; }
+  .soc-map__slot:nth-child(18) { --i: 16; }
+  .soc-map__slot:nth-child(19) { --i: 17; }
+  .soc-map__slot:nth-child(20) { --i: 18; }
+  .soc-map__slot:nth-child(21) { --i: 19; }
+  .soc-map__slot:nth-child(22) { --i: 20; }
+  .soc-map__slot:nth-child(23) { --i: 21; }
+  .soc-map__slot:nth-child(24) { --i: 22; }
+  .soc-map__slot:nth-child(25) { --i: 23; }
 
   /* The node itself is a button, so it carries the interactive states. */
   .soc-map__node {
@@ -388,10 +447,8 @@
     box-shadow: var(--shadow);
   }
 
-  /* --------------------------------------------------------------------------
-     In the 52-64em band the map and the card stack, so the card is centred and
-     held to a comfortable measure rather than run edge to edge.
-     -------------------------------------------------------------------------- */
+  /* In the 52-64em band the map and the card stack, so the card is centred and
+     held to a comfortable measure rather than run edge to edge. */
   .layer__detail {
     width: 100%;
     max-width: 30rem;
@@ -399,8 +456,10 @@
 }
 
 @media (min-width: 64em) {
+  /* `auto` rather than a fixed column: the ring has three sizes and the column
+     follows whichever one this panel uses. */
   .layer__viz {
-    grid-template-columns: 26rem minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
     justify-items: stretch;
   }
 
@@ -409,19 +468,6 @@
   .layer__detail {
     max-width: none;
   }
-}
-
-/* The detail copy is the same card as in the grid below, so it needs no
-   separate design — only the hover lift removed, since it is not itself a
-   pointer target. */
-.tool-card--detail {
-  height: 100%;
-}
-
-.tool-card--detail:hover {
-  transform: none;
-  border-color: var(--silver-accent-mid);
-  box-shadow: var(--shadow-sm);
 }
 
 /* --------------------------------------------------------------------------
@@ -516,6 +562,34 @@
   letter-spacing: var(--tracking-wider);
   text-transform: uppercase;
   color: var(--text-muted);
+}
+
+/* The development, cloud and HRaaS data carries a second list per service —
+   what the work includes, or which models it is available on. Cybersecurity
+   has no equivalent, so cards there simply omit the block. */
+.tool-card__features {
+  display: grid;
+  gap: var(--space-3xs);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.tool-card__feature {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3xs);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+/* Nudged down so the tick sits on the first line's baseline rather than its
+   cap height, which reads as misaligned on items that wrap to two lines. */
+.tool-card__check {
+  flex-shrink: 0;
+  margin-block-start: 0.3em;
+  color: var(--accent-text);
 }
 
 /* Pushed to the bottom so the tag rows line up across a row of cards whose
