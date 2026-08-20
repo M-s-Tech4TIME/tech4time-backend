@@ -5,14 +5,14 @@ Copy, rename and optimise the site's content images.
 One-off build tool. NOT deployed to the web server (see tools/README.md).
 Run from the repo root:  python3 tools/build_images.py
 
-Sources are split the same way the project is: page artwork comes from the
-CURRENT LIVE SITE (staged under tools/masters/), while the third-party product
-and client logos come from the NextJS build's public/ folder, which is the only
-place they exist.
+Every source is the CURRENT LIVE SITE, staged into tools/masters/ by
+tools/stage_live_images.py. Nothing here reads the NextJS repository: the live
+site is the authority on which images the pages use, and an earlier pass that
+mixed NextJS artwork in produced logos the live pages do not carry and missed
+thirteen that they do.
 
-Only referenced images are ported. public/app-logo/ holds 75 files but the pages
-reference 37 of them; the rest (plus SOC.drawio) are leftovers and are skipped so
-they do not bloat the repo.
+Only referenced images are ported, so the repo carries what the pages actually
+use and nothing else.
 
 Every raster gets a WebP sibling and a resized original as fallback, so pages can
 use <picture> with an explicit width/height and avoid layout shift. SVGs are
@@ -25,71 +25,13 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 ROOT = Path(__file__).resolve().parent.parent
-NEXT = Path("/home/alsechemist/CodeSpace/Tech4TIME-web-ui")
-PUBLIC = NEXT / "public"
+MASTERS = ROOT / "tools" / "masters"
 
-# Third-party product logos shown in the company-profile technology grid.
-# source filename -> kebab-case destination stem (the product's real name)
-TECH = {
-    "belkasoft.png": "belkasoft",
-    "bunker.png": "bunkerweb",
-    "burpsuite-logo.png": "burp-suite",
-    "cobalt-strike-logo.png": "cobalt-strike",
-    "cortex-logo.png": "cortex",
-    "eicomsoft-logo.jpeg": "elcomsoft",
-    "elasticsearch.png": "elasticsearch",
-    "encase.png": "encase",
-    "fortinet-logo.svg": "fortinet",
-    "ghidra-logo.webp": "ghidra",
-    "grr-rapid-reponse-logo.png": "grr-rapid-response",
-    "ibm-qradar.webp": "ibm-qradar",
-    "iris-logo.png": "iris",
-    "magnet-forensic.png": "magnet-forensics",
-    "metasploit-logo.svg": "metasploit",
-    "microsoft_sentinel-logo.png": "microsoft-sentinel",
-    "ModSecurity_Logo.png": "modsecurity",
-    "nessus-logo.png": "nessus",
-    "OpenCTI_Logo.png": "opencti",
-    "openstack-logo.png": "openstack",
-    "openvas-logo.png": "openvas",
-    "OPNsense.png": "opnsense",
-    "oxygen-forensic-logo.png": "oxygen-forensic",
-    "paloalto-logo.png": "palo-alto-networks",
-    "pfsense-logo.png": "pfsense",
-    "proxmox-logo.svg": "proxmox",
-    "shuffle.avif": "shuffle",
-    "splunk-logo.png": "splunk",
-    "suricata.jpeg": "suricata",
-    "thehive-logo.png": "thehive",
-    "Tracecat.png": "tracecat",
-    "Velociraptor-logo.svg": "velociraptor",
-    "Wazuh_Logo.png": "wazuh",
-    "wireguard.png": "wireguard",
-    "x-ways-logo.jpeg": "x-ways-forensics",
-    "Zabbix_logo.png": "zabbix",
-    "zeek-logo.png": "zeek",
-}
-
-# Client logos. The NextJS markup labels every one of these "Government Sector",
-# which is neither accurate nor useful as alt text; the real organisations are
-# named here so the port can carry descriptive alt attributes.
-CLIENTS = {
-    "CCA.jpg": "cca",
-    "Information_and_Communication_Technology_Division.svg": "ict-division",
-    "large_color_logo.png": "aitken-spence",
-    "MGC final logo-8.webp": "mgc",
-    "Petronas_Logo.svg.png": "petronas",
-    "Roundel_of_Bangladesh_–_Army_Aviation.svg.png": "bangladesh-army-aviation",
-    "United_Parcel_Service_logo_2014.svg.png": "ups",
-    "cdbl-logo.png": "cdbl",
-}
-
-# Company celebration photography (company-profile "Our Journey" gallery).
-PHOTOS = {
-    "celebration-1.jpeg": "celebration-1",
-    "celebration-2.png": "celebration-2",
-    "celebration-3.jpeg": "celebration-3",
-}
+# Company-profile artwork — client logos, the technology grid and the journey
+# photographs — all comes from the CURRENT LIVE SITE, staged into
+# tools/masters/ by tools/stage_live_images.py, which is where the live site's
+# hashed filenames are mapped to these readable ones. A mapping of None means
+# "port every file in this directory, keeping its stem".
 
 # Section illustrations for the About page, taken from the CURRENT LIVE SITE
 # (copied into tools/masters/sections/). The NextJS build has its own Goal /
@@ -117,11 +59,11 @@ PAGE_CARDS = {
 # `trim` crops the flat white margin the live site's exports carry, so the art
 # fills its box instead of floating in a wide border.
 JOBS = [
-    (PUBLIC / "app-logo", TECH, "tech", 320, False),
-    (PUBLIC / "c-logo", CLIENTS, "clients", 320, False),
-    (PUBLIC / "spic", PHOTOS, "photos", 1200, False),
-    (ROOT / "tools" / "masters" / "sections", SECTIONS, "sections", 1000, True),
-    (ROOT / "tools" / "masters" / "pages", PAGE_CARDS, "pages", 800, False),
+    (MASTERS / "tech", None, "tech", 320, False),
+    (MASTERS / "clients", None, "clients", 320, False),
+    (MASTERS / "photos", None, "photos", 1200, False),
+    (MASTERS / "sections", SECTIONS, "sections", 1000, True),
+    (MASTERS / "pages", PAGE_CARDS, "pages", 800, False),
 ]
 
 # Copied byte-for-byte rather than re-encoded.
@@ -196,7 +138,10 @@ def main() -> None:
     for src_dir, mapping, dest_name, max_w, trim in JOBS:
         dest_dir = ROOT / "assets" / "images" / dest_name
         dest_dir.mkdir(parents=True, exist_ok=True)
-        print(f"\n{src_dir.name}/ -> assets/images/{dest_name}/  ({len(mapping)} files)")
+        print(f"\n{src_dir.name}/ -> assets/images/{dest_name}/")
+
+        if mapping is None:
+            mapping = {p.name: p.stem for p in sorted(src_dir.iterdir()) if p.is_file()}
 
         for filename, stem in sorted(mapping.items(), key=lambda kv: kv[1]):
             src = src_dir / filename

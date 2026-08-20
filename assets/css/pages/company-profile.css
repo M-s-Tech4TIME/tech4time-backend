@@ -1,0 +1,367 @@
+/* ==========================================================================
+   Tech4TIME — pages/company-profile.css
+   Section order follows the CURRENT LIVE SITE: milestones, then background
+   (experience, clients, journey), then professional excellence (technology,
+   principles). The NextJS build runs almost the reverse order.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Timeline
+   Styled after the live site's timeline rather than the NextJS one: a year in
+   its own column, a rail with a marker, and the entry in a box beside it. The
+   live rule set draws the rail as a ::before on the box and the marker as an
+   ::after, and carries the rail into the gap so consecutive entries connect;
+   that is reproduced here in the silver palette.
+   -------------------------------------------------------------------------- */
+
+.timeline {
+  max-width: 56rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.timeline__item {
+  display: flex;
+  align-items: flex-start;
+}
+
+.timeline__item:not(:last-child) {
+  margin-block-end: var(--space-md);
+}
+
+.timeline__year {
+  flex-shrink: 0;
+  width: 4rem;
+  padding-block-start: var(--space-md);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent-text);
+}
+
+@media (min-width: 40em) {
+  .timeline__year {
+    width: 6rem;
+    font-size: var(--text-xl);
+  }
+}
+
+.timeline__box {
+  position: relative;
+  flex: 1;
+  margin-inline-start: 2.5rem;
+  padding: var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.timeline__item:hover .timeline__box {
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The rail. It runs past the bottom of the box by the gap between entries, so
+   the line is continuous down the whole timeline; the last entry stops it. */
+.timeline__box::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: calc(var(--space-md) * -1);
+  left: -2.5rem;
+  width: 2px;
+  transform: translateX(-50%);
+  background-color: var(--border-strong);
+}
+
+.timeline__item:last-child .timeline__box::before {
+  display: none;
+}
+
+/* The marker, sitting on the rail level with the top of the box. */
+.timeline__box::after {
+  content: "";
+  position: absolute;
+  top: var(--space-md);
+  left: -2.5rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  transform: translate(-50%, -50%);
+  background-image: var(--silver-gradient-fill);
+  border: 3px solid var(--bg-base);
+  border-radius: 50%;
+}
+
+.timeline__title {
+  margin-block-end: var(--space-3xs);
+  font-size: var(--text-lg);
+}
+
+.timeline__text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   2. Background: experience, clients, journey
+   -------------------------------------------------------------------------- */
+
+.background__block + .background__block,
+.excellence__block + .excellence__block {
+  margin-block-start: var(--space-2xl);
+}
+
+.background__title {
+  margin-block-end: var(--space-md);
+  font-size: var(--text-xl);
+  text-align: center;
+}
+
+.background__lead {
+  margin-block-start: calc(var(--space-md) * -1 + var(--space-2xs));
+  margin-block-end: var(--space-lg);
+  font-size: var(--text-sm);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.stats {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+}
+
+.stat {
+  padding: var(--space-lg);
+  text-align: center;
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.stat__figure {
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  line-height: 1;
+  background-image: var(--silver-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.stat__label {
+  margin-block-start: var(--space-2xs);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.clients {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.client-card {
+  display: grid;
+  place-items: center;
+  min-height: 7rem;
+  padding: var(--space-md);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    transform var(--duration) var(--ease-out);
+}
+
+.client-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--silver-accent-mid);
+}
+
+/* Client marks are supplied in their own colours. Rather than force them to
+   greyscale, which would misrepresent someone else's brand, they sit on a white
+   plate so they read correctly in both themes. */
+.client-card__logo {
+  width: auto;
+  max-width: 100%;
+  max-height: 3.5rem;
+  object-fit: contain;
+}
+
+.journey {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.journey__item {
+  overflow: hidden;
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.journey__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+
+.journey__item:hover .journey__image {
+  transform: scale(1.04);
+}
+
+/* --------------------------------------------------------------------------
+   3. Technology sphere
+   Ships as a plain grid. tech-sphere.js adds --on, which is what switches it
+   into the 3D arrangement; without scripting, or under prefers-reduced-motion,
+   the grid is what stays.
+   -------------------------------------------------------------------------- */
+
+.tech-sphere__list {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(min(6rem, 100%), 1fr));
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.tech-sphere__face {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: var(--space-sm);
+  background-color: #ffffff;
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: 50%;
+}
+
+/* Product marks are other companies' brands, so they keep their own colours;
+   the white disc is what makes them legible against either theme. */
+.tech-sphere__logo {
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* --- the 3D arrangement, once the script has taken over ------------------ */
+
+.tech-sphere--on {
+  /* --sphere-size is measured and set by the script. */
+  height: var(--sphere-size, 32rem);
+  perspective: 1200px;
+  touch-action: pan-y;
+}
+
+.tech-sphere--on .tech-sphere__list {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  /* --rot-x/--rot-y are written once per frame on this element; the items below
+     read them through inheritance, so a frame is two property writes rather
+     than one per logo. */
+  transform: rotateX(var(--rot-x, 0deg)) rotateY(var(--rot-y, 0deg));
+}
+
+.tech-sphere--on .tech-sphere__item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: -1.75rem;
+  transform-style: preserve-3d;
+  /* Out to its point on the sphere, then the parent's rotation undone in
+     reverse order so the logo keeps facing the viewer instead of turning
+     edge-on as it orbits. */
+  transform:
+    translate3d(var(--x, 0), var(--y, 0), var(--z, 0))
+    rotateY(calc(-1 * var(--rot-y, 0deg)))
+    rotateX(calc(-1 * var(--rot-x, 0deg)));
+}
+
+.tech-sphere--on .tech-sphere__face {
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration) var(--ease-out);
+}
+
+.tech-sphere--on .tech-sphere__item:hover .tech-sphere__face {
+  transform: scale(1.18);
+}
+
+/* --------------------------------------------------------------------------
+   4. Principles
+   -------------------------------------------------------------------------- */
+
+.values {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+}
+
+.value-card {
+  padding: var(--space-lg);
+  text-align: center;
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition:
+    transform var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.value-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow);
+}
+
+.value-card__icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-inline: auto;
+  margin-block-end: var(--space-sm);
+  font-size: 1.5rem;
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-radius: 50%;
+}
+
+.value-card__title {
+  margin-block-end: var(--space-3xs);
+  font-size: var(--text-lg);
+}
+
+.value-card__text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}

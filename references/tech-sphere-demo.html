@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tech Stack Sphere Demo</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    overflow: hidden;
+  }
+
+  .sphere-wrapper {
+    width: 500px;
+    height: 500px;
+    perspective: 1200px;
+    position: relative;
+  }
+
+  .sphere {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    animation: spin 20s linear infinite;
+  }
+
+  .sphere-wrapper:hover .sphere {
+    animation-play-state: paused;
+  }
+
+  .logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 48px;
+    height: 48px;
+    margin: -24px 0 0 -24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    backface-visibility: visible;
+  }
+
+  .logo img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+
+  @keyframes spin {
+    from { transform: rotateY(0deg) rotateX(10deg); }
+    to   { transform: rotateY(360deg) rotateX(10deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="sphere-wrapper">
+  <div class="sphere" id="sphere"></div>
+</div>
+
+<script>
+  // === CONFIG ===
+  const sphere = document.getElementById('sphere');
+  const radius = 220; // controls sphere size, should be roughly half the wrapper width
+
+  // Replace these with your actual tech stack logo image paths
+  const logos = [
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nextjs/nextjs-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/figma/figma-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kubernetes/kubernetes-plain.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/npm/npm-original-wordmark.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jenkins/jenkins-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/flutter/flutter-original.svg',
+    'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/ethereum/ethereum-original.svg',
+  ];
+
+  const count = logos.length;
+
+  // Fibonacci sphere distribution: evenly spaces N points on a sphere's surface
+  function fibonacciSphere(index, total, r) {
+    const goldenRatio = (1 + Math.sqrt(5)) / 2;
+    const theta = 2 * Math.PI * index / goldenRatio;
+    const phi = Math.acos(1 - 2 * (index + 0.5) / total);
+
+    const x = r * Math.sin(phi) * Math.cos(theta);
+    const y = r * Math.sin(phi) * Math.sin(theta);
+    const z = r * Math.cos(phi);
+
+    return { x, y, z };
+  }
+
+  logos.forEach((src, i) => {
+    const pos = fibonacciSphere(i, count, radius);
+
+    const el = document.createElement('div');
+    el.className = 'logo';
+    el.style.transform = `translate3d(${pos.x}px, ${pos.y}px, ${pos.z}px)`;
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = '';
+    el.appendChild(img);
+
+    sphere.appendChild(el);
+  });
+</script>
+
+</body>
+</html>
