@@ -7,50 +7,61 @@
 
 /* --------------------------------------------------------------------------
    1. Timeline
-   Styled after the live site's timeline rather than the NextJS one: a year in
-   its own column, a rail with a marker, and the entry in a box beside it. The
-   live rule set draws the rail as a ::before on the box and the marker as an
-   ::after, and carries the rail into the gap so consecutive entries connect;
-   that is reproduced here in the silver palette.
+   The live site's alternated timeline, not the NextJS one: a centre rail with
+   entries zig-zagging either side of it, and each entry's year sitting opposite
+   its box across the rail.
+
+   The live rule set does this with flex plus order:-1 on even entries; the same
+   arrangement is cleaner as a two-column grid, where an entry only has to name
+   which column its year and its box belong to. Below the tablet band both
+   collapse to the left of the rail, exactly as the live site does at 36rem.
    -------------------------------------------------------------------------- */
 
 .timeline {
-  max-width: 56rem;
+  --rail: 1.25rem;              /* where the rail sits, until it moves to 50% */
+  --dot: 1.75rem;               /* the marker's distance below the box top    */
+
+  position: relative;
+  max-width: 60rem;
   padding: 0;
-  margin: 0;
+  margin-inline: auto;
   list-style: none;
 }
 
+/* One continuous rail for the whole list, rather than a segment per entry:
+   consecutive segments have to meet exactly to look unbroken, and they do not
+   once entries differ in height. */
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: var(--dot);
+  bottom: var(--dot);
+  left: var(--rail);
+  width: 2px;
+  transform: translateX(-50%);
+  background-color: var(--border-strong);
+}
+
 .timeline__item {
-  display: flex;
-  align-items: flex-start;
+  position: relative;
 }
 
 .timeline__item:not(:last-child) {
-  margin-block-end: var(--space-md);
+  margin-block-end: var(--space-lg);
 }
 
 .timeline__year {
-  flex-shrink: 0;
-  width: 4rem;
-  padding-block-start: var(--space-md);
+  margin-block-end: var(--space-2xs);
+  margin-inline-start: 3.5rem;
   font-size: var(--text-lg);
   font-weight: 800;
   line-height: 1;
   color: var(--accent-text);
 }
 
-@media (min-width: 40em) {
-  .timeline__year {
-    width: 6rem;
-    font-size: var(--text-xl);
-  }
-}
-
 .timeline__box {
   position: relative;
-  flex: 1;
-  margin-inline-start: 2.5rem;
+  margin-inline-start: 3.5rem;
   padding: var(--space-lg);
   background-color: var(--bg-elevated);
   border: var(--border-width) solid var(--border-subtle);
@@ -65,29 +76,13 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* The rail. It runs past the bottom of the box by the gap between entries, so
-   the line is continuous down the whole timeline; the last entry stops it. */
-.timeline__box::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: calc(var(--space-md) * -1);
-  left: -2.5rem;
-  width: 2px;
-  transform: translateX(-50%);
-  background-color: var(--border-strong);
-}
-
-.timeline__item:last-child .timeline__box::before {
-  display: none;
-}
-
-/* The marker, sitting on the rail level with the top of the box. */
+/* The marker, sitting on the rail. Drawn on the box so it tracks the box's
+   edge when the entry flips sides. */
 .timeline__box::after {
   content: "";
   position: absolute;
-  top: var(--space-md);
-  left: -2.5rem;
+  top: var(--dot);
+  left: -2.25rem;
   width: 1.1rem;
   height: 1.1rem;
   transform: translate(-50%, -50%);
@@ -105,6 +100,64 @@
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--text-secondary);
+}
+
+/* --- alternated, once there is room for two columns ---------------------- */
+
+@media (min-width: 48em) {
+  .timeline {
+    --rail: 50%;
+    --gap: 5rem;                /* the rail runs down the middle of this gap */
+  }
+
+  .timeline__item {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--gap);
+    align-items: start;
+  }
+
+  /* Odd entries: year on the left of the rail, box on the right. */
+  .timeline__year,
+  .timeline__box {
+    grid-row: 1;
+    margin-inline-start: 0;
+  }
+
+  .timeline__year {
+    grid-column: 1;
+    justify-self: end;
+    /* Lines the year up with the marker rather than the top of the box. */
+    padding-block-start: calc(var(--dot) - 0.5em);
+    margin-block-end: 0;
+    text-align: end;
+    font-size: var(--text-xl);
+  }
+
+  .timeline__box {
+    grid-column: 2;
+  }
+
+  .timeline__box::after {
+    left: calc(var(--gap) / -2);
+  }
+
+  /* Even entries: the same row, mirrored. */
+  .timeline__item:nth-child(even) .timeline__year {
+    grid-column: 2;
+    justify-self: start;
+    text-align: start;
+  }
+
+  .timeline__item:nth-child(even) .timeline__box {
+    grid-column: 1;
+  }
+
+  .timeline__item:nth-child(even) .timeline__box::after {
+    left: auto;
+    right: calc(var(--gap) / -2);
+    transform: translate(50%, -50%);
+  }
 }
 
 /* --------------------------------------------------------------------------
