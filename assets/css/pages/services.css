@@ -1,0 +1,360 @@
+/* ==========================================================================
+   Tech4TIME — pages/services.css
+   Styles for /pages/services/. Follows the NextJS services route's structure:
+   a hero banner, the "Explore Our Services" navigation grid, one block per
+   service (icon + title + silver rule + capability groups), the OSSF framework
+   and a closing CTA.
+
+   The NextJS page alternates image/text rows for four of its services. The
+   current live services page carries no still artwork at all — only the logo
+   and two background videos, and videos are out of scope — so the blocks here
+   are icon-led instead. That also avoids reintroducing the NextJS
+   illustrations, which are blue-tinted and fight the monochrome palette.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Explore our services
+   The NextJS ServiceNavigation switches React views in place; here the same
+   cards are ordinary in-page anchors, so they work without JavaScript and are
+   linkable from the homepage and footer.
+   -------------------------------------------------------------------------- */
+
+.service-nav__grid {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+}
+
+.service-nav-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  color: inherit;
+  text-decoration: none;
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition:
+    transform var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.service-nav-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow);
+}
+
+.service-nav-card__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.25rem;
+  color: var(--accent-text);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+  transition:
+    color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out);
+}
+
+.service-nav-card:hover .service-nav-card__icon {
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-color: transparent;
+}
+
+.service-nav-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.service-nav-card__title {
+  display: block;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.service-nav-card__text {
+  display: block;
+  margin-block-start: var(--space-3xs);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.service-nav-card__arrow {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition:
+    transform var(--duration) var(--ease-out),
+    color var(--duration) var(--ease-out);
+}
+
+.service-nav-card:hover .service-nav-card__arrow {
+  transform: translateX(3px);
+  color: var(--accent-text);
+}
+
+/* --------------------------------------------------------------------------
+   2. Service blocks
+   -------------------------------------------------------------------------- */
+
+.service-block {
+  padding-block: var(--section-padding);
+  border-block-start: var(--border-width) solid var(--border-subtle);
+}
+
+.service-block__header {
+  max-width: 52rem;
+  margin-block-end: var(--space-xl);
+}
+
+.service-block__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.service-block__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: 1.5rem;
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-radius: var(--radius);
+}
+
+.service-block__title {
+  margin-block-end: 0;
+  font-size: var(--text-2xl);
+}
+
+/* The 80x4px accent bar the NextJS source draws under each service title,
+   rendered here in the silver gradient. */
+.service-block__rule {
+  width: 5rem;
+  height: 4px;
+  margin-block-start: var(--space-sm);
+  background-image: var(--silver-gradient-fill);
+  border-radius: var(--radius-full);
+}
+
+.service-block__intro {
+  margin-block-start: var(--space-md);
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.service-block__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-block-start: var(--space-xl);
+}
+
+/* --------------------------------------------------------------------------
+   3. Capability groups
+   Masonry-ish columns would reflow the reading order, so these stay a plain
+   auto-fit grid; uneven card heights are acceptable and keep source order.
+   -------------------------------------------------------------------------- */
+
+.service-block__groups {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  align-items: start;
+}
+
+.service-group {
+  height: 100%;
+  padding: var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.service-group:hover {
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Groups that hold only a handful of items would otherwise sit in a narrow
+   column beside a lot of empty space. */
+.service-group--wide {
+  grid-column: 1 / -1;
+}
+
+.service-group__title {
+  margin-block-end: var(--space-sm);
+  padding-block-end: var(--space-xs);
+  font-size: var(--text-lg);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+.service-group__list {
+  display: grid;
+  gap: var(--space-2xs);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.service-group__list--split {
+  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
+  gap: var(--space-2xs) var(--space-md);
+}
+
+.service-group__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2xs);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+/* Nudged down so the tick sits on the first line's baseline rather than its
+   cap height, which reads as misaligned on the items that wrap to two lines. */
+.service-group__check {
+  flex-shrink: 0;
+  margin-block-start: 0.3em;
+  color: var(--accent-text);
+}
+
+/* --------------------------------------------------------------------------
+   4. OSSF framework
+   -------------------------------------------------------------------------- */
+
+.ossf__grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: none;
+}
+
+.ossf-card {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition:
+    transform var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.ossf-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow);
+}
+
+/* The stage number is decoration — the ordered list already conveys sequence
+   to assistive tech, so the digits are hidden from it and kept as a watermark. */
+.ossf-card__step {
+  position: absolute;
+  top: var(--space-2xs);
+  right: var(--space-xs);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--border-strong);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.ossf-card__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-block-end: var(--space-sm);
+  font-size: 1.25rem;
+  color: var(--accent-text);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+  transition:
+    color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out);
+}
+
+.ossf-card:hover .ossf-card__icon {
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-color: transparent;
+}
+
+.ossf-card__title {
+  margin-block-end: var(--space-3xs);
+  font-size: var(--text-base);
+  font-weight: 650;
+}
+
+.ossf-card__text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   5. Closing CTA
+   -------------------------------------------------------------------------- */
+
+/* The page alternates surface and base bands the whole way down and the OSSF
+   section above this one is a surface band, so the CTA sits on base — otherwise
+   the two would merge into one continuous block. The silver wash and the top
+   rule are what set it apart. */
+.services-cta {
+  position: relative;
+  overflow: hidden;
+  padding-block: var(--section-padding);
+  text-align: center;
+  background-color: var(--bg-base);
+  border-block-start: var(--border-width) solid var(--border-subtle);
+}
+
+.services-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--silver-gradient);
+  opacity: 0.09;
+  pointer-events: none;
+}
+
+.services-cta__inner {
+  position: relative;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
+.services-cta__title {
+  margin-block-end: var(--space-sm);
+  font-size: var(--text-2xl);
+}
+
+.services-cta__text {
+  margin-block-end: var(--space-lg);
+  font-size: var(--text-md);
+  color: var(--text-secondary);
+}

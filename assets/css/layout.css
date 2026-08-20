@@ -66,6 +66,37 @@
   color: var(--text-secondary);
 }
 
+/* Banner every inner page opens with: the page name in the silver gradient over
+   a tagline. Shared rather than per-page, so all twelve read as one family. */
+.page-hero {
+  padding-block: clamp(3rem, 8vw, 6rem) clamp(2.5rem, 6vw, 4rem);
+  text-align: center;
+  background-color: var(--bg-surface);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+.page-hero__inner {
+  max-width: 50rem;
+  margin-inline: auto;
+}
+
+.page-hero__title {
+  margin-block-end: var(--space-2xs);
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  background-image: var(--silver-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.page-hero__subtitle {
+  font-size: var(--text-lg);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
 /* --------------------------------------------------------------------------
    3. Grid helpers
    Auto-fit grids so columns reflow fluidly instead of snapping at breakpoints.

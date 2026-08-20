@@ -5,41 +5,11 @@
    the "Why Us?" grid and a closing CTA.
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   1. Hero banner
-   -------------------------------------------------------------------------- */
-
-.page-hero {
-  padding-block: clamp(3rem, 8vw, 6rem) clamp(2.5rem, 6vw, 4rem);
-  text-align: center;
-  background-color: var(--bg-surface);
-  border-block-end: var(--border-width) solid var(--border-subtle);
-}
-
-.page-hero__inner {
-  max-width: 50rem;
-  margin-inline: auto;
-}
-
-.page-hero__title {
-  margin-block-end: var(--space-2xs);
-  font-size: var(--text-4xl);
-  font-weight: 800;
-  background-image: var(--silver-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
-
-.page-hero__subtitle {
-  font-size: var(--text-lg);
-  font-weight: 500;
-  color: var(--text-secondary);
-}
+/* The `.page-hero` banner this page opens with is shared by every inner page,
+   so it lives in layout.css rather than here. */
 
 /* --------------------------------------------------------------------------
-   2. Section header with the silver rule
+   1. Section header with the silver rule
    The NextJS source sets an 80x4px accent bar under each heading; here it is
    the silver gradient rather than a flat colour.
    -------------------------------------------------------------------------- */
@@ -61,7 +31,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   3. Image + text sections
+   2. Image + text sections
    -------------------------------------------------------------------------- */
 
 .about-split {
@@ -123,7 +93,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   4. Specialties
+   3. Specialties
    -------------------------------------------------------------------------- */
 
 .specialties__grid {
@@ -185,7 +155,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   5. Why Us
+   4. Why Us
    -------------------------------------------------------------------------- */
 
 .why-us__grid {
@@ -239,7 +209,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   6. Closing CTA
+   5. Closing CTA
    -------------------------------------------------------------------------- */
 
 .about-cta {
