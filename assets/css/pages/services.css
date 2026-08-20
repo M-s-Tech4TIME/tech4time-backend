@@ -197,6 +197,16 @@
   grid-column: 1 / -1;
 }
 
+/* A block with a full-width group above exactly two others: auto-fit would give
+   the pair two of three columns and leave the third empty, which reads as a
+   mistake sitting directly under a card that spans the whole row. Pinning the
+   pair to two columns lets them share the same width as the card above. */
+@media (min-width: 48rem) {
+  .service-block__groups--pair {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .service-group__title {
   margin-block-end: var(--space-sm);
   padding-block-end: var(--space-xs);
