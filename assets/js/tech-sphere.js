@@ -59,6 +59,8 @@
     this.targetX = 0;
     this.targetY = DRIFT;
     this.frame = null;
+    this.running = false;
+    this.tick = this.render.bind(this);
   }
 
   /**
@@ -100,7 +102,7 @@
     this.list.style.setProperty("--rot-y", this.rotY.toFixed(2) + "deg");
     this.list.style.setProperty("--rot-x", this.rotX.toFixed(2) + "deg");
 
-    this.frame = global.requestAnimationFrame(this.render.bind(this));
+    this.frame = global.requestAnimationFrame(this.tick);
   };
 
   Sphere.prototype.onPointerMove = function (event) {
@@ -118,17 +120,18 @@
     this.targetX = 0;
   };
 
-  Sphere.prototype.start = function () {
+  /* Listeners are bound once, for the life of the page. Enabling and disabling
+     the sphere only starts and stops the animation — otherwise every trip back
+     above the breakpoint would stack another set of handlers. */
+  Sphere.prototype.attach = function () {
     var self = this;
-
-    this.measure();
-    this.root.classList.add("tech-sphere--on");
+    var resizeTimer;
 
     /* Pointer events rather than mouse events, so a pen works too. Touch is
        excluded on purpose: on a touch screen a drag over the sphere is a scroll,
        and hijacking it to spin logos would be hostile. */
     this.root.addEventListener("pointermove", function (event) {
-      if (event.pointerType !== "touch") {
+      if (self.running && event.pointerType !== "touch") {
         self.onPointerMove(event);
       }
     });
@@ -136,27 +139,53 @@
       self.onPointerLeave();
     });
 
-    var resizeTimer;
     global.addEventListener("resize", function () {
       global.clearTimeout(resizeTimer);
       resizeTimer = global.setTimeout(function () {
-        if (global.innerWidth < MIN_WIDTH) {
-          self.stop();
-        } else {
-          self.measure();
-        }
+        self.sync();
       }, 150);
     });
+  };
 
+  /**
+   * Match the sphere to the viewport as it is now.
+   *
+   * Browser zoom reports as a resize — zooming in shrinks the viewport in CSS
+   * pixels — so this is also what hands the sphere back when you zoom out
+   * again. Enabling has to be able to follow disabling, not just precede it.
+   */
+  Sphere.prototype.sync = function () {
+    if (global.innerWidth < MIN_WIDTH) {
+      this.disable();
+    } else {
+      this.enable();
+    }
+  };
+
+  Sphere.prototype.enable = function () {
+    this.measure();
+
+    if (this.running) {
+      return;
+    }
+
+    this.root.classList.add("tech-sphere--on");
+    this.running = true;
     this.render();
   };
 
-  Sphere.prototype.stop = function () {
+  Sphere.prototype.disable = function () {
+    if (!this.running) {
+      return;
+    }
+
     if (this.frame) {
       global.cancelAnimationFrame(this.frame);
       this.frame = null;
     }
+
     this.root.classList.remove("tech-sphere--on");
+    this.running = false;
   };
 
   var api = (global.Tech4Time = global.Tech4Time || {});
@@ -170,16 +199,22 @@
 
       /* A sphere of logos orbiting the screen is exactly the kind of continuous
          motion prefers-reduced-motion exists to stop, and the grid underneath
-         says the same thing. So it simply is not built. */
+         says the same thing. So under that setting it is never built at all.
+
+         Being narrow is different: that is a condition which can change, and
+         browser zoom changes it constantly. So the sphere is always wired up
+         and sync() decides, now and on every resize, whether it should be
+         running. */
       var calm = global.matchMedia("(prefers-reduced-motion: reduce)");
-      if (calm.matches || global.innerWidth < MIN_WIDTH) {
+      if (calm.matches) {
         return;
       }
 
       Array.prototype.forEach.call(roots, function (root) {
         var sphere = new Sphere(root);
         if (sphere.items.length > 2) {
-          sphere.start();
+          sphere.attach();
+          sphere.sync();
         }
       });
     }

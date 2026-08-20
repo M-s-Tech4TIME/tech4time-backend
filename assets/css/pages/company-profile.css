@@ -344,13 +344,24 @@
   transform: rotateX(var(--rot-x, 0deg)) rotateY(var(--rot-y, 0deg));
 }
 
+/* Laid out at twice the size it is shown at, then scaled back down.
+
+   Inside a preserve-3d subtree the browser rasterises each tile once and reuses
+   that texture as perspective scales it toward and away from the viewer, so a
+   tile rasterised at its display size goes soft the moment it comes forward.
+   Rasterising at 2x and scaling down gives it the pixels to stay sharp. The
+   scale is last in the list, so it acts on the tile alone and leaves the
+   translate3d that positions it on the sphere untouched. */
 .tech-sphere--on .tech-sphere__item {
+  --tile: 7rem;
+  --shown: 0.5;
+
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 3.5rem;
-  height: 3.5rem;
-  margin: -1.75rem;
+  width: var(--tile);
+  height: var(--tile);
+  margin: calc(var(--tile) / -2);
   transform-style: preserve-3d;
   /* Out to its point on the sphere, then the parent's rotation undone in
      reverse order so the logo keeps facing the viewer instead of turning
@@ -358,13 +369,17 @@
   transform:
     translate3d(var(--x, 0), var(--y, 0), var(--z, 0))
     rotateY(calc(-1 * var(--rot-y, 0deg)))
-    rotateX(calc(-1 * var(--rot-x, 0deg)));
+    rotateX(calc(-1 * var(--rot-x, 0deg)))
+    scale(var(--shown));
 }
 
 .tech-sphere--on .tech-sphere__face {
   width: 100%;
   height: 100%;
-  padding: 0.5rem;
+  padding: 1rem;
+  /* Everything here is halved by the scale above, so the hairline is specified
+     at 2px to land on one. */
+  border-width: 2px;
   box-shadow: var(--shadow-sm);
   transition: transform var(--duration) var(--ease-out);
 }
