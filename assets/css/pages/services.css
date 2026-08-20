@@ -110,8 +110,10 @@
   border-block-start: var(--border-width) solid var(--border-subtle);
 }
 
+/* No measure cap here on purpose: the intro runs the full container width so it
+   lines up with the capability cards below it rather than stopping short and
+   leaving the right-hand side of the band empty. */
 .service-block__header {
-  max-width: 52rem;
   margin-block-end: var(--space-xl);
 }
 
