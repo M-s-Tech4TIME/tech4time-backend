@@ -328,45 +328,4 @@
   color: var(--text-secondary);
 }
 
-/* --------------------------------------------------------------------------
-   5. Closing CTA
-   -------------------------------------------------------------------------- */
-
-/* The page alternates surface and base bands the whole way down and the OSSF
-   section above this one is a surface band, so the CTA sits on base — otherwise
-   the two would merge into one continuous block. The silver wash and the top
-   rule are what set it apart. */
-.services-cta {
-  position: relative;
-  overflow: hidden;
-  padding-block: var(--section-padding);
-  text-align: center;
-  background-color: var(--bg-base);
-  border-block-start: var(--border-width) solid var(--border-subtle);
-}
-
-.services-cta::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: var(--silver-gradient);
-  opacity: 0.09;
-  pointer-events: none;
-}
-
-.services-cta__inner {
-  position: relative;
-  max-width: 40rem;
-  margin-inline: auto;
-}
-
-.services-cta__title {
-  margin-block-end: var(--space-sm);
-  font-size: var(--text-2xl);
-}
-
-.services-cta__text {
-  margin-block-end: var(--space-lg);
-  font-size: var(--text-md);
-  color: var(--text-secondary);
-}
+/* The closing CTA band is the shared `.cta-band` component. */

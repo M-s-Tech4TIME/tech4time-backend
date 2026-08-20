@@ -34,8 +34,9 @@ BLOCKS = {
     ),
 }
 
-# Pages may omit forms.js when they carry no form; that is not drift.
-OPTIONAL_SCRIPTS = {"/assets/js/forms.js"}
+# Feature modules a page may legitimately omit: forms.js when it carries no
+# form, dashboard.js when it has no tabbed panels. Their absence is not drift.
+OPTIONAL_SCRIPTS = {"/assets/js/forms.js", "/assets/js/dashboard.js"}
 
 ARIA_CURRENT = re.compile(r'\s*aria-current="page"')
 WHITESPACE = re.compile(r"\s+")

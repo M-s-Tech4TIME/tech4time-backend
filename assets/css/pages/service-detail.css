@@ -1,0 +1,452 @@
+/* ==========================================================================
+   Tech4TIME — pages/service-detail.css
+   Shared by the four service detail pages under /pages/services/. Ports the
+   NextJS dashboards (SecurityDashboard and its siblings): the layer tabs, the
+   node map around a central hub, and the solution card grid.
+
+   The NextJS originals separate their two layers by colour — green for
+   proactive, red for reactive. This palette has no hue, and colour alone would
+   fail WCAG 1.4.1 in any case, so the layers are told apart by icon, title and
+   position instead.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Core capability cards
+   -------------------------------------------------------------------------- */
+
+.core-solutions__grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+}
+
+.core-card {
+  padding: var(--space-xl);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition:
+    transform var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.core-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow);
+}
+
+.core-card__icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-block-end: var(--space-md);
+  font-size: 1.5rem;
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-radius: var(--radius);
+}
+
+.core-card__title {
+  margin-block-end: var(--space-xs);
+  font-size: var(--text-lg);
+}
+
+.core-card__text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.core-solutions__note {
+  margin-block-start: var(--space-lg);
+  font-size: var(--text-sm);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.core-solutions__note a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+
+/* --------------------------------------------------------------------------
+   2. Layer tabs
+   The base .tabs component is a row of pills. The dashboards use something
+   closer to a sidebar: an icon, a name and a line explaining the layer. This
+   modifier supplies that without disturbing the pill variant.
+   -------------------------------------------------------------------------- */
+
+.tabs--cards .tabs__list {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+}
+
+.tabs--cards .tabs__tab {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  min-height: 0;
+  padding: var(--space-md);
+  font-size: var(--text-base);
+  font-weight: 400;
+  text-align: start;
+  text-decoration: none;
+  background-color: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+}
+
+.tabs--cards .tabs__tab[aria-selected="true"] {
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+  background-image: none;
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The selected tab needs a marker that is not colour. A solid silver bar down
+   its leading edge does the job, and the ARIA state carries it for anyone not
+   looking at the screen. */
+.tabs--cards .tabs__tab[aria-selected="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: var(--space-sm);
+  inset-inline-start: 0;
+  width: 4px;
+  background-image: var(--silver-gradient-fill);
+  border-radius: var(--radius-full);
+}
+
+.tabs--cards .tabs__tab {
+  position: relative;
+}
+
+.tabs--cards .tabs__tab-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.125rem;
+  color: var(--accent-text);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+  transition:
+    color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out);
+}
+
+.tabs--cards .tabs__tab[aria-selected="true"] .tabs__tab-icon {
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-color: transparent;
+}
+
+.tabs--cards .tabs__tab-body {
+  min-width: 0;
+}
+
+.tabs--cards .tabs__tab-name {
+  display: block;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.tabs--cards .tabs__tab-text {
+  display: block;
+  margin-block-start: var(--space-3xs);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* Without JavaScript both panels stay on the page, one after the other, and
+   the tabs above are ordinary jump links. A rule between them keeps that
+   reading as two sections rather than one run-on list. */
+.layer + .layer {
+  margin-block-start: var(--space-2xl);
+  padding-block-start: var(--space-2xl);
+  border-block-start: var(--border-width) solid var(--border-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   3. Layer header
+   -------------------------------------------------------------------------- */
+
+.layer__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-block-end: var(--space-xl);
+  padding: var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-inline-start: 4px solid var(--silver-accent-mid);
+  border-radius: var(--radius-lg);
+}
+
+.layer__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  margin-block-end: var(--space-2xs);
+  font-size: var(--text-xl);
+}
+
+.layer__icon {
+  color: var(--accent-text);
+}
+
+.layer__text {
+  max-width: 52rem;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.layer__count {
+  flex-shrink: 0;
+  padding: var(--space-2xs) var(--space-sm);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  white-space: nowrap;
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-full);
+}
+
+/* --------------------------------------------------------------------------
+   4. Node map
+   The dashboards scatter each solution around a central SOC hub and draw a
+   line back to it. Here the nodes sit on an even ring, which keeps the whole
+   thing to twelve nth-child rules and no inline styles — the CSP on this site
+   is style-src 'self', so inline style attributes would not run at all.
+
+   Purely decorative: every node repeats a card below it, so the map is hidden
+   from assistive tech, and hidden outright on narrow screens where twelve
+   nodes on a ring would be illegible.
+   -------------------------------------------------------------------------- */
+
+.soc-map {
+  display: none;
+}
+
+@media (min-width: 52em) {
+  .soc-map {
+    position: relative;
+    display: block;
+    width: 26rem;
+    height: 26rem;
+    margin: 0 auto var(--space-2xl);
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Spokes: one hairline every 30deg, masked to a ring so they neither cross
+     the hub nor run past the nodes. */
+  .soc-map::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-image: repeating-conic-gradient(
+      from -0.2deg,
+      var(--border-strong) 0deg 0.4deg,
+      transparent 0.4deg 30deg
+    );
+    -webkit-mask-image: radial-gradient(closest-side, transparent 0 27%, #000 29% 80%, transparent 82%);
+    mask-image: radial-gradient(closest-side, transparent 0 27%, #000 29% 80%, transparent 82%);
+  }
+
+  /* The ring the nodes sit on. */
+  .soc-map::after {
+    content: "";
+    position: absolute;
+    inset: 2.25rem;
+    border: var(--border-width) dashed var(--border-subtle);
+    border-radius: 50%;
+  }
+
+  .soc-map__hub {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    gap: var(--space-3xs);
+    width: 7rem;
+    height: 7rem;
+    margin: -3.5rem;
+    font-size: 1.5rem;
+    color: var(--on-accent);
+    background-image: var(--silver-gradient-fill);
+    border-radius: 50%;
+    box-shadow: var(--shadow);
+  }
+
+  .soc-map__hub-label {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-wider);
+  }
+
+  .soc-map__node {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin: -1.625rem;
+    /* Fallback so a thirteenth node would stack at the top rather than break
+       the transform outright. */
+    --i: 0;
+    color: var(--accent-text);
+    background-color: var(--bg-elevated);
+    border: var(--border-width) solid var(--border-subtle);
+    border-radius: 50%;
+    /* Rotate out to the ring, then counter-rotate so the icon stays upright. */
+    transform:
+      rotate(calc(var(--i) * 30deg))
+      translateY(-10.75rem)
+      rotate(calc(var(--i) * -30deg));
+  }
+
+  /* Child 1 is the hub, so the twelve nodes are children 2 through 13. */
+  .soc-map__node:nth-child(2)  { --i: 0; }
+  .soc-map__node:nth-child(3)  { --i: 1; }
+  .soc-map__node:nth-child(4)  { --i: 2; }
+  .soc-map__node:nth-child(5)  { --i: 3; }
+  .soc-map__node:nth-child(6)  { --i: 4; }
+  .soc-map__node:nth-child(7)  { --i: 5; }
+  .soc-map__node:nth-child(8)  { --i: 6; }
+  .soc-map__node:nth-child(9)  { --i: 7; }
+  .soc-map__node:nth-child(10) { --i: 8; }
+  .soc-map__node:nth-child(11) { --i: 9; }
+  .soc-map__node:nth-child(12) { --i: 10; }
+  .soc-map__node:nth-child(13) { --i: 11; }
+}
+
+/* --------------------------------------------------------------------------
+   5. Solution cards
+   -------------------------------------------------------------------------- */
+
+.layer__grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition:
+    transform var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.tool-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow);
+}
+
+.tool-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.tool-card__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.125rem;
+  color: var(--accent-text);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+  transition:
+    color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out);
+}
+
+.tool-card:hover .tool-card__icon {
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-color: transparent;
+}
+
+.tool-card__titles {
+  min-width: 0;
+}
+
+.tool-card__name {
+  margin-block-end: var(--space-3xs);
+  font-size: var(--text-base);
+  font-weight: 650;
+}
+
+.tool-card__category {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.tool-card__desc,
+.tool-card__purpose {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.tool-card__label {
+  display: block;
+  margin-block-end: var(--space-3xs);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Pushed to the bottom so the tag rows line up across a row of cards whose
+   descriptions run to different lengths. */
+.tool-card__toolset {
+  margin-block-start: auto;
+  padding-block-start: var(--space-sm);
+  border-block-start: var(--border-width) solid var(--border-subtle);
+}
+
+.tool-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}

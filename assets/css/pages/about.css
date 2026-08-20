@@ -208,35 +208,4 @@
   color: var(--text-secondary);
 }
 
-/* --------------------------------------------------------------------------
-   5. Closing CTA
-   -------------------------------------------------------------------------- */
-
-.about-cta {
-  position: relative;
-  overflow: hidden;
-  padding-block: var(--section-padding);
-  text-align: center;
-  background-color: var(--bg-surface);
-  border-block-start: var(--border-width) solid var(--border-subtle);
-}
-
-.about-cta::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: var(--silver-gradient);
-  opacity: 0.07;
-  pointer-events: none;
-}
-
-.about-cta__inner {
-  position: relative;
-  max-width: 40rem;
-  margin-inline: auto;
-}
-
-.about-cta__title {
-  margin-block-end: var(--space-md);
-  font-size: var(--text-2xl);
-}
+/* The closing CTA band is the shared `.cta-band` component. */
