@@ -186,31 +186,30 @@
    sets the statement as the only text.
    -------------------------------------------------------------------------- */
 
+/* Three rows of two. Fewer, wider cards give each statement more presence than
+   a 3x2 grid did, and let the title sit beside its icon rather than under it. */
 .capabilities__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--space-sm);
 }
 
-/* Two rows of three from the tablet band up; six across would squeeze the
-   longer statements onto four lines each. */
 @media (min-width: 48em) {
   .capabilities__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-md);
   }
 }
 
 .capability-card {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-lg) var(--space-sm);
-  text-align: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  min-height: 7.5rem;
   background-color: var(--bg-elevated);
   border: var(--border-width) solid var(--border-subtle);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   transition:
     transform var(--duration) var(--ease-out),
     border-color var(--duration) var(--ease-out),
@@ -226,30 +225,45 @@
 .capability-card__icon {
   display: grid;
   place-items: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  font-size: 1.5rem;
-  color: var(--accent-text);
-  background-color: var(--bg-surface);
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: 50%;
-  transition:
-    color var(--duration) var(--ease-out),
-    background-color var(--duration) var(--ease-out);
+  flex-shrink: 0;
+  width: 4.5rem;
+  height: 4.5rem;
+  font-size: 1.875rem;
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-radius: var(--radius);
+  transition: transform var(--duration) var(--ease-out);
 }
 
 .capability-card:hover .capability-card__icon {
-  color: var(--on-accent);
-  background-image: var(--silver-gradient-fill);
-  border-color: transparent;
+  transform: scale(1.05);
 }
 
 .capability-card__title {
-  font-size: var(--text-base);
-  font-weight: 650;
+  flex: 1;
+  font-size: var(--text-lg);
+  font-weight: 700;
   line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
   color: var(--text-primary);
   text-wrap: balance;
+}
+
+/* Mirror the columns so the icons face the centre of the grid, as in the
+   reference layout. Only from the two-column band up — alternating sides in a
+   single mobile column would just look unsettled. */
+@media (min-width: 48em) {
+  .capability-card:nth-child(odd) {
+    flex-direction: row-reverse;
+  }
+
+  .capability-card:nth-child(odd) .capability-card__title {
+    text-align: left;
+  }
+
+  .capability-card:nth-child(even) .capability-card__title {
+    text-align: right;
+  }
 }
 
 /* --------------------------------------------------------------------------
