@@ -1,0 +1,270 @@
+/* ==========================================================================
+   Tech4TIME — pages/about.css
+   Styles for /pages/about/. Mirrors the NextJS about route's structure:
+   a hero banner, five alternating image/text sections, the specialties grid,
+   the "Why Us?" grid and a closing CTA.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Hero banner
+   -------------------------------------------------------------------------- */
+
+.page-hero {
+  padding-block: clamp(3rem, 8vw, 6rem) clamp(2.5rem, 6vw, 4rem);
+  text-align: center;
+  background-color: var(--bg-surface);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+.page-hero__inner {
+  max-width: 50rem;
+  margin-inline: auto;
+}
+
+.page-hero__title {
+  margin-block-end: var(--space-2xs);
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  background-image: var(--silver-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.page-hero__subtitle {
+  font-size: var(--text-lg);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   2. Section header with the silver rule
+   The NextJS source sets an 80x4px accent bar under each heading; here it is
+   the silver gradient rather than a flat colour.
+   -------------------------------------------------------------------------- */
+
+.about-section__header {
+  margin-block-end: var(--space-lg);
+}
+
+.about-section__title {
+  margin-block-end: var(--space-xs);
+  font-size: var(--text-2xl);
+}
+
+.about-section__rule {
+  width: 5rem;
+  height: 4px;
+  background-image: var(--silver-gradient-fill);
+  border-radius: var(--radius-full);
+}
+
+/* --------------------------------------------------------------------------
+   3. Image + text sections
+   -------------------------------------------------------------------------- */
+
+.about-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+  align-items: center;
+}
+
+@media (min-width: 56.25em) {
+  .about-split {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2xl);
+  }
+
+  /* Alternate which side the artwork sits on. The NextJS source names two
+     classes for this but applies its `order` rule to a non-grid child, so the
+     alternation never takes effect there; it is implemented properly here. */
+  .about-split--reverse .about-split__media {
+    order: 2;
+  }
+}
+
+.about-split__media {
+  overflow: hidden;
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.about-split__image {
+  width: 100%;
+  height: clamp(15rem, 32vw, 25rem);
+  object-fit: cover;
+  object-position: center;
+  /* The illustrations are dark line art on white, so they keep a light plate
+     under them in both modes. */
+  background-color: #ffffff;
+}
+
+/* The Company section shows the wordmark rather than an illustration, so it is
+   contained on the themed surface instead of cropped against white. */
+.about-split__image--contain {
+  padding: var(--space-lg);
+  object-fit: contain;
+  background-color: var(--bg-surface);
+}
+
+.about-split__text {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.about-split__text > * + * {
+  margin-block-start: var(--space-sm);
+}
+
+/* --------------------------------------------------------------------------
+   4. Specialties
+   -------------------------------------------------------------------------- */
+
+.specialties__grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+}
+
+.specialty-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition:
+    transform var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.specialty-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow);
+}
+
+.specialty-card__icon {
+  display: grid;
+  place-items: center;
+  width: 3.75rem;
+  height: 3.75rem;
+  margin-block-end: var(--space-2xs);
+  font-size: 1.5rem;
+  color: var(--accent-text);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+  transition:
+    color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out);
+}
+
+.specialty-card:hover .specialty-card__icon {
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-color: transparent;
+}
+
+.specialty-card__title {
+  font-size: var(--text-lg);
+}
+
+.specialty-card__text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   5. Why Us
+   -------------------------------------------------------------------------- */
+
+.why-us__grid {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+}
+
+.why-us-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+  transition:
+    transform var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.why-us-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow-sm);
+}
+
+.why-us-card__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.125rem;
+  color: var(--accent-text);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.why-us-card__title {
+  margin-block-end: var(--space-3xs);
+  font-size: var(--text-base);
+  font-weight: 650;
+}
+
+.why-us-card__text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   6. Closing CTA
+   -------------------------------------------------------------------------- */
+
+.about-cta {
+  position: relative;
+  overflow: hidden;
+  padding-block: var(--section-padding);
+  text-align: center;
+  background-color: var(--bg-surface);
+  border-block-start: var(--border-width) solid var(--border-subtle);
+}
+
+.about-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--silver-gradient);
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+.about-cta__inner {
+  position: relative;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
+.about-cta__title {
+  margin-block-end: var(--space-md);
+  font-size: var(--text-2xl);
+}

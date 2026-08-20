@@ -154,31 +154,39 @@
   height: clamp(1.75rem, 1.4rem + 1.7vw, 2.5rem);
 }
 
-/* Mode-aware logo. Two lockups ship; CSS shows the one that reads against the
-   active surface. This mirrors the theme-toggle icon rules, so it follows both
-   the OS preference and an explicit data-theme choice — which a
-   <picture media="(prefers-color-scheme: …)"> could not do. */
+/* Mode-aware artwork. Two variants ship; CSS shows the one that reads against
+   the active surface. This mirrors the theme-toggle icon rules, so it follows
+   both the OS preference and an explicit data-theme choice — which a
+   <picture media="(prefers-color-scheme: …)"> could not do.
+
+   .theme-swap--light / --dark are the general-purpose pair for page content;
+   the header and footer keep their own class names. */
+.theme-swap--dark,
 .site-header__logo-wrap--dark,
 .site-footer__logo-wrap--dark {
   display: none;
 }
 
 @media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-swap--light,
   :root:not([data-theme="light"]) .site-header__logo-wrap--light,
   :root:not([data-theme="light"]) .site-footer__logo-wrap--light {
     display: none;
   }
+  :root:not([data-theme="light"]) .theme-swap--dark,
   :root:not([data-theme="light"]) .site-header__logo-wrap--dark,
   :root:not([data-theme="light"]) .site-footer__logo-wrap--dark {
     display: block;
   }
 }
 
+:root[data-theme="dark"] .theme-swap--light,
 :root[data-theme="dark"] .site-header__logo-wrap--light,
 :root[data-theme="dark"] .site-footer__logo-wrap--light {
   display: none;
 }
 
+:root[data-theme="dark"] .theme-swap--dark,
 :root[data-theme="dark"] .site-header__logo-wrap--dark,
 :root[data-theme="dark"] .site-footer__logo-wrap--dark {
   display: block;
