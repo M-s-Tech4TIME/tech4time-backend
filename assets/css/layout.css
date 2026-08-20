@@ -134,6 +134,16 @@
   min-height: var(--header-height);
 }
 
+/* The drawer is a positioned sibling with a higher z-index, so it would paint
+   over the logo and — critically — over the hamburger, leaving no way to tap
+   the menu closed again. Lifting the bar's own controls above it keeps the
+   header usable while the drawer is open. */
+.site-header__brand,
+.site-header__actions {
+  position: relative;
+  z-index: calc(var(--z-overlay) + 1);
+}
+
 .site-header__brand {
   flex-shrink: 0;
   line-height: 0;
