@@ -135,6 +135,74 @@
     this.select(fromHash > -1 ? fromHash : 0, false);
   };
 
+  /* ------------------------------------------------------------------------
+     Solution map
+
+     Each node on the ring points at one of the solution cards further down the
+     page by id. Moving onto a node copies that card into the detail slot beside
+     the map — the same gesture as the NextJS dashboard, but with the card's
+     markup as the single source of truth, so the two can never disagree.
+
+     Nodes are real buttons, so this answers to pointer, keyboard and touch
+     alike. The detail slot is deliberately NOT a live region: the button's own
+     name already says which solution you are on, aria-pressed says it is the
+     selected one, and the same card sits in the grid below — announcing the
+     whole card again on every hover would be noise, not help.
+     ---------------------------------------------------------------------- */
+
+  function SolutionMap(root) {
+    this.root = root;
+    this.detail = root.querySelector("[data-solution-detail]");
+    this.nodes = Array.prototype.slice.call(
+      root.querySelectorAll("[data-solution]")
+    );
+  }
+
+  SolutionMap.prototype.usable = function () {
+    return Boolean(this.detail) && this.nodes.length > 0;
+  };
+
+  SolutionMap.prototype.show = function (node) {
+    var card = doc.getElementById(node.getAttribute("data-solution"));
+    if (!card || node === this.current) {
+      return;
+    }
+
+    var copy = card.cloneNode(true);
+    /* The original keeps the id; a duplicate of it would be invalid. */
+    copy.removeAttribute("id");
+    copy.classList.add("tool-card--detail");
+
+    this.detail.innerHTML = "";
+    this.detail.appendChild(copy);
+
+    this.nodes.forEach(function (other) {
+      other.setAttribute("aria-pressed", other === node ? "true" : "false");
+    });
+    this.current = node;
+  };
+
+  SolutionMap.prototype.init = function () {
+    var self = this;
+
+    this.nodes.forEach(function (node) {
+      node.setAttribute("aria-pressed", "false");
+
+      /* mouseenter for hover, focus for the keyboard, click for touch — where
+         no hover exists and focus follows the tap anyway. */
+      ["mouseenter", "focus", "click"].forEach(function (type) {
+        node.addEventListener(type, function () {
+          self.show(node);
+        });
+      });
+    });
+
+    /* The slot ships with the first solution already rendered, so it is never
+       empty; mark the matching node to match. */
+    this.nodes[0].setAttribute("aria-pressed", "true");
+    this.current = this.nodes[0];
+  };
+
   var api = (global.Tech4Time = global.Tech4Time || {});
 
   api.dashboard = {
@@ -147,6 +215,15 @@
            on the page) is left exactly as it shipped: everything visible. */
         if (tabs.usable()) {
           tabs.init();
+        }
+      });
+
+      var maps = doc.querySelectorAll("[data-solution-map]");
+
+      Array.prototype.forEach.call(maps, function (root) {
+        var map = new SolutionMap(root);
+        if (map.usable()) {
+          map.init();
         }
       });
     }

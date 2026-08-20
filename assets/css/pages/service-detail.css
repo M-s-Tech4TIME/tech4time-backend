@@ -171,8 +171,14 @@
 
 /* Without JavaScript both panels stay on the page, one after the other, and
    the tabs above are ordinary jump links. A rule between them keeps that
-   reading as two sections rather than one run-on list. */
-.layer + .layer {
+   reading as two sections rather than one run-on list.
+
+   The :not([hidden]) on the FIRST of the pair is what matters: once the tabs
+   are live only one panel is on screen, and without this the survivor still
+   drew a rule and four rems of padding above itself, leaving an empty gap
+   under the tabs — and only ever above the second panel, so the two layers did
+   not even match each other. */
+.layer:not([hidden]) + .layer {
   margin-block-start: var(--space-2xl);
   padding-block-start: var(--space-2xl);
   border-block-start: var(--border-width) solid var(--border-subtle);
@@ -239,17 +245,26 @@
    nodes on a ring would be illegible.
    -------------------------------------------------------------------------- */
 
-.soc-map {
+/* Under 52em the ring is illegible and the detail card beside it is only a
+   copy of one card from the grid below, so the whole apparatus goes. */
+.layer__viz {
   display: none;
 }
 
 @media (min-width: 52em) {
+  .layer__viz {
+    display: grid;
+    gap: var(--space-xl);
+    align-items: center;
+    justify-items: center;
+    margin-block-end: var(--space-2xl);
+  }
+
   .soc-map {
     position: relative;
-    display: block;
     width: 26rem;
     height: 26rem;
-    margin: 0 auto var(--space-2xl);
+    margin: 0;
     padding: 0;
     list-style: none;
   }
@@ -279,17 +294,23 @@
     border-radius: 50%;
   }
 
+  /* Flex, not grid: two auto grid rows stretch to fill the circle and centre
+     their contents separately, which pushed the icon into the top half and the
+     label into the bottom. Flex with justify-content centres them as one unit. */
   .soc-map__hub {
     position: absolute;
     top: 50%;
     left: 50%;
-    display: grid;
-    place-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: var(--space-3xs);
     width: 7rem;
     height: 7rem;
     margin: -3.5rem;
     font-size: 1.5rem;
+    line-height: 1;
     color: var(--on-accent);
     background-image: var(--silver-gradient-fill);
     border-radius: 50%;
@@ -302,22 +323,16 @@
     letter-spacing: var(--tracking-wider);
   }
 
-  .soc-map__node {
+  .soc-map__slot {
     position: absolute;
     top: 50%;
     left: 50%;
-    display: grid;
-    place-items: center;
     width: 3.25rem;
     height: 3.25rem;
     margin: -1.625rem;
     /* Fallback so a thirteenth node would stack at the top rather than break
        the transform outright. */
     --i: 0;
-    color: var(--accent-text);
-    background-color: var(--bg-elevated);
-    border: var(--border-width) solid var(--border-subtle);
-    border-radius: 50%;
     /* Rotate out to the ring, then counter-rotate so the icon stays upright. */
     transform:
       rotate(calc(var(--i) * 30deg))
@@ -325,19 +340,82 @@
       rotate(calc(var(--i) * -30deg));
   }
 
-  /* Child 1 is the hub, so the twelve nodes are children 2 through 13. */
-  .soc-map__node:nth-child(2)  { --i: 0; }
-  .soc-map__node:nth-child(3)  { --i: 1; }
-  .soc-map__node:nth-child(4)  { --i: 2; }
-  .soc-map__node:nth-child(5)  { --i: 3; }
-  .soc-map__node:nth-child(6)  { --i: 4; }
-  .soc-map__node:nth-child(7)  { --i: 5; }
-  .soc-map__node:nth-child(8)  { --i: 6; }
-  .soc-map__node:nth-child(9)  { --i: 7; }
-  .soc-map__node:nth-child(10) { --i: 8; }
-  .soc-map__node:nth-child(11) { --i: 9; }
-  .soc-map__node:nth-child(12) { --i: 10; }
-  .soc-map__node:nth-child(13) { --i: 11; }
+  /* Child 1 is the hub, so the twelve slots are children 2 through 13. */
+  .soc-map__slot:nth-child(2)  { --i: 0; }
+  .soc-map__slot:nth-child(3)  { --i: 1; }
+  .soc-map__slot:nth-child(4)  { --i: 2; }
+  .soc-map__slot:nth-child(5)  { --i: 3; }
+  .soc-map__slot:nth-child(6)  { --i: 4; }
+  .soc-map__slot:nth-child(7)  { --i: 5; }
+  .soc-map__slot:nth-child(8)  { --i: 6; }
+  .soc-map__slot:nth-child(9)  { --i: 7; }
+  .soc-map__slot:nth-child(10) { --i: 8; }
+  .soc-map__slot:nth-child(11) { --i: 9; }
+  .soc-map__slot:nth-child(12) { --i: 10; }
+  .soc-map__slot:nth-child(13) { --i: 11; }
+
+  /* The node itself is a button, so it carries the interactive states. */
+  .soc-map__node {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    font: inherit;
+    color: var(--accent-text);
+    background-color: var(--bg-elevated);
+    border: var(--border-width) solid var(--border-subtle);
+    border-radius: 50%;
+    cursor: pointer;
+    transition:
+      color var(--duration) var(--ease-out),
+      background-color var(--duration) var(--ease-out),
+      border-color var(--duration) var(--ease-out),
+      transform var(--duration) var(--ease-out);
+  }
+
+  .soc-map__node:hover {
+    transform: scale(1.12);
+    border-color: var(--silver-accent-mid);
+  }
+
+  /* aria-pressed is the one the script maintains, so the selected node looks
+     selected however it was reached — hover, Tab or tap. */
+  .soc-map__node[aria-pressed="true"] {
+    color: var(--on-accent);
+    background-image: var(--silver-gradient-fill);
+    border-color: transparent;
+    box-shadow: var(--shadow);
+  }
+
+  /* --------------------------------------------------------------------------
+     Map + detail, side by side above the tablet band. Below it the map is
+     already gone, so the single column only ever holds the detail card.
+     -------------------------------------------------------------------------- */
+  .layer__detail {
+    width: 100%;
+    max-width: 30rem;
+  }
+}
+
+@media (min-width: 64em) {
+  .layer__viz {
+    grid-template-columns: 26rem minmax(0, 1fr);
+    justify-items: stretch;
+  }
+}
+
+/* The detail copy is the same card as in the grid below, so it needs no
+   separate design — only the hover lift removed, since it is not itself a
+   pointer target. */
+.tool-card--detail {
+  height: 100%;
+}
+
+.tool-card--detail:hover {
+  transform: none;
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow-sm);
 }
 
 /* --------------------------------------------------------------------------

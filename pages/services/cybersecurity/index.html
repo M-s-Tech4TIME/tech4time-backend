@@ -435,7 +435,7 @@
     <div class="container">
       <div class="section__header">
         <span class="section__eyebrow">Security Layers</span>
-        <h2 class="section__title" id="layers-heading">Prevention and Response, Working Together</h2>
+        <h2 class="section__title" id="layers-heading">Response and Prevention, Working Together</h2>
         <p class="section__lead">
           Twenty-four solutions across two layers. Everything below is on the page
           whether or not scripting is available — the tabs only choose which layer
@@ -445,13 +445,6 @@
 
       <div class="tabs tabs--cards" data-tabs>
         <div class="tabs__list" data-tabs-list>
-          <a class="tabs__tab" href="#layer-proactive" data-tabs-tab>
-            <span class="tabs__tab-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
-            <span class="tabs__tab-body">
-              <span class="tabs__tab-name">Proactive Security</span>
-              <span class="tabs__tab-text">Preventive measures to stop attacks before they happen</span>
-            </span>
-          </a>
           <a class="tabs__tab" href="#layer-reactive" data-tabs-tab>
             <span class="tabs__tab-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#first-aid"></use></svg></span>
             <span class="tabs__tab-body">
@@ -459,329 +452,14 @@
               <span class="tabs__tab-text">Response actions for when threats are detected</span>
             </span>
           </a>
+          <a class="tabs__tab" href="#layer-proactive" data-tabs-tab>
+            <span class="tabs__tab-icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
+            <span class="tabs__tab-body">
+              <span class="tabs__tab-name">Proactive Security</span>
+              <span class="tabs__tab-text">Preventive measures to stop attacks before they happen</span>
+            </span>
+          </a>
         </div>
-
-      <section class="layer tabs__panel" id="layer-proactive">
-        <div class="layer__header">
-          <div>
-            <h3 class="layer__title">
-              <span class="layer__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
-              Proactive Security
-            </h3>
-            <p class="layer__text">Preventive measures that stop attacks before they happen. These solutions harden systems, surface vulnerabilities and block threats before they are used against you.</p>
-          </div>
-          <p class="layer__count">12 Solutions</p>
-        </div>
-
-        <!-- The NextJS dashboard draws the solutions as nodes orbiting a
-             central SOC hub. Reproduced here as a static ring: decoration
-             only, since every node repeats a card below it. -->
-        <ul class="soc-map" aria-hidden="true">
-          <li class="soc-map__hub"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg><span class="soc-map__hub-label">PROACTIVE</span></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#bug"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#user-ninja"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-virus"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#project-diagram"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#brain"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#users"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#user-lock"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#check-double"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#search"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#gavel"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-line"></use></svg></li>
-        </ul>
-
-        <div class="layer__grid">
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#bug"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Offensive Security &amp; Penetration Testing</h4>
-              <p class="tool-card__category">Security Testing</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Systematic evaluation of security posture through simulated attacks, exploitation techniques, and vulnerability discovery.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Comprehensive security validation across all infrastructure layers including network and application assessments.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Metasploit</li>
-            <li class="tag">Burp Suite</li>
-            <li class="tag">Nmap</li>
-            <li class="tag">OpenVAS</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#user-ninja"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Red Team &amp; Adversary Simulation</h4>
-              <p class="tool-card__category">Advanced Testing</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Simulates real-world threat actors using sophisticated tactics, techniques, and procedures (TTPs).</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Evaluate organizational detection and response capabilities over extended engagement periods.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Atomic Red Team</li>
-            <li class="tag">CALDERA</li>
-            <li class="tag">MITRE ATT&amp;CK</li>
-            <li class="tag">BloodHound</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-virus"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Vulnerability Assessment &amp; Management</h4>
-              <p class="tool-card__category">Risk Management</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Continuous identification, classification, prioritization, and tracking of security vulnerabilities.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Systematic risk reduction across entire technology stack from infrastructure to applications.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Nessus</li>
-            <li class="tag">Qualys</li>
-            <li class="tag">OpenVAS</li>
-            <li class="tag">Nexpose</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#project-diagram"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Security Architecture &amp; Design</h4>
-              <p class="tool-card__category">Strategic Planning</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Strategic planning and implementation of security controls and frameworks.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Embed security principles into technology infrastructure and business processes from inception.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">SABSA</li>
-            <li class="tag">TOGAF</li>
-            <li class="tag">ZTA</li>
-            <li class="tag">Defense in Depth</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#brain"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Threat Intelligence &amp; Research</h4>
-              <p class="tool-card__category">Intelligence</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Proactive gathering, analysis, and operationalization of threat data from multiple sources.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Anticipate emerging threats and inform defensive strategies before attacks occur.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">MISP</li>
-            <li class="tag">OpenCTI</li>
-            <li class="tag">AlienVault OTX</li>
-            <li class="tag">ThreatFox</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#users"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Security Awareness &amp; Human Factor</h4>
-              <p class="tool-card__category">Training &amp; Culture</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Comprehensive programs to educate users and reduce human vulnerabilities.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Build organizational security culture through training and behavioral modification.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">KnowBe4</li>
-            <li class="tag">Proofpoint</li>
-            <li class="tag">Cofense</li>
-            <li class="tag">SANS Security Awareness</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#user-lock"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Access Control &amp; Identity Management</h4>
-              <p class="tool-card__category">Identity Security</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Strategic implementation of authentication, authorization, and identity lifecycle management.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Prevent unauthorized access and enforce least privilege principles across all systems.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Okta</li>
-            <li class="tag">Azure AD</li>
-            <li class="tag">Keycloak</li>
-            <li class="tag">ForgeRock</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Preventive Security Controls &amp; Hardening</h4>
-              <p class="tool-card__category">System Security</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Implementation of security measures designed to prevent attacks before they succeed.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            System hardening, configuration management, and security baseline enforcement.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">CIS Benchmarks</li>
-            <li class="tag">STIGs</li>
-            <li class="tag">Ansible</li>
-            <li class="tag">Chef</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#check-double"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Security Testing &amp; Validation</h4>
-              <p class="tool-card__category">Quality Assurance</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Comprehensive evaluation methodologies including code review and security scanning.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Identify and remediate security gaps before exploitation through continuous testing.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">SonarQube</li>
-            <li class="tag">Veracode</li>
-            <li class="tag">Checkmarx</li>
-            <li class="tag">OWASP ZAP</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#search"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Threat Hunting &amp; Proactive Detection</h4>
-              <p class="tool-card__category">Proactive Defense</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Hypothesis-driven investigation for hidden threats and security anomalies.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Find advanced persistent threats (APTs) that automated systems may miss.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">HELK</li>
-            <li class="tag">Elastic Hunting</li>
-            <li class="tag">Sigma</li>
-            <li class="tag">YARA</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#gavel"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Security Governance &amp; Compliance</h4>
-              <p class="tool-card__category">Governance</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Framework establishment and enforcement of security policies and standards.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Guide organizational security practices and ensure adherence to legal obligations.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">ISO 27001</li>
-            <li class="tag">NIST CSF</li>
-            <li class="tag">SOC 2</li>
-            <li class="tag">GDPR Compliance</li>
-            </ul>
-          </div>
-        </article>
-
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-line"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Risk Assessment &amp; Security Planning</h4>
-              <p class="tool-card__category">Strategic Risk</p>
-            </div>
-          </div>
-          <p class="tool-card__desc">Systematic evaluation of organizational risk exposure and threat landscape analysis.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Develop strategic security roadmaps aligned with business objectives and risk tolerance.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">FAIR</li>
-            <li class="tag">ISO 31000</li>
-            <li class="tag">NIST RMF</li>
-            <li class="tag">OWASP Risk Rating</li>
-            </ul>
-          </div>
-        </article>
-        </div>
-      </section>
 
       <section class="layer tabs__panel" id="layer-reactive">
         <div class="layer__header">
@@ -795,313 +473,821 @@
           <p class="layer__count">12 Solutions</p>
         </div>
 
-        <!-- The NextJS dashboard draws the solutions as nodes orbiting a
-             central SOC hub. Reproduced here as a static ring: decoration
-             only, since every node repeats a card below it. -->
-        <ul class="soc-map" aria-hidden="true">
-          <li class="soc-map__hub"><svg class="icon" aria-hidden="true" focusable="false"><use href="#first-aid"></use></svg><span class="soc-map__hub-label">REACTIVE</span></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#first-aid"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#microscope"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#eye"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#virus"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#search-plus"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#database"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-cross"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#brain"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#link"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#ban"></use></svg></li>
-          <li class="soc-map__node"><svg class="icon" aria-hidden="true" focusable="false"><use href="#wrench"></use></svg></li>
-        </ul>
+        <!-- The NextJS dashboard orbits the solutions around a central hub and
+             swaps a detail card as you move across them. Same idea here: the
+             nodes are buttons, so pointer, keyboard and touch all reach them.
+             Hidden under 52em, where twelve nodes on a ring are illegible and
+             the cards below carry everything anyway. -->
+        <div class="layer__viz" data-solution-map>
+          <ul class="soc-map">
+            <li class="soc-map__hub">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#first-aid"></use></svg>
+              <span class="soc-map__hub-label">REACTIVE</span>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-incident-response-crisis-management">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#first-aid"></use></svg>
+                <span class="visually-hidden">Incident Response &amp; Crisis Management</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-digital-forensics-investigation">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#microscope"></use></svg>
+                <span class="visually-hidden">Digital Forensics &amp; Investigation</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-threat-detection-monitoring">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#eye"></use></svg>
+                <span class="visually-hidden">Threat Detection &amp; Monitoring</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-malware-analysis-containment">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#virus"></use></svg>
+                <span class="visually-hidden">Malware Analysis &amp; Containment</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-security-operations-management">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg>
+                <span class="visually-hidden">Security Operations Management</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-breach-investigation-root-cause-analysis">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#search-plus"></use></svg>
+                <span class="visually-hidden">Breach Investigation &amp; Root Cause Analysis</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-data-recovery-restoration">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#database"></use></svg>
+                <span class="visually-hidden">Data Recovery &amp; Restoration</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-attack-surface-analysis-response">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-cross"></use></svg>
+                <span class="visually-hidden">Attack Surface Analysis &amp; Response</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-threat-intelligence-attribution">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#brain"></use></svg>
+                <span class="visually-hidden">Threat Intelligence &amp; Attribution</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-security-event-correlation-analysis">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#link"></use></svg>
+                <span class="visually-hidden">Security Event Correlation &amp; Analysis</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-containment-neutralization">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#ban"></use></svg>
+                <span class="visually-hidden">Containment &amp; Neutralization</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-post-incident-recovery-remediation">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#wrench"></use></svg>
+                <span class="visually-hidden">Post-Incident Recovery &amp; Remediation</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="layer__detail" data-solution-detail>
+            <article class="tool-card tool-card--detail">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#first-aid"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Incident Response &amp; Crisis Management</h4>
+                <p class="tool-card__category">Emergency Response</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Framework for detecting, responding to, and managing cybersecurity incidents in real-time.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Coordinate response across organizational units with emergency protocols and crisis communication.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">NIST Incident Response</li>
+              <li class="tag">ISO/IEC 27035</li>
+              <li class="tag">SANS IR</li>
+              <li class="tag">Incident Response Playbooks</li>
+              </ul>
+            </div>
+          </article>
+          </div>
+        </div>
 
         <div class="layer__grid">
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#first-aid"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Incident Response &amp; Crisis Management</h4>
-              <p class="tool-card__category">Emergency Response</p>
+          <article class="tool-card" id="sol-incident-response-crisis-management">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#first-aid"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Incident Response &amp; Crisis Management</h4>
+                <p class="tool-card__category">Emergency Response</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Framework for detecting, responding to, and managing cybersecurity incidents in real-time.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Coordinate response across organizational units with emergency protocols and crisis communication.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">NIST Incident Response</li>
-            <li class="tag">ISO/IEC 27035</li>
-            <li class="tag">SANS IR</li>
-            <li class="tag">Incident Response Playbooks</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Framework for detecting, responding to, and managing cybersecurity incidents in real-time.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Coordinate response across organizational units with emergency protocols and crisis communication.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">NIST Incident Response</li>
+              <li class="tag">ISO/IEC 27035</li>
+              <li class="tag">SANS IR</li>
+              <li class="tag">Incident Response Playbooks</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#microscope"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Digital Forensics &amp; Investigation</h4>
-              <p class="tool-card__category">Forensics</p>
+          <article class="tool-card" id="sol-digital-forensics-investigation">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#microscope"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Digital Forensics &amp; Investigation</h4>
+                <p class="tool-card__category">Forensics</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Systematic collection, preservation, analysis, and presentation of digital evidence.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Chain of custody procedures for legal and investigative purposes including endpoint and network forensics.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Autopsy</li>
-            <li class="tag">FTK</li>
-            <li class="tag">Volatility</li>
-            <li class="tag">Wireshark</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Systematic collection, preservation, analysis, and presentation of digital evidence.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Chain of custody procedures for legal and investigative purposes including endpoint and network forensics.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Autopsy</li>
+              <li class="tag">FTK</li>
+              <li class="tag">Volatility</li>
+              <li class="tag">Wireshark</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#eye"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Threat Detection &amp; Monitoring</h4>
-              <p class="tool-card__category">Security Monitoring</p>
+          <article class="tool-card" id="sol-threat-detection-monitoring">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#eye"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Threat Detection &amp; Monitoring</h4>
+                <p class="tool-card__category">Security Monitoring</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Continuous surveillance and analysis of systems, networks, and user behaviors.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Identify active threats, anomalies, and security events with real-time monitoring and correlation.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">SIEM</li>
-            <li class="tag">EDR</li>
-            <li class="tag">NDR</li>
-            <li class="tag">XDR</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Continuous surveillance and analysis of systems, networks, and user behaviors.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Identify active threats, anomalies, and security events with real-time monitoring and correlation.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">SIEM</li>
+              <li class="tag">EDR</li>
+              <li class="tag">NDR</li>
+              <li class="tag">XDR</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#virus"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Malware Analysis &amp; Containment</h4>
-              <p class="tool-card__category">Threat Analysis</p>
+          <article class="tool-card" id="sol-malware-analysis-containment">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#virus"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Malware Analysis &amp; Containment</h4>
+                <p class="tool-card__category">Threat Analysis</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Analyzing malicious software to understand behavior, impact, and propagation methods.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Isolation and neutralization strategies to prevent further damage from malware.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Cuckoo Sandbox</li>
-            <li class="tag">Joe Sandbox</li>
-            <li class="tag">Hybrid Analysis</li>
-            <li class="tag">VirusTotal</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Analyzing malicious software to understand behavior, impact, and propagation methods.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Isolation and neutralization strategies to prevent further damage from malware.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Cuckoo Sandbox</li>
+              <li class="tag">Joe Sandbox</li>
+              <li class="tag">Hybrid Analysis</li>
+              <li class="tag">VirusTotal</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Security Operations Management</h4>
-              <p class="tool-card__category">SOC Management</p>
+          <article class="tool-card" id="sol-security-operations-management">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Security Operations Management</h4>
+                <p class="tool-card__category">SOC Management</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Centralized coordination of security monitoring, alert investigation, and threat response.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Operational backbone of reactive security through SOC and SIEM platforms.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">24/7 SOC</li>
-            <li class="tag">Managed SOC</li>
-            <li class="tag">Hybrid SOC</li>
-            <li class="tag">SOC-as-a-Service</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Centralized coordination of security monitoring, alert investigation, and threat response.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Operational backbone of reactive security through SOC and SIEM platforms.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">24/7 SOC</li>
+              <li class="tag">Managed SOC</li>
+              <li class="tag">Hybrid SOC</li>
+              <li class="tag">SOC-as-a-Service</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#search-plus"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Breach Investigation &amp; Root Cause Analysis</h4>
-              <p class="tool-card__category">Incident Analysis</p>
+          <article class="tool-card" id="sol-breach-investigation-root-cause-analysis">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#search-plus"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Breach Investigation &amp; Root Cause Analysis</h4>
+                <p class="tool-card__category">Incident Analysis</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Deep-dive investigations into security breaches to determine attack vectors and compromised assets.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Timeline reconstruction and identification of vulnerabilities exploited during incidents.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Incident Timeline Analysis</li>
-            <li class="tag">Attack Path Reconstruction</li>
-            <li class="tag">Compromise Assessment</li>
-            <li class="tag">Forensic Analysis</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Deep-dive investigations into security breaches to determine attack vectors and compromised assets.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Timeline reconstruction and identification of vulnerabilities exploited during incidents.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Incident Timeline Analysis</li>
+              <li class="tag">Attack Path Reconstruction</li>
+              <li class="tag">Compromise Assessment</li>
+              <li class="tag">Forensic Analysis</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#database"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Data Recovery &amp; Restoration</h4>
-              <p class="tool-card__category">Recovery Services</p>
+          <article class="tool-card" id="sol-data-recovery-restoration">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#database"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Data Recovery &amp; Restoration</h4>
+                <p class="tool-card__category">Recovery Services</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Recovering lost, encrypted, or corrupted data following security incidents.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Backup restoration, ransomware decryption attempts, and system rebuilding.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Backup Systems</li>
-            <li class="tag">DRaaS</li>
-            <li class="tag">Data Restoration Services</li>
-            <li class="tag">Ransomware Recovery</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Recovering lost, encrypted, or corrupted data following security incidents.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Backup restoration, ransomware decryption attempts, and system rebuilding.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Backup Systems</li>
+              <li class="tag">DRaaS</li>
+              <li class="tag">Data Restoration Services</li>
+              <li class="tag">Ransomware Recovery</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-cross"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Attack Surface Analysis &amp; Response</h4>
-              <p class="tool-card__category">Defense Operations</p>
+          <article class="tool-card" id="sol-attack-surface-analysis-response">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-cross"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Attack Surface Analysis &amp; Response</h4>
+                <p class="tool-card__category">Defense Operations</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Real-time identification and response to active exploitation attempts.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Response across perimeter defenses, application layers, and endpoint systems.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Attack Surface Management</li>
-            <li class="tag">Continuous Threat Exposure Management</li>
-            <li class="tag">VAS</li>
-            <li class="tag">External Attack Surface Analysis</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Real-time identification and response to active exploitation attempts.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Response across perimeter defenses, application layers, and endpoint systems.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Attack Surface Management</li>
+              <li class="tag">Continuous Threat Exposure Management</li>
+              <li class="tag">VAS</li>
+              <li class="tag">External Attack Surface Analysis</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#brain"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Threat Intelligence &amp; Attribution</h4>
-              <p class="tool-card__category">Intelligence Operations</p>
+          <article class="tool-card" id="sol-threat-intelligence-attribution">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#brain"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Threat Intelligence &amp; Attribution</h4>
+                <p class="tool-card__category">Intelligence Operations</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Collection, analysis, and operationalization of threat data to understand active threat actors.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Enable informed response and attribution with TTP analysis.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">MISP</li>
-            <li class="tag">OpenCTI</li>
-            <li class="tag">Threat Intelligence Platforms</li>
-            <li class="tag">IOC Management</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Collection, analysis, and operationalization of threat data to understand active threat actors.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Enable informed response and attribution with TTP analysis.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">MISP</li>
+              <li class="tag">OpenCTI</li>
+              <li class="tag">Threat Intelligence Platforms</li>
+              <li class="tag">IOC Management</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#link"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Security Event Correlation &amp; Analysis</h4>
-              <p class="tool-card__category">Analytics</p>
+          <article class="tool-card" id="sol-security-event-correlation-analysis">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#link"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Security Event Correlation &amp; Analysis</h4>
+                <p class="tool-card__category">Analytics</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Aggregation and correlation of security events from multiple sources.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Identify complex attack patterns and coordinated threats that individual alerts might miss.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">SIEM Correlation Rules</li>
-            <li class="tag">UEBA</li>
-            <li class="tag">SOAR</li>
-            <li class="tag">Security Analytics</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Aggregation and correlation of security events from multiple sources.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Identify complex attack patterns and coordinated threats that individual alerts might miss.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">SIEM Correlation Rules</li>
+              <li class="tag">UEBA</li>
+              <li class="tag">SOAR</li>
+              <li class="tag">Security Analytics</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#ban"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Containment &amp; Neutralization</h4>
-              <p class="tool-card__category">Tactical Response</p>
+          <article class="tool-card" id="sol-containment-neutralization">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#ban"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Containment &amp; Neutralization</h4>
+                <p class="tool-card__category">Tactical Response</p>
+              </div>
             </div>
-          </div>
-          <p class="tool-card__desc">Tactical actions to isolate compromised systems and block malicious communications.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            Prevent lateral movement during active security incidents through quarantine and isolation.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Network Segmentation</li>
-            <li class="tag">Endpoint Isolation</li>
-            <li class="tag">Threat Quarantine</li>
-            <li class="tag">Attack Mitigation</li>
-            </ul>
-          </div>
-        </article>
+            <p class="tool-card__desc">Tactical actions to isolate compromised systems and block malicious communications.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Prevent lateral movement during active security incidents through quarantine and isolation.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Network Segmentation</li>
+              <li class="tag">Endpoint Isolation</li>
+              <li class="tag">Threat Quarantine</li>
+              <li class="tag">Attack Mitigation</li>
+              </ul>
+            </div>
+          </article>
 
-          <article class="tool-card">
-          <div class="tool-card__head">
-            <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#wrench"></use></svg></span>
-            <div class="tool-card__titles">
-              <h4 class="tool-card__name">Post-Incident Recovery &amp; Remediation</h4>
-              <p class="tool-card__category">Recovery &amp; Remediation</p>
+          <article class="tool-card" id="sol-post-incident-recovery-remediation">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#wrench"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Post-Incident Recovery &amp; Remediation</h4>
+                <p class="tool-card__category">Recovery &amp; Remediation</p>
+              </div>
             </div>
+            <p class="tool-card__desc">Comprehensive restoration of affected systems to secure operational states.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              System rebuilding, security control implementation, and vulnerability remediation.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Remediation Planning</li>
+              <li class="tag">System Hardening</li>
+              <li class="tag">Security Control Implementation</li>
+              <li class="tag">Post-Incident Review</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="layer tabs__panel" id="layer-proactive">
+        <div class="layer__header">
+          <div>
+            <h3 class="layer__title">
+              <span class="layer__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
+              Proactive Security
+            </h3>
+            <p class="layer__text">Preventive measures that stop attacks before they happen. These solutions harden systems, surface vulnerabilities and block threats before they are used against you.</p>
           </div>
-          <p class="tool-card__desc">Comprehensive restoration of affected systems to secure operational states.</p>
-          <p class="tool-card__purpose">
-            <span class="tool-card__label">Purpose</span>
-            System rebuilding, security control implementation, and vulnerability remediation.
-          </p>
-          <div class="tool-card__toolset">
-            <span class="tool-card__label">Tools &amp; frameworks</span>
-            <ul class="tool-card__tags" role="list">
-            <li class="tag">Remediation Planning</li>
-            <li class="tag">System Hardening</li>
-            <li class="tag">Security Control Implementation</li>
-            <li class="tag">Post-Incident Review</li>
-            </ul>
+          <p class="layer__count">12 Solutions</p>
+        </div>
+
+        <!-- The NextJS dashboard orbits the solutions around a central hub and
+             swaps a detail card as you move across them. Same idea here: the
+             nodes are buttons, so pointer, keyboard and touch all reach them.
+             Hidden under 52em, where twelve nodes on a ring are illegible and
+             the cards below carry everything anyway. -->
+        <div class="layer__viz" data-solution-map>
+          <ul class="soc-map">
+            <li class="soc-map__hub">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg>
+              <span class="soc-map__hub-label">PROACTIVE</span>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-offensive-security-penetration-testing">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#bug"></use></svg>
+                <span class="visually-hidden">Offensive Security &amp; Penetration Testing</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-red-team-adversary-simulation">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#user-ninja"></use></svg>
+                <span class="visually-hidden">Red Team &amp; Adversary Simulation</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-vulnerability-assessment-management">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-virus"></use></svg>
+                <span class="visually-hidden">Vulnerability Assessment &amp; Management</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-security-architecture-design">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#project-diagram"></use></svg>
+                <span class="visually-hidden">Security Architecture &amp; Design</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-threat-intelligence-research">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#brain"></use></svg>
+                <span class="visually-hidden">Threat Intelligence &amp; Research</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-security-awareness-human-factor">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#users"></use></svg>
+                <span class="visually-hidden">Security Awareness &amp; Human Factor</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-access-control-identity-management">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#user-lock"></use></svg>
+                <span class="visually-hidden">Access Control &amp; Identity Management</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-preventive-security-controls-hardening">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg>
+                <span class="visually-hidden">Preventive Security Controls &amp; Hardening</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-security-testing-validation">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#check-double"></use></svg>
+                <span class="visually-hidden">Security Testing &amp; Validation</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-threat-hunting-proactive-detection">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#search"></use></svg>
+                <span class="visually-hidden">Threat Hunting &amp; Proactive Detection</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-security-governance-compliance">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#gavel"></use></svg>
+                <span class="visually-hidden">Security Governance &amp; Compliance</span>
+              </button>
+            </li>
+            <li class="soc-map__slot">
+              <button class="soc-map__node" type="button" data-solution="sol-risk-assessment-security-planning">
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-line"></use></svg>
+                <span class="visually-hidden">Risk Assessment &amp; Security Planning</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="layer__detail" data-solution-detail>
+            <article class="tool-card tool-card--detail">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#bug"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Offensive Security &amp; Penetration Testing</h4>
+                <p class="tool-card__category">Security Testing</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Systematic evaluation of security posture through simulated attacks, exploitation techniques, and vulnerability discovery.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Comprehensive security validation across all infrastructure layers including network and application assessments.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Metasploit</li>
+              <li class="tag">Burp Suite</li>
+              <li class="tag">Nmap</li>
+              <li class="tag">OpenVAS</li>
+              </ul>
+            </div>
+          </article>
           </div>
-        </article>
+        </div>
+
+        <div class="layer__grid">
+          <article class="tool-card" id="sol-offensive-security-penetration-testing">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#bug"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Offensive Security &amp; Penetration Testing</h4>
+                <p class="tool-card__category">Security Testing</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Systematic evaluation of security posture through simulated attacks, exploitation techniques, and vulnerability discovery.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Comprehensive security validation across all infrastructure layers including network and application assessments.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Metasploit</li>
+              <li class="tag">Burp Suite</li>
+              <li class="tag">Nmap</li>
+              <li class="tag">OpenVAS</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-red-team-adversary-simulation">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#user-ninja"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Red Team &amp; Adversary Simulation</h4>
+                <p class="tool-card__category">Advanced Testing</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Simulates real-world threat actors using sophisticated tactics, techniques, and procedures (TTPs).</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Evaluate organizational detection and response capabilities over extended engagement periods.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Atomic Red Team</li>
+              <li class="tag">CALDERA</li>
+              <li class="tag">MITRE ATT&amp;CK</li>
+              <li class="tag">BloodHound</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-vulnerability-assessment-management">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-virus"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Vulnerability Assessment &amp; Management</h4>
+                <p class="tool-card__category">Risk Management</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Continuous identification, classification, prioritization, and tracking of security vulnerabilities.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Systematic risk reduction across entire technology stack from infrastructure to applications.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Nessus</li>
+              <li class="tag">Qualys</li>
+              <li class="tag">OpenVAS</li>
+              <li class="tag">Nexpose</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-security-architecture-design">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#project-diagram"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Security Architecture &amp; Design</h4>
+                <p class="tool-card__category">Strategic Planning</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Strategic planning and implementation of security controls and frameworks.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Embed security principles into technology infrastructure and business processes from inception.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">SABSA</li>
+              <li class="tag">TOGAF</li>
+              <li class="tag">ZTA</li>
+              <li class="tag">Defense in Depth</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-threat-intelligence-research">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#brain"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Threat Intelligence &amp; Research</h4>
+                <p class="tool-card__category">Intelligence</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Proactive gathering, analysis, and operationalization of threat data from multiple sources.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Anticipate emerging threats and inform defensive strategies before attacks occur.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">MISP</li>
+              <li class="tag">OpenCTI</li>
+              <li class="tag">AlienVault OTX</li>
+              <li class="tag">ThreatFox</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-security-awareness-human-factor">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#users"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Security Awareness &amp; Human Factor</h4>
+                <p class="tool-card__category">Training &amp; Culture</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Comprehensive programs to educate users and reduce human vulnerabilities.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Build organizational security culture through training and behavioral modification.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">KnowBe4</li>
+              <li class="tag">Proofpoint</li>
+              <li class="tag">Cofense</li>
+              <li class="tag">SANS Security Awareness</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-access-control-identity-management">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#user-lock"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Access Control &amp; Identity Management</h4>
+                <p class="tool-card__category">Identity Security</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Strategic implementation of authentication, authorization, and identity lifecycle management.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Prevent unauthorized access and enforce least privilege principles across all systems.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">Okta</li>
+              <li class="tag">Azure AD</li>
+              <li class="tag">Keycloak</li>
+              <li class="tag">ForgeRock</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-preventive-security-controls-hardening">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#shield-alt"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Preventive Security Controls &amp; Hardening</h4>
+                <p class="tool-card__category">System Security</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Implementation of security measures designed to prevent attacks before they succeed.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              System hardening, configuration management, and security baseline enforcement.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">CIS Benchmarks</li>
+              <li class="tag">STIGs</li>
+              <li class="tag">Ansible</li>
+              <li class="tag">Chef</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-security-testing-validation">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#check-double"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Security Testing &amp; Validation</h4>
+                <p class="tool-card__category">Quality Assurance</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Comprehensive evaluation methodologies including code review and security scanning.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Identify and remediate security gaps before exploitation through continuous testing.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">SonarQube</li>
+              <li class="tag">Veracode</li>
+              <li class="tag">Checkmarx</li>
+              <li class="tag">OWASP ZAP</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-threat-hunting-proactive-detection">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#search"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Threat Hunting &amp; Proactive Detection</h4>
+                <p class="tool-card__category">Proactive Defense</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Hypothesis-driven investigation for hidden threats and security anomalies.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Find advanced persistent threats (APTs) that automated systems may miss.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">HELK</li>
+              <li class="tag">Elastic Hunting</li>
+              <li class="tag">Sigma</li>
+              <li class="tag">YARA</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-security-governance-compliance">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#gavel"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Security Governance &amp; Compliance</h4>
+                <p class="tool-card__category">Governance</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Framework establishment and enforcement of security policies and standards.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Guide organizational security practices and ensure adherence to legal obligations.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">ISO 27001</li>
+              <li class="tag">NIST CSF</li>
+              <li class="tag">SOC 2</li>
+              <li class="tag">GDPR Compliance</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="tool-card" id="sol-risk-assessment-security-planning">
+            <div class="tool-card__head">
+              <span class="tool-card__icon"><svg class="icon" aria-hidden="true" focusable="false"><use href="#chart-line"></use></svg></span>
+              <div class="tool-card__titles">
+                <h4 class="tool-card__name">Risk Assessment &amp; Security Planning</h4>
+                <p class="tool-card__category">Strategic Risk</p>
+              </div>
+            </div>
+            <p class="tool-card__desc">Systematic evaluation of organizational risk exposure and threat landscape analysis.</p>
+            <p class="tool-card__purpose">
+              <span class="tool-card__label">Purpose</span>
+              Develop strategic security roadmaps aligned with business objectives and risk tolerance.
+            </p>
+            <div class="tool-card__toolset">
+              <span class="tool-card__label">Tools &amp; frameworks</span>
+              <ul class="tool-card__tags" role="list">
+              <li class="tag">FAIR</li>
+              <li class="tag">ISO 31000</li>
+              <li class="tag">NIST RMF</li>
+              <li class="tag">OWASP Risk Rating</li>
+              </ul>
+            </div>
+          </article>
         </div>
       </section>
       </div>
