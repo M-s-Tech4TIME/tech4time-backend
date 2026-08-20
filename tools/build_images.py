@@ -99,6 +99,15 @@ SECTIONS = {
     "Consultancy.png": "consultancy",
 }
 
+# Line-art illustrations for the homepage's three destination cards. These come
+# from the current live site (curated in the earlier project iteration and kept
+# at the v2-archive tag); the NextJS build has no equivalent artwork.
+PAGE_CARDS = {
+    "about-us.jpg": "about-us",
+    "services.jpg": "services",
+    "company-profile.jpg": "company-profile",
+}
+
 # (source dir, mapping, destination dir, max width)
 # Logos render at ~120px, photos and section art span a card or half a section.
 JOBS = [
@@ -106,6 +115,7 @@ JOBS = [
     (PUBLIC / "c-logo", CLIENTS, "clients", 320),
     (PUBLIC / "spic", PHOTOS, "photos", 1200),
     (IMGS, SECTIONS, "sections", 1000),
+    (ROOT / "tools" / "masters" / "pages", PAGE_CARDS, "pages", 800),
 ]
 
 # Copied byte-for-byte rather than re-encoded.
