@@ -40,6 +40,7 @@ failure.
 | `check_contrast.py` | Every functional colour pair meets WCAG AA in both modes. Run after any change to `theme.css`. |
 | `audit_pages.py` | Per page: `lang`, viewport, canonical, unique title/description, one `<h1>`, no skipped heading levels, `alt` on every image, `width`/`height` on every image, valid JSON-LD, `rel="noopener noreferrer"` on external links, resolvable internal links, and that every `<use href="#icon">` has an inlined symbol. |
 | `check_shared_markup.py` | The header and footer on every page still match `tools/templates/`, and the script tags match. This is what keeps thirteen hand-pasted copies from drifting. |
+| `test_contact_handler.py` | Exercises `contact-handler.php` end to end. Needs the PHP CLI (`sudo apt install php-cli`); skips nothing, fails loudly if it is absent. |
 
 Quick full pass:
 
@@ -49,6 +50,40 @@ python3 tools/check_contrast.py \
   && python3 tools/check_shared_markup.py \
   && python3 tools/audit_pages.py
 ```
+
+## Testing the contact form
+
+`test_contact_handler.py` starts `php -S`, points PHP's `sendmail_path` at a
+script that captures the outgoing message to a file, and then reads back the
+exact bytes `mail()` was asked to send. That is what lets it assert the
+header-injection defences actually work rather than merely look right.
+
+```bash
+python3 tools/test_contact_handler.py
+```
+
+It covers the method check, the honeypot, every validation rule, CR/LF
+injection into each field, the assembled message, non-ASCII round trips, and
+the no-JavaScript HTML response.
+
+**It does not test delivery**, and cannot: that needs a real mail server. On the
+cPanel host, before launch:
+
+1. **`info@tech4time.bd` must exist** as a mailbox, forwarder, or the domain's
+   default address. The domain's MX points at the web server itself, so the
+   message never leaves the box — but it still has to land somewhere.
+2. **`no-reply@tech4time.bd` should exist**, even if it only discards. It is the
+   `From:` address, and it is where bounces go.
+3. Submit the real form once with JavaScript on, once with it off, and confirm
+   both arrive and that hitting reply goes to the visitor rather than to
+   `no-reply`.
+4. If `mail()` proves unreliable on the host, the fix is SMTP authentication
+   against the host's own mail server rather than more `mail()` retries.
+
+The domain's DNS is already set up for this: SPF authorises the web server's IP
+(`+a +mx +ip4:...`), and cPanel signs outbound mail with the `default` DKIM
+selector. DMARC is `p=none`, so nothing is quarantined on a failure — worth
+tightening to `p=quarantine` only after the form is confirmed working.
 
 ## Templates
 

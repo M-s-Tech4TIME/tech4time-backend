@@ -34,7 +34,43 @@ const MAIL_SUBJECT = 'Website enquiry';
    hitting reply still reaches them. */
 const MAIL_FROM = 'no-reply@tech4time.bd';
 
+/* -------------------------------------------------------------- safety net */
+
+/* A blank 500 tells the visitor nothing and leaves us nothing to look at.
+   Shared hosting is where unexplained fatals happen — an extension switched
+   off in cPanel, a memory limit, a PHP version bump — so whatever goes wrong,
+   the visitor still ends up with an address they can write to. */
+register_shutdown_function(static function (): void {
+    $fatal = error_get_last();
+    $hard = E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR;
+
+    if ($fatal && ($fatal['type'] & $hard) && !headers_sent()) {
+        respond(false, 'We could not send your message just now. Please email '
+            . MAIL_TO . ' directly.', 500);
+    }
+});
+
 /* ------------------------------------------------------------------ helpers */
+
+/**
+ * Count characters, with or without mbstring.
+ *
+ * mbstring is not guaranteed on shared hosting — it is a checkbox in cPanel's
+ * PHP extension list — and calling mb_strlen() where it is switched off is a
+ * fatal error, not a warning. The limits below are about how much someone
+ * typed, so they count characters rather than bytes: measured in bytes, a
+ * message in Bangla would be cut off at roughly a third of its real length.
+ */
+function chars(string $value): int
+{
+    if (function_exists('mb_strlen')) {
+        return mb_strlen($value, 'UTF-8');
+    }
+
+    /* Continuation bytes (10xxxxxx) are the second and later bytes of a
+       multi-byte character, so removing them leaves one byte per character. */
+    return strlen(preg_replace('/[\x80-\xBF]/', '', $value));
+}
 
 function wants_json(): bool
 {
@@ -109,8 +145,14 @@ function field(string $name): string
     if (!is_string($value)) {
         return '';
     }
-    /* Strip control characters, which is how header injection gets in. */
-    return trim(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value));
+    /* Strip control characters, which is how header injection gets in.
+
+       No /u modifier on purpose. Every byte in that class is an ASCII control
+       byte, and UTF-8 never uses those inside a multi-byte character, so a
+       byte-wise strip cannot damage valid text. With /u, malformed input makes
+       preg_replace return null instead — and the field would silently come
+       back empty, which reads as "they left it blank". */
+    return trim(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $value));
 }
 
 /* ------------------------------------------------------------- method check */
@@ -142,13 +184,13 @@ $errors = [];
 
 if ($name === '') {
     $errors[] = 'Name is required';
-} elseif (mb_strlen($name) > 100) {
+} elseif (chars($name) > 100) {
     $errors[] = 'Name must be less than 100 characters';
 }
 
 if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $errors[] = 'A valid email address is required';
-} elseif (mb_strlen($email) > 254) {
+} elseif (chars($email) > 254) {
     $errors[] = 'Email address is too long';
 }
 
@@ -160,18 +202,29 @@ if ($phone === '') {
 
 if ($subject === '') {
     $errors[] = 'Type of service is required';
-} elseif (mb_strlen($subject) > 120) {
+} elseif (chars($subject) > 120) {
     $errors[] = 'Type of service must be less than 120 characters';
 }
 
-if (mb_strlen($message) < 10) {
+if (chars($message) < 10) {
     $errors[] = 'Message must be at least 10 characters';
-} elseif (mb_strlen($message) > 5000) {
+} elseif (chars($message) > 5000) {
     $errors[] = 'Message must be less than 5000 characters';
 }
 
 if (!$privacy) {
     $errors[] = 'Please confirm you have read the privacy policy';
+}
+
+/* The mail goes out declared as charset=utf-8, so anything that is not valid
+   UTF-8 would arrive as mojibake. Every browser posts UTF-8 from this page —
+   the form's own charset says so — which makes malformed input a sign that the
+   request did not come from the form. */
+foreach ([$name, $phone, $email, $subject, $message] as $value) {
+    if ($value !== '' && preg_match('//u', $value) !== 1) {
+        $errors[] = 'Your message contains characters we could not read';
+        break;
+    }
 }
 
 if ($errors) {
@@ -196,11 +249,14 @@ $body = "New enquiry from the Tech4TIME website\n"
       . 'Received: ' . gmdate('Y-m-d H:i:s') . " UTC\n"
       . 'IP: ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . "\n";
 
+/* No X-Mailer header. The usual "PHP/8.x" value announces that a script sent
+   this rather than a person, which several filters score against — and it
+   tells a stranger the PHP version the host is running. It buys nothing. */
 $headers = [
     'From: Tech4TIME Website <' . MAIL_FROM . '>',
     'Reply-To: ' . $safe_email,
     'Content-Type: text/plain; charset=utf-8',
-    'X-Mailer: PHP/' . phpversion(),
+    'MIME-Version: 1.0',
 ];
 
 $sent = @mail(
