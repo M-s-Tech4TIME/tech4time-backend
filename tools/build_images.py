@@ -62,6 +62,7 @@ JOBS = [
     (MASTERS / "tech", None, "tech", 320, False),
     (MASTERS / "clients", None, "clients", 320, False),
     (MASTERS / "photos", None, "photos", 1200, False),
+    (MASTERS / "flags", None, "flags", 160, False),
     (MASTERS / "sections", SECTIONS, "sections", 1000, True),
     (MASTERS / "pages", PAGE_CARDS, "pages", 800, False),
 ]

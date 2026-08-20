@@ -596,3 +596,54 @@ textarea.field__control {
   font-size: var(--text-md);
   color: var(--text-secondary);
 }
+
+/* --------------------------------------------------------------------------
+   Checkbox field
+   A consent box reads differently from a text field: the control comes first
+   and the label wraps beside it, rather than sitting above.
+   -------------------------------------------------------------------------- */
+
+.field--check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: var(--space-3xs) var(--space-2xs);
+}
+
+.field__checkbox {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-block-start: 0.15em;
+  accent-color: var(--accent-text);
+}
+
+.field__label--check {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.field--check .field__error {
+  grid-column: 2;
+}
+
+/* Reassurance under a submit button. */
+.form__note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3xs);
+  margin-block-start: var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.form__note .icon {
+  flex-shrink: 0;
+  margin-block-start: 0.2em;
+}
+
+/* Errors are announced and coloured, but colour is never the only signal —
+   the field carries aria-invalid and the message says what is wrong. */
+.form__status[data-error="true"] {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}

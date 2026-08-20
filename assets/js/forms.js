@@ -113,6 +113,15 @@
       return null;
     },
 
+    /* A consent box carries the same value whether or not it is ticked, so
+       this one reads the field rather than the string. */
+    consent: function (value, field) {
+      if (field && !field.checked) {
+        return "Please confirm you have read the privacy policy";
+      }
+      return null;
+    },
+
     subject: function (value) {
       var subject = value.trim();
       if (!subject) return "Subject is required";
@@ -151,7 +160,7 @@
     var rule = validators[field.dataset.validate || field.name];
     if (!rule) return true;
 
-    var error = rule(field.value);
+    var error = rule(field.value, field);
     if (error) {
       showError(field, error);
       return false;

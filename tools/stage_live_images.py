@@ -106,6 +106,13 @@ PHOTOS = {
     "celebration-3.jpeg": "celebration-3",
 }
 
+# Office flags on the contact page.
+FLAGS = {
+    "Flag_of_Bangladesh.png": "bangladesh",
+    "Flag_of_Malaysia.png": "malaysia",
+    "Flag_of_Belgium.jpg": "belgium",
+}
+
 # Section illustrations already staged from the live site by hand for the About
 # page and the homepage cards; listed here so the whole picture is in one place.
 SECTIONS = {
@@ -119,6 +126,7 @@ JOBS = [
     ("clients", CLIENTS),
     ("tech", TECH),
     ("photos", PHOTOS),
+    ("flags", FLAGS),
     ("sections", SECTIONS),
 ]
 
