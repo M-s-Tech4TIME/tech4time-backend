@@ -1,0 +1,61 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>{{TITLE}}</title>
+<meta name="description" content="{{DESCRIPTION}}">
+<link rel="canonical" href="{{CANONICAL}}">
+
+<!-- Crawling. Large image previews and full snippets are allowed so rich
+     results can use the branded share card. -->
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+
+<!-- Security. NOTE: X-Frame-Options and X-Content-Type-Options are ignored in
+     <meta> by every browser — they are set for real in .htaccess, which is the
+     authoritative source. Referrer-Policy and CSP genuinely do work here, and
+     are kept as defence in depth in case the host strips response headers. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'">
+
+<!-- Open Graph -->
+<meta property="og:type" content="{{OG_TYPE}}">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="Tech4TIME">
+<meta property="og:title" content="{{OG_TITLE}}">
+<meta property="og:description" content="{{DESCRIPTION}}">
+<meta property="og:url" content="{{CANONICAL}}">
+<meta property="og:image" content="https://tech4time.bd/assets/images/og/tech4time-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Tech4TIME — Orchestrating Technology with Time">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{OG_TITLE}}">
+<meta name="twitter:description" content="{{DESCRIPTION}}">
+<meta name="twitter:image" content="https://tech4time.bd/assets/images/og/tech4time-og.png">
+<meta name="twitter:image:alt" content="Tech4TIME — Orchestrating Technology with Time">
+
+<!-- Icons -->
+<link rel="icon" href="/assets/images/favicon/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon/favicon-16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon/favicon-32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="/assets/images/favicon/favicon-96.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/images/favicon/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafafa">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0b0c">
+
+<!-- Fonts. Preloaded because the latin subset is on the critical render path;
+     the -ext subset is not preloaded since most pages never reference it. -->
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- Styles, in cascade order -->
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/theme.css">
+<link rel="stylesheet" href="/assets/css/layout.css">
+<link rel="stylesheet" href="/assets/css/components.css">
+<link rel="stylesheet" href="/assets/css/animations.css">
+
+<!-- Colour mode, applied before first paint to avoid a flash of the wrong
+     theme. Deliberately NOT deferred; see the comment in the file itself. -->
+<script src="/assets/js/theme-init.js"></script>

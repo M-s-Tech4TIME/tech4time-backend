@@ -1,0 +1,134 @@
+/* ==========================================================================
+   Tech4TIME — animations.css
+   Keyframes, scroll-reveal states and the metallic shine sweep.
+
+   Phase 1 ships only what the shared header/footer need. The full motion pass
+   (scroll reveals across every section, the terminal typing effect, staggered
+   card entrances) lands in Phase 4.
+
+   All motion is suppressed by the prefers-reduced-motion block in base.css, so
+   nothing here needs to repeat that guard.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Keyframes
+   -------------------------------------------------------------------------- */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* The shine sweep: a highlight travelling across a surface, evoking light
+   catching the metallic clock hands in the logo. */
+@keyframes shine-sweep {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. Scroll reveal
+   Elements marked [data-reveal] start hidden and are revealed by
+   assets/js/animations.js via IntersectionObserver.
+
+   Without JavaScript the content must still be visible, so the hidden state is
+   applied only once the observer has claimed the page (html.js-reveal). No-JS
+   visitors simply see everything already in place.
+   -------------------------------------------------------------------------- */
+
+.js-reveal [data-reveal] {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
+}
+
+.js-reveal [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Stagger children by index; the delay custom property is set in the markup. */
+[data-reveal-delay] {
+  transition-delay: calc(var(--reveal-delay, 0) * 80ms);
+}
+
+/* --------------------------------------------------------------------------
+   3. Shine sweep on hover
+   Applied to primary buttons and interactive cards. The sweep is a pseudo
+   element so it never affects layout, and it is pointer-events: none so it
+   cannot swallow clicks.
+
+   Hover-only effects must not strand touch users, so the sweep is limited to
+   devices that actually hover; :focus-visible triggers it for keyboards.
+   -------------------------------------------------------------------------- */
+
+.shine {
+  position: relative;
+  isolation: isolate;
+}
+
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-image: var(--silver-shine-sweep);
+  transform: translateX(-120%);
+  pointer-events: none;
+  opacity: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .shine:hover::after {
+    opacity: 1;
+    animation: shine-sweep var(--duration-slow) var(--ease-out);
+  }
+}
+
+.shine:focus-visible::after {
+  opacity: 1;
+  animation: shine-sweep var(--duration-slow) var(--ease-out);
+}
+
+/* --------------------------------------------------------------------------
+   4. Utility animations
+   -------------------------------------------------------------------------- */
+
+.is-spinning {
+  animation: spin 1s linear infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up var(--duration-slow) var(--ease-out) both;
+}
+
+.animate-fade-in {
+  animation: fade-in var(--duration-slow) var(--ease-out) both;
+}

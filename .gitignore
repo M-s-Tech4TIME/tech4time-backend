@@ -1,0 +1,19 @@
+# Working documents (project plan / briefs), not site content
+Tech4TIME-Static-Website-Plan_v3.md
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python (tools/)
+__pycache__/
+*.py[cod]
+.venv/
+venv/

@@ -1,0 +1,11 @@
+# Tech4TIME — https://tech4time.bd
+# All major crawlers are welcome across the whole site.
+
+User-agent: *
+Allow: /
+
+# Form endpoints have nothing to index and should never appear in results.
+Disallow: /contact-handler.php
+Disallow: /careers-handler.php
+
+Sitemap: https://tech4time.bd/sitemap.xml

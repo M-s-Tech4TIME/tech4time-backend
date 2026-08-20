@@ -1,0 +1,17 @@
+# Normalise line endings so the site is identical whether it is edited on
+# Linux, macOS or Windows, and so diffs stay clean.
+* text=auto eol=lf
+
+# Binary assets: never convert, never diff as text.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.webp   binary
+*.avif   binary
+*.ico    binary
+*.woff2  binary
+*.mp4    binary
+*.pdf    binary
+
+# SVG is text and benefits from diffing, but must not be mangled.
+*.svg    text eol=lf

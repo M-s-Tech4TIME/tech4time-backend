@@ -1,0 +1,132 @@
+<!-- Base structured data, identical on every page. Per-page BreadcrumbList and
+     any page-specific schema (Service, JobPosting, ContactPage…) go in their own
+     block after this one.
+
+     Contact details, addresses and social profiles are taken from the NextJS
+     Footer component, which carries the live values. The Organization schema in
+     the NextJS root layout lists placeholder social URLs (facebook.com/tech4time,
+     twitter.com/tech4time, linkedin.com/company/tech4time, github.com/tech4time)
+     that do not match the real profiles the footer links to; the real ones are
+     used here. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://tech4time.bd/#organization",
+      "name": "Tech4TIME",
+      "alternateName": "M/s. Tech4TIME",
+      "url": "https://tech4time.bd/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://tech4time.bd/assets/images/logo/logo-light-540.png",
+        "width": 540,
+        "height": 192
+      },
+      "image": "https://tech4time.bd/assets/images/og/tech4time-og.png",
+      "description": "Open-Source and enterprise-grade cybersecurity, software development, cloud infrastructure and IT solutions. Orchestrate, build, maintain and protect your business.",
+      "slogan": "Orchestrating Technology with Time",
+      "foundingDate": "2018-05-15",
+      "email": "info@tech4time.bd",
+      "areaServed": "Worldwide",
+      "knowsLanguage": "en",
+      "address": [
+        {
+          "@type": "PostalAddress",
+          "streetAddress": "278/3, Mirpur DOHS Road",
+          "addressLocality": "Dhaka",
+          "addressCountry": "BD"
+        },
+        {
+          "@type": "PostalAddress",
+          "streetAddress": "68100 Batu Caves",
+          "addressLocality": "Selangor",
+          "addressCountry": "MY"
+        }
+      ],
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "telephone": "+8801320571562",
+          "email": "info@tech4time.bd",
+          "contactType": "customer service",
+          "areaServed": "BD",
+          "availableLanguage": ["English"]
+        },
+        {
+          "@type": "ContactPoint",
+          "telephone": "+60198527096",
+          "email": "info@tech4time.bd",
+          "contactType": "customer service",
+          "areaServed": "MY",
+          "availableLanguage": ["English"]
+        }
+      ],
+      "sameAs": [
+        "https://www.linkedin.com/company/tech4time-bd/",
+        "https://github.com/M-s-Tech4TIME"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://tech4time.bd/#website",
+      "url": "https://tech4time.bd/",
+      "name": "Tech4TIME",
+      "description": "Cybersecurity, software development, cloud infrastructure and HR solutions.",
+      "publisher": { "@id": "https://tech4time.bd/#organization" },
+      "inLanguage": "en"
+    },
+    {
+      "@type": "ProfessionalService",
+      "@id": "https://tech4time.bd/#service",
+      "name": "Tech4TIME",
+      "url": "https://tech4time.bd/",
+      "image": "https://tech4time.bd/assets/images/og/tech4time-og.png",
+      "parentOrganization": { "@id": "https://tech4time.bd/#organization" },
+      "priceRange": "$$",
+      "areaServed": "Worldwide",
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+          "opens": "09:00",
+          "closes": "18:00",
+          "description": "Bangladesh office"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "opens": "09:00",
+          "closes": "18:00",
+          "description": "Malaysia office"
+        }
+      ],
+      "serviceType": [
+        "Cybersecurity Services",
+        "Software Development",
+        "Cloud Infrastructure",
+        "IT Consulting",
+        "Managed Services",
+        "Human Resources as a Service",
+        "DevOps Services",
+        "Security Operations Center"
+      ],
+      "knowsAbout": [
+        "Cybersecurity",
+        "Penetration Testing",
+        "Security Operations Center",
+        "Incident Response",
+        "Digital Forensics",
+        "Software Development",
+        "DevSecOps",
+        "Cloud Computing",
+        "OpenStack",
+        "Kubernetes",
+        "IT Staffing",
+        "HR as a Service"
+      ]
+    }
+  ]
+}
+</script>
