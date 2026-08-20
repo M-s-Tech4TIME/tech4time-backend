@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
-Copy, rename and optimise the content images the NextJS site actually uses.
+Copy, rename and optimise the site's content images.
 
 One-off build tool. NOT deployed to the web server (see tools/README.md).
 Run from the repo root:  python3 tools/build_images.py
+
+Sources are split the same way the project is: page artwork comes from the
+CURRENT LIVE SITE (staged under tools/masters/), while the third-party product
+and client logos come from the NextJS build's public/ folder, which is the only
+place they exist.
 
 Only referenced images are ported. public/app-logo/ holds 75 files but the pages
 reference 37 of them; the rest (plus SOC.drawio) are leftovers and are skipped so
@@ -17,12 +22,11 @@ copied verbatim -- they are already resolution independent.
 import shutil
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 ROOT = Path(__file__).resolve().parent.parent
 NEXT = Path("/home/alsechemist/CodeSpace/Tech4TIME-web-ui")
 PUBLIC = NEXT / "public"
-IMGS = NEXT / "src" / "app" / "imgs"
 
 # Third-party product logos shown in the company-profile technology grid.
 # source filename -> kebab-case destination stem (the product's real name)
@@ -87,16 +91,16 @@ PHOTOS = {
     "celebration-3.jpeg": "celebration-3",
 }
 
-# Section illustrations used by the About page and the services portfolio.
+# Section illustrations for the About page, taken from the CURRENT LIVE SITE
+# (copied into tools/masters/sections/). The NextJS build has its own Goal /
+# Mission / Vision / Ambition artwork, but those are blue-tinted illustrations
+# on dark plates that fight the monochrome palette; the live site's are pure
+# black-and-white line art and match the rest of the rebuild.
 SECTIONS = {
-    "Our Goal.png": "our-goal",
-    "Our Mission.png": "our-mission",
-    "Our Vision.png": "our-vision",
-    "Our Ambition.png": "our-ambition",
-    "Security Policy.png": "security-policy",
-    "Custom Software Development.png": "custom-software-development",
-    "On-Demand IT Equipment Supply.png": "it-equipment-supply",
-    "Consultancy.png": "consultancy",
+    "our-goal.jpg": "our-goal",
+    "our-mission.jpg": "our-mission",
+    "our-vision.jpg": "our-vision",
+    "our-ambition.jpg": "our-ambition",
 }
 
 # Line-art illustrations for the homepage's three destination cards. These come
@@ -108,14 +112,16 @@ PAGE_CARDS = {
     "company-profile.jpg": "company-profile",
 }
 
-# (source dir, mapping, destination dir, max width)
+# (source dir, mapping, destination dir, max width, trim)
 # Logos render at ~120px, photos and section art span a card or half a section.
+# `trim` crops the flat white margin the live site's exports carry, so the art
+# fills its box instead of floating in a wide border.
 JOBS = [
-    (PUBLIC / "app-logo", TECH, "tech", 320),
-    (PUBLIC / "c-logo", CLIENTS, "clients", 320),
-    (PUBLIC / "spic", PHOTOS, "photos", 1200),
-    (IMGS, SECTIONS, "sections", 1000),
-    (ROOT / "tools" / "masters" / "pages", PAGE_CARDS, "pages", 800),
+    (PUBLIC / "app-logo", TECH, "tech", 320, False),
+    (PUBLIC / "c-logo", CLIENTS, "clients", 320, False),
+    (PUBLIC / "spic", PHOTOS, "photos", 1200, False),
+    (ROOT / "tools" / "masters" / "sections", SECTIONS, "sections", 1000, True),
+    (ROOT / "tools" / "masters" / "pages", PAGE_CARDS, "pages", 800, False),
 ]
 
 # Copied byte-for-byte rather than re-encoded.
@@ -127,7 +133,24 @@ JOBS = [
 PASSTHROUGH = {".svg", ".avif"}
 
 
-def process(src: Path, dest_dir: Path, stem: str, max_w: int) -> str:
+def trim_margin(im: Image.Image, keep: float = 0.04) -> Image.Image:
+    """Crop a flat near-white border, leaving a small proportional margin."""
+    rgb = im.convert("RGB")
+    diff = ImageChops.difference(rgb, Image.new("RGB", rgb.size, (255, 255, 255)))
+    bbox = diff.convert("L").point(lambda v: 255 if v > 12 else 0).getbbox()
+    if not bbox:
+        return im
+
+    pad = round(max(bbox[2] - bbox[0], bbox[3] - bbox[1]) * keep)
+    return im.crop((
+        max(0, bbox[0] - pad),
+        max(0, bbox[1] - pad),
+        min(im.width, bbox[2] + pad),
+        min(im.height, bbox[3] + pad),
+    ))
+
+
+def process(src: Path, dest_dir: Path, stem: str, max_w: int, trim: bool = False) -> str:
     ext = src.suffix.lower()
 
     if ext in PASSTHROUGH:
@@ -136,6 +159,9 @@ def process(src: Path, dest_dir: Path, stem: str, max_w: int) -> str:
 
     im = Image.open(src)
     im.load()
+
+    if trim:
+        im = trim_margin(im)
 
     if im.width > max_w:
         im = im.resize((max_w, round(max_w * im.height / im.width)), Image.LANCZOS)
@@ -167,7 +193,7 @@ def process(src: Path, dest_dir: Path, stem: str, max_w: int) -> str:
 def main() -> None:
     total, missing = 0, []
 
-    for src_dir, mapping, dest_name, max_w in JOBS:
+    for src_dir, mapping, dest_name, max_w, trim in JOBS:
         dest_dir = ROOT / "assets" / "images" / dest_name
         dest_dir.mkdir(parents=True, exist_ok=True)
         print(f"\n{src_dir.name}/ -> assets/images/{dest_name}/  ({len(mapping)} files)")
@@ -178,7 +204,7 @@ def main() -> None:
                 missing.append(str(src))
                 print(f"  MISSING  {filename}")
                 continue
-            print(f"  {process(src, dest_dir, stem, max_w)}")
+            print(f"  {process(src, dest_dir, stem, max_w, trim)}")
             total += 1
 
     print(f"\n{total} images ported")

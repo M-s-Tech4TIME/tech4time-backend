@@ -92,21 +92,23 @@
   box-shadow: var(--shadow);
 }
 
+/* The live site's illustrations are square black-and-white line art. They are
+   contained rather than cropped — cover would slice the top and bottom off a
+   square drawing — inside a 4:3 box so the rows do not become excessively tall.
+   The plate stays white in both modes, since the art is dark line work. */
 .about-split__image {
   width: 100%;
-  height: clamp(15rem, 32vw, 25rem);
-  object-fit: cover;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
   object-position: center;
-  /* The illustrations are dark line art on white, so they keep a light plate
-     under them in both modes. */
+  padding: var(--space-sm);
   background-color: #ffffff;
 }
 
-/* The Company section shows the wordmark rather than an illustration, so it is
-   contained on the themed surface instead of cropped against white. */
+/* The Company section shows the wordmark rather than an illustration, so it
+   sits on the themed surface instead of a white plate. */
 .about-split__image--contain {
-  padding: var(--space-lg);
-  object-fit: contain;
+  padding: var(--space-xl);
   background-color: var(--bg-surface);
 }
 
