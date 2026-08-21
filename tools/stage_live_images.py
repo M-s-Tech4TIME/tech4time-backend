@@ -106,6 +106,17 @@ PHOTOS = {
     "celebration-3.jpeg": "celebration-3",
 }
 
+# The four logo variants offered on the branding page, in the live page's
+# order. "Light" and "Dark" name the theme the mark is placed ON, not the
+# colour of the mark itself: the light-theme logo is dark ink for a pale
+# background, and the dark-theme logo is pale ink for a dark one.
+BRANDING = {
+    "Tech4TimeLogo_Branding_Light_Transparent.png": "logo-light-transparent",
+    "Tech4TimeLogo_Branding_Dark_Transparent.png": "logo-dark-transparent",
+    "Tech4TIME_Logo_Light.png": "logo-light-background",
+    "Tech4TIME_Logo_Dark.png": "logo-dark-background",
+}
+
 # Office flags on the contact page.
 FLAGS = {
     "Flag_of_Bangladesh.png": "bangladesh",
@@ -122,12 +133,17 @@ SECTIONS = {
     "Our-Ambition.jpg": "our-ambition",
 }
 
+# (folder, mapping, rendition preference)
+# Everything is served from the live site's 1024px rendition, which is ample
+# for page artwork. The branding logos are the exception: they are offered as
+# downloads, so they are staged from the untouched original instead.
 JOBS = [
-    ("clients", CLIENTS),
-    ("tech", TECH),
-    ("photos", PHOTOS),
-    ("flags", FLAGS),
-    ("sections", SECTIONS),
+    ("clients", CLIENTS, (1024, 0)),
+    ("tech", TECH, (1024, 0)),
+    ("photos", PHOTOS, (1024, 0)),
+    ("flags", FLAGS, (1024, 0)),
+    ("branding", BRANDING, (0, 1024)),
+    ("sections", SECTIONS, (1024, 0)),
 ]
 
 HASH_SUFFIX = re.compile(r"-[A-Za-z0-9_-]{22}(\.\w+)$")
@@ -147,9 +163,9 @@ def index_live() -> dict:
     return found
 
 
-def best(renditions: dict) -> Path:
-    """Prefer the 1024px rendition; size 0 is the untouched original."""
-    for want in (1024, 0):
+def best(renditions: dict, prefer: tuple = (1024, 0)) -> Path:
+    """Pick a rendition. Size 0 is the untouched original."""
+    for want in prefer:
         if want in renditions:
             return renditions[want]
     return renditions[max(renditions)]
@@ -162,7 +178,7 @@ def main() -> None:
     live = index_live()
     total, missing = 0, []
 
-    for folder, mapping in JOBS:
+    for folder, mapping, prefer in JOBS:
         dest = ROOT / "tools" / "masters" / folder
         dest.mkdir(parents=True, exist_ok=True)
         print(f"\n{folder}/  ({len(mapping)} files)")
@@ -172,7 +188,7 @@ def main() -> None:
                 missing.append(f"{folder}/{live_name}")
                 print(f"  MISSING  {live_name}")
                 continue
-            src = best(live[live_name])
+            src = best(live[live_name], prefer)
             shutil.copy2(src, dest / f"{stem}{src.suffix.lower()}")
             total += 1
 

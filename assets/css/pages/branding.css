@@ -1,0 +1,121 @@
+/* ==========================================================================
+   Tech4TIME — pages/branding.css
+   Branding Assets & Guidelines: the four logo variants, and the disclaimer.
+   ========================================================================== */
+
+.assets__grid {
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+}
+
+.asset {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.asset:hover {
+  border-color: var(--silver-accent-mid);
+  box-shadow: var(--shadow);
+}
+
+/* --------------------------------------------------------------- preview */
+
+/* A fixed height so the four previews line up despite the two aspect ratios
+   in play — the transparent marks are about 2.8:1, the plated ones 16:9. */
+.asset__preview {
+  display: grid;
+  place-items: center;
+  min-height: 11rem;
+  padding: var(--space-lg);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+/* These two are deliberately hard-coded rather than themed.
+
+   The ink in a transparent logo does not change with the site's theme, so the
+   plate behind it must not either: put the light-theme mark on a dark plate
+   in dark mode and it is black ink on black. Each preview therefore shows the
+   background the file is actually FOR, in both modes, which is also what
+   makes the preview honest — you are seeing where it works. */
+.asset__preview--light {
+  background-color: #f2f2f2;
+}
+
+.asset__preview--dark {
+  background-color: #141414;
+}
+
+/* The plated variants carry their own background, so this one only has to
+   frame them without competing. */
+.asset__preview--neutral {
+  background-color: var(--bg-surface);
+}
+
+.asset__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 8rem;
+  object-fit: contain;
+}
+
+/* ------------------------------------------------------------------ body */
+
+.asset__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--space-2xs);
+  padding: var(--space-lg);
+}
+
+.asset__title {
+  font-size: var(--text-lg);
+}
+
+.asset__text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.asset__meta {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* margin-block-start:auto rather than a fixed gap, so the buttons sit on one
+   line across the row however long the descriptions run. */
+.asset__download {
+  align-self: start;
+  margin-block-start: auto;
+  padding-block-start: var(--space-2xs);
+}
+
+/* ------------------------------------------------------------ disclaimer */
+
+.disclaimer__body {
+  max-width: 70ch;
+  margin-inline: auto;
+}
+
+.disclaimer__text {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.disclaimer__text + .disclaimer__text {
+  margin-block-start: var(--space-md);
+}

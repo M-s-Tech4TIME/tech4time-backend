@@ -63,9 +63,21 @@ JOBS = [
     (MASTERS / "clients", None, "clients", 320, False),
     (MASTERS / "photos", None, "photos", 1200, False),
     (MASTERS / "flags", None, "flags", 160, False),
+    (MASTERS / "branding", None, "branding", 800, False),
     (MASTERS / "sections", SECTIONS, "sections", 1000, True),
     (MASTERS / "pages", PAGE_CARDS, "pages", 800, False),
 ]
+
+# The branding page offers its four logos as downloads, so each is written a
+# second time at a size worth downloading. These are NOT loaded by the page —
+# only the 800px previews above are — so their weight costs a visitor nothing
+# unless they ask for one.
+#
+# PNG only. The point of the download is a file the recipient can drop into a
+# deck or a print job without thinking about format support, and 1600px is
+# wide enough for both while keeping each file to a few hundred KB. The
+# originals run to 6000px and 1.3MB, which is more than the use warrants.
+BRAND_DOWNLOADS = (MASTERS / "branding", "branding", 1600, "-full")
 
 # Copied byte-for-byte rather than re-encoded.
 #   .svg  - already resolution independent.
@@ -133,6 +145,32 @@ def process(src: Path, dest_dir: Path, stem: str, max_w: int, trim: bool = False
     return f"{stem}.webp + {fallback}  ({im.width}x{im.height})"
 
 
+def build_downloads() -> int:
+    """Write the full-size PNGs the branding page's download buttons hand over."""
+    src_dir, dest_name, max_w, suffix = BRAND_DOWNLOADS
+    dest_dir = ROOT / "assets" / "images" / dest_name
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    print(f"\n{src_dir.name}/ -> assets/images/{dest_name}/  (downloads)")
+
+    count = 0
+    for src in sorted(p for p in src_dir.iterdir() if p.is_file()):
+        im = Image.open(src)
+        im.load()
+
+        if im.width > max_w:
+            im = im.resize((max_w, round(max_w * im.height / im.width)), Image.LANCZOS)
+
+        # Alpha is kept whether or not it is used here. On the plated variants
+        # the flat background IS the asset — flattening it to JPEG would hand
+        # someone a logo they cannot place on their own background.
+        out = dest_dir / f"{src.stem}{suffix}.png"
+        im.save(out, optimize=True)
+        print(f"  {out.name}  ({im.width}x{im.height}, {out.stat().st_size // 1024}KB)")
+        count += 1
+
+    return count
+
+
 def main() -> None:
     total, missing = 0, []
 
@@ -152,6 +190,8 @@ def main() -> None:
                 continue
             print(f"  {process(src, dest_dir, stem, max_w, trim)}")
             total += 1
+
+    total += build_downloads()
 
     print(f"\n{total} images ported")
     if missing:
