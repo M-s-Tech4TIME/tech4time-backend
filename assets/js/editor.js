@@ -38,21 +38,78 @@
 
   var ALIGNMENTS = ["ta-left", "ta-center", "ta-right", "ta-justify"];
 
-  /* label, aria-label, command. `block` marks the ones that act on the
-     paragraph rather than the selection. */
+  /* Toolbar icons.
+
+     Drawn here rather than pulled from the sprite because this toolbar is
+     built by script: the sprite is inlined into pages by tools/inject_icons.py,
+     which only walks pages/, and the admin is not one of those. Bold, italic
+     and underline stay as letterforms — a B in bold says more than any glyph.
+
+     The bars are plain rectangles so they stay crisp at 1rem, where a detailed
+     path turns to mush. */
+  function svg(viewBox, body) {
+    return '<svg class="rte__icon" viewBox="' + viewBox + '" aria-hidden="true" ' +
+           'focusable="false">' + body + '</svg>';
+  }
+
+  function bars(rows) {
+    return rows.map(function (row) {
+      return '<rect x="' + row[0] + '" y="' + row[1] + '" width="' + row[2] +
+             '" height="2" rx="1"/>';
+    }).join("");
+  }
+
+  var ROWS = [4, 8.5, 13, 17.5];
+
+  var ICONS = {
+    "align-left": svg("0 0 24 24", bars([
+      [3, ROWS[0], 18], [3, ROWS[1], 11], [3, ROWS[2], 18], [3, ROWS[3], 11]
+    ])),
+    "align-center": svg("0 0 24 24", bars([
+      [3, ROWS[0], 18], [6.5, ROWS[1], 11], [3, ROWS[2], 18], [6.5, ROWS[3], 11]
+    ])),
+    "align-right": svg("0 0 24 24", bars([
+      [3, ROWS[0], 18], [10, ROWS[1], 11], [3, ROWS[2], 18], [10, ROWS[3], 11]
+    ])),
+    "align-justify": svg("0 0 24 24", bars([
+      [3, ROWS[0], 18], [3, ROWS[1], 18], [3, ROWS[2], 18], [3, ROWS[3], 18]
+    ])),
+
+    "list-ul": svg("0 0 24 24",
+      '<circle cx="4.5" cy="6" r="1.75"/><circle cx="4.5" cy="12" r="1.75"/>' +
+      '<circle cx="4.5" cy="18" r="1.75"/>' +
+      bars([[9, 5, 12], [9, 11, 12], [9, 17, 12]])),
+
+    /* Numerals as text: three glyphs at this size are more legible drawn by
+       the font than approximated with paths. */
+    "list-ol": svg("0 0 24 24",
+      '<text x="1" y="8.5" font-size="8" font-weight="700">1</text>' +
+      '<text x="1" y="14.5" font-size="8" font-weight="700">2</text>' +
+      '<text x="1" y="20.5" font-size="8" font-weight="700">3</text>' +
+      bars([[10, 5, 11], [10, 11, 11], [10, 17, 11]])),
+
+    /* Font Awesome Free, the same source as the site's sprite. */
+    "link": svg("0 0 640 512", '<path d="M579.8 267.7c56.5-56.5 56.5-148 0-204.5c-50-50-128.8-56.5-186.3-15.4l-1.6 1.1c-14.4 10.3-17.7 30.3-7.4 44.6s30.3 17.7 44.6 7.4l1.6-1.1c32.1-22.9 76-19.3 103.8 8.6c31.5 31.5 31.5 82.5 0 114L422.3 334.8c-31.5 31.5-82.5 31.5-114 0c-27.9-27.9-31.5-71.8-8.6-103.8l1.1-1.6c10.3-14.4 6.9-34.4-7.4-44.6s-34.4-6.9-44.6 7.4l-1.1 1.6C206.5 251.2 213 330 263 380c56.5 56.5 148 56.5 204.5 0L579.8 267.7zM60.2 244.3c-56.5 56.5-56.5 148 0 204.5c50 50 128.8 56.5 186.3 15.4l1.6-1.1c14.4-10.3 17.7-30.3 7.4-44.6s-30.3-17.7-44.6-7.4l-1.6 1.1c-32.1 22.9-76 19.3-103.8-8.6C74 372 74 321 105.5 289.5L217.7 177.2c31.5-31.5 82.5-31.5 114 0c27.9 27.9 31.5 71.8 8.6 103.9l-1.1 1.6c-10.3 14.4-6.9 34.4 7.4 44.6s34.4 6.9 44.6-7.4l1.1-1.6C433.5 260.8 427 182 377 132c-56.5-56.5-148-56.5-204.5 0L60.2 244.3z"/>')
+  };
+
+
+  /* `tags` is how the pressed state is decided — see refresh(). */
   var TOOLS = [
-    { name: "bold", label: "B", title: "Bold (Ctrl+B)", command: "bold", className: "rte__btn--bold" },
-    { name: "italic", label: "I", title: "Italic (Ctrl+I)", command: "italic", className: "rte__btn--italic" },
-    { name: "underline", label: "U", title: "Underline (Ctrl+U)", command: "underline", className: "rte__btn--underline" },
+    { label: "B", title: "Bold (Ctrl+B)", command: "bold",
+      className: "rte__btn--bold", tags: ["strong", "b"] },
+    { label: "I", title: "Italic (Ctrl+I)", command: "italic",
+      className: "rte__btn--italic", tags: ["em", "i"] },
+    { label: "U", title: "Underline (Ctrl+U)", command: "underline",
+      className: "rte__btn--underline", tags: ["u"] },
     { separator: true },
-    { name: "ul", label: "•—", title: "Bulleted list", command: "insertUnorderedList" },
-    { name: "ol", label: "1.", title: "Numbered list", command: "insertOrderedList" },
-    { name: "link", label: "🔗", title: "Insert link", command: "createLink" },
+    { icon: "list-ul", title: "Bulleted list", command: "insertUnorderedList", tags: ["ul"] },
+    { icon: "list-ol", title: "Numbered list", command: "insertOrderedList", tags: ["ol"] },
+    { icon: "link", title: "Insert link", command: "createLink", tags: ["a"] },
     { separator: true },
-    { name: "ta-left", label: "◧", title: "Align left", align: "ta-left" },
-    { name: "ta-center", label: "◫", title: "Align centre", align: "ta-center" },
-    { name: "ta-right", label: "◨", title: "Align right", align: "ta-right" },
-    { name: "ta-justify", label: "▤", title: "Justify", align: "ta-justify" }
+    { icon: "align-left", title: "Align left", align: "ta-left" },
+    { icon: "align-center", title: "Align centre", align: "ta-center" },
+    { icon: "align-right", title: "Align right", align: "ta-right" },
+    { icon: "align-justify", title: "Justify", align: "ta-justify" }
   ];
 
   function Editor(textarea) {
@@ -101,7 +158,11 @@
       var button = doc.createElement("button");
       button.type = "button";
       button.className = "rte__btn" + (tool.className ? " " + tool.className : "");
-      button.textContent = tool.label;
+      if (tool.icon) {
+        button.innerHTML = ICONS[tool.icon];
+      } else {
+        button.textContent = tool.label;
+      }
       button.title = tool.title;
       button.setAttribute("aria-label", tool.title);
       button.setAttribute("aria-pressed", "false");
@@ -169,8 +230,8 @@
     this.textarea.value = this.surface.innerHTML;
   };
 
-  /** The block element the caret sits in, within this editor. */
-  Editor.prototype.currentBlock = function () {
+  /** The element the caret sits in, or null if the caret is not in here. */
+  Editor.prototype.selectionNode = function () {
     var selection = global.getSelection();
     if (!selection || !selection.rangeCount) {
       return null;
@@ -180,6 +241,43 @@
     if (node.nodeType === 3) {
       node = node.parentNode;
     }
+
+    /* With several editors on the page, the selection may belong to another
+       one — or to nothing at all. Acting on it then would format the wrong
+       field. */
+    return this.surface.contains(node) ? node : null;
+  };
+
+  /**
+   * Is the caret inside one of these elements?
+   *
+   * This replaces document.queryCommandState, which cannot be trusted for
+   * this. In Blink it answers by looking at COMPUTED STYLE, so any text that
+   * merely renders bold reports as bold — and the button lights up over a
+   * word that carries no <strong> at all. Clicking it to "turn it off" then
+   * runs execCommand("bold") against a document whose real state is not bold,
+   * which turns bold ON. That is the whole of the double-click bug: a wrong
+   * reading making the toggle work backwards.
+   *
+   * Walking the tree answers the question actually being asked, and matches
+   * exactly what careers_sanitise_html() will store.
+   */
+  Editor.prototype.within = function (tags) {
+    var node = this.selectionNode();
+
+    while (node && node !== this.surface) {
+      if (node.nodeType === 1 &&
+          tags.indexOf(node.nodeName.toLowerCase()) !== -1) {
+        return true;
+      }
+      node = node.parentNode;
+    }
+    return false;
+  };
+
+  /** The block element the caret sits in, within this editor. */
+  Editor.prototype.currentBlock = function () {
+    var node = this.selectionNode();
 
     while (node && node !== this.surface) {
       var tag = node.nodeName.toLowerCase();
@@ -193,6 +291,18 @@
 
   Editor.prototype.run = function (tool) {
     this.surface.focus();
+
+    /* focus() alone does not guarantee a selection inside the surface — an
+       empty field, or a click that landed between editors, leaves it
+       elsewhere. Put the caret in this surface before any command runs. */
+    if (!this.selectionNode()) {
+      var range = doc.createRange();
+      range.selectNodeContents(this.surface);
+      range.collapse(false);
+      var selection = global.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
 
     if (tool.align) {
       this.align(tool.align);
@@ -259,6 +369,7 @@
 
   /** Reflect the state of the caret in the toolbar. */
   Editor.prototype.refresh = function () {
+    var self = this;
     var block = this.currentBlock();
 
     this.buttons.forEach(function (entry) {
@@ -266,12 +377,8 @@
 
       if (entry.tool.align) {
         on = !!block && block.classList.contains(entry.tool.align);
-      } else if (entry.tool.command && entry.tool.command !== "createLink") {
-        try {
-          on = doc.queryCommandState(entry.tool.command);
-        } catch (error) {
-          on = false;
-        }
+      } else if (entry.tool.tags) {
+        on = self.within(entry.tool.tags);
       }
 
       entry.el.setAttribute("aria-pressed", on ? "true" : "false");

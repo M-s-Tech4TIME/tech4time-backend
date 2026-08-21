@@ -349,6 +349,16 @@
   background-image: var(--silver-gradient-fill);
 }
 
+/* Icons inherit the button's colour, so the pressed state flips them along
+   with everything else. pointer-events:none keeps the click target the button
+   rather than whichever rectangle happened to be under the cursor. */
+.rte__icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: currentColor;
+  pointer-events: none;
+}
+
 .rte__btn--bold { font-weight: 800; }
 .rte__btn--italic { font-style: italic; }
 .rte__btn--underline { text-decoration: underline; }
