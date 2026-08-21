@@ -140,15 +140,37 @@
   position: sticky;
   top: 0;
   z-index: var(--z-header);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+/* The frosted background is on a pseudo-element rather than on .site-header
+   itself, and that is not a stylistic choice.
+
+   backdrop-filter makes an element the containing block for any
+   position: fixed DESCENDANT. The mobile nav drawer is fixed and lives inside
+   the header, so with the blur on .site-header its inset:0 resolved against
+   the header's own box instead of the viewport: the drawer opened 120px tall
+   instead of full height, and all six links fell outside it and could not be
+   hit. Nothing looked broken in the markup, the attribute said data-open=true,
+   and the transition ran. Moving the blur one level down leaves the drawer's
+   containing block as the viewport, where it belongs.
+
+   Negative z-index keeps it behind the header's own content while staying
+   inside the header's stacking context, so it blurs the page scrolling under
+   it and nothing else. */
+.site-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background-color: color-mix(in srgb, var(--bg-base) 85%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-block-end: var(--border-width) solid var(--border-subtle);
 }
 
 /* Browsers without color-mix get the solid base tone. */
 @supports not (background-color: color-mix(in srgb, red 50%, transparent)) {
-  .site-header {
+  .site-header::before {
     background-color: var(--bg-base);
   }
 }
@@ -281,11 +303,13 @@
   }
 }
 
-@media (min-width: 64em) {
-  .nav-toggle {
-    display: none;
-  }
-}
+/* Whether the hamburger shows is decided in components.css, next to the rule
+   that gives it a display in the first place. It used to be decided here, and
+   because layout.css loads before components.css and both selectors are a
+   single class, `.nav-toggle { display: grid }` there quietly beat the
+   `display: none` here at every width — a media query adds no specificity.
+   The button sat next to the full desktop nav on every page. Rules that fight
+   over one property belong in one file. */
 
 /* --------------------------------------------------------------------------
    5. Site footer

@@ -135,7 +135,15 @@ class Browser:
 
     def shoot(self, path: Path):
         """The whole document. An element screenshot of <html> in Firefox
-        captures beyond the viewport, which a plain /screenshot does not."""
+        captures beyond the viewport, which a plain /screenshot does not.
+
+        ONE CAVEAT, worth knowing before you draw a conclusion from one of
+        these: the sticky header comes out EMPTY in a full-document capture.
+        Its contents are painted into the viewport, not into the document
+        image, so the bar appears as a blank strip even when the logo and nav
+        are on screen and working. To look at the header, screenshot the
+        viewport (GET /session/{id}/screenshot) or the .site-header element
+        instead. A blank bar here is the capture, not the page."""
         eid = rq("POST", self.s + "/element",
                  {"using": "css selector", "value": "html"})["value"][W3C]
         data = rq("GET", f"{self.s}/element/{eid}/screenshot")["value"]

@@ -65,9 +65,11 @@ failure.
 | `check_shared_markup.py` | The header and footer on every page still match `tools/templates/`, and the script tags match. This is what keeps thirteen hand-pasted copies from drifting. |
 | `test_contact_handler.py` | Exercises `contact-handler.php` end to end. Needs the PHP CLI (`sudo apt install php-cli`); skips nothing, fails loudly if it is absent. |
 | `test_editor.py` | Drives the rich text editor in headless Firefox: that clicking text formats nothing, that the buttons do, and that alignment arrives as a class rather than an inline style. Needs Firefox and `geckodriver`; prints a notice and exits 0 without them. |
+| `test_nav.py` | Drives the navigation at desktop and mobile widths: that the hamburger is hidden once the full nav is on screen, that opening the drawer produces something a person can actually use, and that Escape closes it and returns focus. Asserts reachability with `elementFromPoint` rather than attributes — both nav bugs it was written for had perfectly correct attributes. |
+| `test_theme.py` | The theme switch itself: the OS preference decides when nothing is stored, an explicit choice wins in both directions, and it survives navigation. Drives `prefers-color-scheme` through a real Firefox pref rather than faking the media query. |
 | `test_careers_admin.py` | Exercises the job post editor end to end — create, validate, publish, reorder, delete, CSRF, the empty state, and the HTML sanitiser that guards what the careers page prints unescaped. Runs against a copy of `content/careers.json` and restores it afterwards. Also needs the PHP CLI. |
 
-Quick full pass:
+Quick full pass — static, no browser needed, a few seconds:
 
 ```bash
 python3 tools/check_contrast.py \
@@ -75,6 +77,20 @@ python3 tools/check_contrast.py \
   && python3 tools/check_shared_markup.py \
   && python3 tools/audit_pages.py
 ```
+
+The browser checks, which is where the interesting failures live. Slower —
+`check_dark_mode.py` alone loads 96 pages — so run them before a commit that
+touches CSS or the shared header, not on every save:
+
+```bash
+python3 tools/test_nav.py \
+  && python3 tools/test_theme.py \
+  && python3 tools/test_editor.py \
+  && python3 tools/check_dark_mode.py
+```
+
+On a confined machine geckodriver may survive each run; `pkill geckodriver`
+clears any that pile up.
 
 ## Testing the contact form
 

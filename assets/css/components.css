@@ -214,6 +214,21 @@
   border-radius: var(--radius-sm);
 }
 
+/* From the laptop band up the full nav is already on screen, so the hamburger
+   has nothing to open and is hidden.
+
+   This lives here, immediately after the rule it overrides, rather than in
+   layout.css with the drawer it controls. Both selectors are one class, and a
+   media query contributes no specificity, so the winner is decided purely by
+   source order — and layout.css loads first. Kept together, the order is not
+   something a future stylesheet reshuffle can get wrong. The breakpoint is
+   the same 64em the drawer uses in layout.css; the two must stay in step. */
+@media (min-width: 64em) {
+  .nav-toggle {
+    display: none;
+  }
+}
+
 .nav-toggle__bar {
   display: block;
   width: 1.375rem;

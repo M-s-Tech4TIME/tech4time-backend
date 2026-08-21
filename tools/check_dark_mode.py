@@ -577,7 +577,15 @@ return bad;
 OPEN_DRAWER = """
 var t = document.querySelector('[data-nav-toggle]');
 if (t && t.getAttribute('aria-expanded') !== 'true') { t.click(); }
-return document.querySelector('[data-nav-drawer]').getAttribute('data-open');
+var n = document.querySelector('[data-nav-drawer]');
+var r = n.getBoundingClientRect();
+return {
+  open: n.getAttribute('data-open'),
+  covers: Math.round(r.width) >= window.innerWidth - 2 &&
+          Math.round(r.height) >= window.innerHeight - 2,
+  rect: Math.round(r.width) + "x" + Math.round(r.height),
+  viewport: window.innerWidth + "x" + window.innerHeight
+};
 """
 
 # Walk the whole document so loading="lazy" images actually fetch. Until one
@@ -612,8 +620,25 @@ def audit_page(b: Browser, origin: str, path: str, label: str,
         b.load_themed(url, theme)
         b.settle()
         if drawer:
-            if b.js(OPEN_DRAWER) != "true":
+            # The transitions on transform and visibility run to 400ms, so the
+            # geometry below is only meaningful once they have landed.
+            time.sleep(1.0)
+            state = b.js(OPEN_DRAWER)
+            if state["open"] != "true":
                 raise SystemExit(f"the nav drawer would not open on {path}")
+            # An audit that measures colours inside a drawer nobody can reach
+            # reports a clean pass, which is what happened while the drawer was
+            # clamped to the header by backdrop-filter: the elements still had
+            # boxes and the boxes still had contrast. Geometry is asserted by
+            # tools/test_nav.py; this is only here so a broken drawer stops the
+            # audit rather than being quietly measured.
+            if not state["covers"]:
+                raise SystemExit(
+                    f"the nav drawer opened at {state['rect']} but the viewport is "
+                    f"{state['viewport']} on {path}.\n"
+                    "It is not covering the screen, so nothing measured inside it "
+                    "would mean anything. Run tools/test_nav.py, which diagnoses "
+                    "this case.")
             time.sleep(0.4)
 
         data = b.js(AUDIT_JS.replace("SCOPE", json.dumps(scope)))
