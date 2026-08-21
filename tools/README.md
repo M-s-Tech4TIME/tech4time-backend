@@ -30,6 +30,28 @@ Run in this order after changing source artwork.
 build sources. It is deliberately outside `assets/` so 2MB of source files is
 never uploaded to the web server.
 
+## Previewing the site
+
+```bash
+python3 tools/serve.py          # http://localhost:8000
+```
+
+Three pages need PHP now — the careers page, the editor, and the contact
+handler — so `python3 -m http.server` shows their source instead of their
+output. This runs the PHP built-in server with `tools/dev-router.php`, which
+resolves directory requests the way Apache's `DirectoryIndex` does and supplies
+the authenticated user that cPanel's Directory Privacy supplies on the host.
+
+**The editor's password is faked locally.** There is no Apache here to ask for
+one, and the router hands PHP a username directly so `/admin/` can be worked
+on. It binds to localhost only. Two things behave differently from the host:
+`.htaccess` is not read, so `/content/` and `/tools/` are reachable locally
+though blocked in production; and `mail()` has nothing to hand mail to, so the
+contact form validates correctly and then reports it could not send.
+
+Edits made in the local editor write `content/careers.json` for real. Undo with
+`git checkout content/careers.json`.
+
 ## Verification
 
 Run these before committing, and as the Phase 5 audit gate. All exit non-zero on
