@@ -66,24 +66,32 @@ It covers the method check, the honeypot, every validation rule, CR/LF
 injection into each field, the assembled message, non-ASCII round trips, and
 the no-JavaScript HTML response.
 
-**It does not test delivery**, and cannot: that needs a real mail server. On the
-cPanel host, before launch:
+**It does not test delivery**, and cannot: that needs a real mail server.
 
-1. **`info@tech4time.bd` must exist** as a mailbox, forwarder, or the domain's
-   default address. The domain's MX points at the web server itself, so the
-   message never leaves the box — but it still has to land somewhere.
-2. **`no-reply@tech4time.bd` should exist**, even if it only discards. It is the
-   `From:` address, and it is where bounces go.
-3. Submit the real form once with JavaScript on, once with it off, and confirm
-   both arrive and that hitting reply goes to the visitor rather than to
+### Host state — confirmed
+
+- DNS is already right. MX is `0 tech4time.bd`, so mail to the domain is handled
+  by **the web server itself** and never leaves the box. SPF authorises that
+  server (`v=spf1 +a +mx +ip4:103.138.189.25 include:spf.mysecurecloudhost.com
+  ~all`), and cPanel signs outbound mail with the `default` DKIM selector.
+- **`info@tech4time.bd` and `no-reply@tech4time.bd` both exist** as accounts.
+- DMARC is `v=DMARC1; p=none;` — monitoring only. Worth tightening to
+  `p=quarantine` once the form is confirmed working, not before: at `p=none` a
+  failure is visible rather than silently binned.
+
+### Still to do on the host
+
+1. Upload `tools/mail-probe.php` by hand, load it once, read the report, and
+   **delete it**. It tests `mail()` on its own, so a mail problem shows up as
+   one failed probe rather than as a contact form that quietly swallows
+   enquiries. Instructions are in the file's header; it refuses to run until
+   you change `PROBE_TOKEN`, and its recipient is hard-coded so it cannot be
+   pointed anywhere else.
+2. Submit the real form twice — once with JavaScript on, once with it off — and
+   confirm both arrive and that hitting reply reaches the visitor rather than
    `no-reply`.
-4. If `mail()` proves unreliable on the host, the fix is SMTP authentication
-   against the host's own mail server rather than more `mail()` retries.
-
-The domain's DNS is already set up for this: SPF authorises the web server's IP
-(`+a +mx +ip4:...`), and cPanel signs outbound mail with the `default` DKIM
-selector. DMARC is `p=none`, so nothing is quarantined on a failure — worth
-tightening to `p=quarantine` only after the form is confirmed working.
+3. If `mail()` proves unreliable, the fix is SMTP authentication against the
+   host's own mail server, not more `mail()` retries.
 
 ## Templates
 
