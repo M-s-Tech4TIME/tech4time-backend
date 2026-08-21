@@ -264,3 +264,132 @@
 .admin__footer code {
   font-family: var(--font-mono);
 }
+
+/* --------------------------------------------------------------------------
+   Rich text editor
+   editor.js replaces each body textarea with these. Without it the textarea
+   is what stays, so nothing here is required for the form to work.
+   -------------------------------------------------------------------------- */
+
+.rte {
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-base);
+}
+
+/* The surface, not the wrapper, is what receives focus — so the ring is drawn
+   on the wrapper and triggered by focus inside it, or the toolbar would sit
+   outside the highlighted area. */
+.rte:focus-within {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+  border-color: var(--accent-text);
+}
+
+.rte__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs);
+  background-color: var(--bg-surface);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+  border-start-start-radius: var(--radius-sm);
+  border-start-end-radius: var(--radius-sm);
+}
+
+.rte__separator {
+  width: var(--border-width);
+  align-self: stretch;
+  margin-inline: var(--space-3xs);
+  background-color: var(--border-strong);
+}
+
+.rte__btn {
+  display: grid;
+  place-items: center;
+  /* 2rem square is below the 44px touch minimum, which is deliberate: this is
+     a pointer-and-keyboard tool on an admin page, and a toolbar of 44px
+     buttons would be taller than the field it formats. */
+  min-width: 2rem;
+  height: 2rem;
+  padding-inline: var(--space-3xs);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  line-height: 1;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.rte__btn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+  border-color: var(--border-subtle);
+}
+
+.rte__btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* The pressed state is carried by fill and border, not by hue — there is no
+   colour in this palette to signal with, and it must read the same to someone
+   who cannot separate two tones. */
+.rte__btn--on {
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+  border-color: transparent;
+}
+
+.rte__btn--on:hover {
+  color: var(--on-accent);
+  background-image: var(--silver-gradient-fill);
+}
+
+.rte__btn--bold { font-weight: 800; }
+.rte__btn--italic { font-style: italic; }
+.rte__btn--underline { text-decoration: underline; }
+
+.rte__surface {
+  min-height: 11rem;
+  max-height: 32rem;
+  overflow-y: auto;
+  padding: var(--space-sm);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+}
+
+.rte__surface:focus {
+  /* The wrapper already draws the ring. */
+  outline: none;
+}
+
+.rte__surface > :first-child { margin-block-start: 0; }
+.rte__surface > :last-child { margin-block-end: 0; }
+
+.rte__surface p { margin-block: var(--space-2xs); }
+
+.rte__surface ul,
+.rte__surface ol {
+  padding-inline-start: var(--space-lg);
+  margin-block: var(--space-2xs);
+}
+
+.rte__surface li { margin-block: 0.15em; }
+.rte__surface a { color: var(--accent-text); }
+
+/* The alignment classes the editor writes, mirrored here so the surface shows
+   what the published page will show. Kept in sync with careers.css and with
+   CAREERS_ALLOWED_CLASSES in lib/careers.php. */
+.rte__surface .ta-left,
+.job__body .ta-left { text-align: left; }
+.rte__surface .ta-center,
+.job__body .ta-center { text-align: center; }
+.rte__surface .ta-right,
+.job__body .ta-right { text-align: right; }
+.rte__surface .ta-justify,
+.job__body .ta-justify { text-align: justify; }

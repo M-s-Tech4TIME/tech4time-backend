@@ -1,108 +1,42 @@
 {
-  "cv_form_url": "https://forms.gle/undLPJSVYtPSEUG69",
-  "updated": "2026-08-21T00:00:00+00:00",
-  "jobs": [
-    {
-      "id": "security-engineer",
-      "title": "Security Engineer",
-      "employment_type": "Full-Time",
-      "work_arrangement": "On-site",
-      "location": "Dhaka, Bangladesh",
-      "salary": "Negotiable",
-      "posted": "2026-08-21",
-      "closes": "",
-      "status": "open",
-      "apply_url": "https://forms.gle/M4Z9mT2zP9NjoRhn8",
-      "about": [
-        "We are looking for a technically sharp and proactive Security Engineer to join our security team. You will be responsible for building and operationalising our Security Operations Center (SOC), architecting secure and redundant infrastructure, and maintaining the High Availability (HA) clusters that keep our systems resilient. You will work across infrastructure, cloud, and application teams — embedding security at every layer of our stack.",
-        "This is not a compliance-checkbox role. We need someone who thinks like an attacker, builds like an engineer, and takes quiet pride in a system that simply never goes down."
-      ],
-      "responsibilities": [
-        "Design, deploy, and operationalise the SOC from the ground up — defining tooling, detection rules, alert pipelines, and incident response playbooks covering triage, containment, eradication, and post-incident review.",
-        "Implement and maintain a SIEM platform, integrating log sources from network devices, servers, endpoints, and cloud services, with threat intelligence feeds mapped to actionable detection content.",
-        "Architect secure, redundant infrastructure across data centres and cloud regions — including network segmentation, firewall and IDS/IPS management, zero-trust access controls, and certificate/secrets lifecycle management.",
-        "Harden operating systems, hypervisors, container runtimes, and cloud environments against known attack vectors, benchmarked against CIS standards and internal policy.",
-        "Deploy and maintain HA cluster solutions with failover, fencing, and quorum mechanisms — ensuring security controls are embedded from day one and cluster health events are visible within the SOC.",
-        "Conduct regular DR drills, chaos engineering exercises, and vulnerability assessments — driving remediation by exploitability and business impact.",
-        "Embed security gates into CI/CD pipelines and IaC workflows to prevent insecure configurations from reaching production."
-      ],
-      "requirements": [
-        "2 - 3 years of hands-on experience in security engineering, SOC engineering, or infrastructure security.",
-        "Demonstrable experience contributing to or leading a SOC build — tooling selection, detection content authoring, and playbook development.",
-        "Strong command of TCP/IP networking, packet analysis, and common attack patterns mapped to the MITRE ATT&CK framework.",
-        "Proficiency with at least one SIEM platform, including writing detection queries and tuning alert pipelines.",
-        "Experience hardening Linux and Windows environments, with working knowledge of open-stack and its cloud security controls",
-        "Familiarity with web servers, load balancers, container and Kubernetes security, HA cluster concepts, and configuration management tooling.",
-        "Confident in at least one scripting language (Python, Bash, or PowerShell) for automating security tasks."
-      ],
-      "must_have": [
-        "Experience in Open-Source Security Platforms and Technologies",
-        "Profound knowledge of SIEM, SOAR, IR, TI, VA & Forensics Platforms",
-        "Experience of both building and maintaining HA Infrastructure and Clusters",
-        "Deep understanding of Security Infrastructure and Architecture Designs"
-      ],
-      "certifications": [
-        "We hold no mandatory certification requirements for this role.",
-        "\"A certification only earns its place on your profile the moment you can prove it — not by the letters after your name, but by the depth of skill and judgement you carry because of it. Your certification is only valuable to us if you can showcase its value through your own profound skill.\""
-      ],
-      "offers": [
-        "Competitive Salary",
-        "Exponential learning curve of Cybersecurity Industry",
-        "Mentorship and Guidance",
-        "Workplace of ever learning & thriving opportunity",
-        "Deep Research of Cybersecurity Technologies",
-        "Opportunities regarding Innovation and Creativity in the field of Cybersecurity"
-      ]
-    },
-    {
-      "id": "jr-security-engineer",
-      "title": "Jr. Security Engineer",
-      "employment_type": "Full-Time",
-      "work_arrangement": "On-site",
-      "location": "Dhaka, Bangladesh",
-      "salary": "Negotiable",
-      "posted": "2026-08-21",
-      "closes": "",
-      "status": "open",
-      "apply_url": "https://forms.gle/NRmeeFw6yDVfQt7f6",
-      "about": [
-        "We are looking for a curious, hungry-to-learn Junior Security Engineer to join our security team. You will work alongside our mid and senior engineers, getting your hands dirty across SOC operations, infrastructure hardening, and keeping our high availability systems running securely and reliably.",
-        "This role is built for someone early in their security career who is not waiting for permission to dig deep. If you spend your evenings on tinkering with various cybersecurity tools, spin up home labs just to break things, or read CVE disclosures for fun and building a foundation — you already speak our language."
-      ],
-      "responsibilities": [
-        "Monitor SOC dashboards, triage incoming alerts, investigate potential incidents, and escalate confirmed threats following established playbooks.",
-        "Assist in maintaining and tuning SIEM detection rules, reducing false positives and improving alert quality over time.",
-        "Support the deployment and day-to-day operations of security tooling — firewalls, IDS/IPS, EDR, and vulnerability scanners.",
-        "Contribute to hardening tasks across Linux and Windows servers, cloud environments, and containerised workloads under the guidance of senior engineers.",
-        "Help maintain and test HA cluster health checks and failover procedures, flagging anomalies and documenting findings.",
-        "Participate in vulnerability assessment cycles — scanning, validating findings, and tracking remediation tickets to closure.",
-        "Write and improve runbooks, incident response documentation, and internal knowledge-base articles to build team operational maturity."
-      ],
-      "requirements": [
-        "0 – 2 years of experience in a cybersecurity, IT operations, or systems administration role — including internships, placements, or structured self-study.",
-        "Working understanding of networking fundamentals — TCP/IP, DNS, HTTP/S, firewalls, and basic packet analysis.",
-        "Familiarity with Linux and Windows operating environments at a command-line level.",
-        "Basic awareness of common attack techniques and defensive concepts (OWASP Top 10, MITRE ATT&CK is a plus).",
-        "A genuine interest in at least one of these areas: SOC operations, infrastructure security, or cloud security.",
-        "Some exposure to scripting — even beginner-level Python or Bash — with a clear appetite to improve."
-      ],
-      "nice_to_have": [
-        "Hands-on experience with any SIEM, EDR, or vulnerability management platform — even in a lab environment.",
-        "Personal projects, home lab setups, CTF participation, or a GitHub repository showing security-related work.",
-        "Familiarity with virtualisation and basic container concepts (Docker, Kubernetes)."
-      ],
-      "certifications": [
-        "We hold no mandatory certification requirements for this role.",
-        "\"A certification only earns its place on your profile the moment you can prove it — not by the letters after your name, but by the depth of skill and judgement you carry because of it. Your certification is only valuable to us if you can showcase its value through your own profound skill.\""
-      ],
-      "offers": [
-        "Competitive Salary",
-        "Exponential learning curve of Cybersecurity Industry",
-        "Mentorship and Guidance",
-        "Workplace of ever learning & thriving opportunity",
-        "Deep Research of Cybersecurity Technologies",
-        "Opportunities regarding Innovation and Creativity in the field of Cybersecurity"
-      ]
-    }
-  ]
+    "cv_form_url": "https://forms.gle/undLPJSVYtPSEUG69",
+    "updated": "2026-08-21T03:27:54+00:00",
+    "jobs": [
+        {
+            "id": "security-engineer",
+            "title": "Security Engineer",
+            "employment_type": "Full-Time",
+            "work_arrangement": "On-site",
+            "location": "Dhaka, Bangladesh",
+            "salary": "Negotiable",
+            "posted": "2026-08-21",
+            "closes": "",
+            "status": "open",
+            "apply_url": "https://forms.gle/M4Z9mT2zP9NjoRhn8",
+            "about": "<p>We are looking for a technically sharp and proactive Security Engineer to join our security team. You will be responsible for building and operationalising our Security Operations Center (SOC), architecting secure and redundant infrastructure, and maintaining the High Availability (HA) clusters that keep our systems resilient. You will work across infrastructure, cloud, and application teams — embedding security at every layer of our stack.</p><p>This is not a compliance-checkbox role. We need someone who thinks like an attacker, builds like an engineer, and takes quiet pride in a system that simply never goes down.</p>",
+            "responsibilities": "<ul><li>Design, deploy, and operationalise the SOC from the ground up — defining tooling, detection rules, alert pipelines, and incident response playbooks covering triage, containment, eradication, and post-incident review.</li><li>Implement and maintain a SIEM platform, integrating log sources from network devices, servers, endpoints, and cloud services, with threat intelligence feeds mapped to actionable detection content.</li><li>Architect secure, redundant infrastructure across data centres and cloud regions — including network segmentation, firewall and IDS/IPS management, zero-trust access controls, and certificate/secrets lifecycle management.</li><li>Harden operating systems, hypervisors, container runtimes, and cloud environments against known attack vectors, benchmarked against CIS standards and internal policy.</li><li>Deploy and maintain HA cluster solutions with failover, fencing, and quorum mechanisms — ensuring security controls are embedded from day one and cluster health events are visible within the SOC.</li><li>Conduct regular DR drills, chaos engineering exercises, and vulnerability assessments — driving remediation by exploitability and business impact.</li><li>Embed security gates into CI/CD pipelines and IaC workflows to prevent insecure configurations from reaching production.</li></ul>",
+            "requirements": "<ul><li>2 - 3 years of hands-on experience in security engineering, SOC engineering, or infrastructure security.</li><li>Demonstrable experience contributing to or leading a SOC build — tooling selection, detection content authoring, and playbook development.</li><li>Strong command of TCP/IP networking, packet analysis, and common attack patterns mapped to the MITRE ATT&amp;CK framework.</li><li>Proficiency with at least one SIEM platform, including writing detection queries and tuning alert pipelines.</li><li>Experience hardening Linux and Windows environments, with working knowledge of open-stack and its cloud security controls</li><li>Familiarity with web servers, load balancers, container and Kubernetes security, HA cluster concepts, and configuration management tooling.</li><li>Confident in at least one scripting language (Python, Bash, or PowerShell) for automating security tasks.</li></ul>",
+            "must_have": "<ul><li>Experience in Open-Source Security Platforms and Technologies</li><li>Profound knowledge of SIEM, SOAR, IR, TI, VA &amp; Forensics Platforms</li><li>Experience of both building and maintaining HA Infrastructure and Clusters</li><li>Deep understanding of Security Infrastructure and Architecture Designs</li></ul>",
+            "certifications": "<p>We hold no mandatory certification requirements for this role.</p><p>&quot;A certification only earns its place on your profile the moment you can prove it — not by the letters after your name, but by the depth of skill and judgement you carry because of it. Your certification is only valuable to us if you can showcase its value through your own profound skill.&quot;</p>",
+            "offers": "<ul><li>Competitive Salary</li><li>Exponential learning curve of Cybersecurity Industry</li><li>Mentorship and Guidance</li><li>Workplace of ever learning &amp; thriving opportunity</li><li>Deep Research of Cybersecurity Technologies</li><li>Opportunities regarding Innovation and Creativity in the field of Cybersecurity</li></ul>"
+        },
+        {
+            "id": "jr-security-engineer",
+            "title": "Jr. Security Engineer",
+            "employment_type": "Full-Time",
+            "work_arrangement": "On-site",
+            "location": "Dhaka, Bangladesh",
+            "salary": "Negotiable",
+            "posted": "2026-08-21",
+            "closes": "",
+            "status": "open",
+            "apply_url": "https://forms.gle/NRmeeFw6yDVfQt7f6",
+            "about": "<p>We are looking for a curious, hungry-to-learn Junior Security Engineer to join our security team. You will work alongside our mid and senior engineers, getting your hands dirty across SOC operations, infrastructure hardening, and keeping our high availability systems running securely and reliably.</p><p>This role is built for someone early in their security career who is not waiting for permission to dig deep. If you spend your evenings on tinkering with various cybersecurity tools, spin up home labs just to break things, or read CVE disclosures for fun and building a foundation — you already speak our language.</p>",
+            "responsibilities": "<ul><li>Monitor SOC dashboards, triage incoming alerts, investigate potential incidents, and escalate confirmed threats following established playbooks.</li><li>Assist in maintaining and tuning SIEM detection rules, reducing false positives and improving alert quality over time.</li><li>Support the deployment and day-to-day operations of security tooling — firewalls, IDS/IPS, EDR, and vulnerability scanners.</li><li>Contribute to hardening tasks across Linux and Windows servers, cloud environments, and containerised workloads under the guidance of senior engineers.</li><li>Help maintain and test HA cluster health checks and failover procedures, flagging anomalies and documenting findings.</li><li>Participate in vulnerability assessment cycles — scanning, validating findings, and tracking remediation tickets to closure.</li><li>Write and improve runbooks, incident response documentation, and internal knowledge-base articles to build team operational maturity.</li></ul>",
+            "requirements": "<ul><li>0 – 2 years of experience in a cybersecurity, IT operations, or systems administration role — including internships, placements, or structured self-study.</li><li>Working understanding of networking fundamentals — TCP/IP, DNS, HTTP/S, firewalls, and basic packet analysis.</li><li>Familiarity with Linux and Windows operating environments at a command-line level.</li><li>Basic awareness of common attack techniques and defensive concepts (OWASP Top 10, MITRE ATT&amp;CK is a plus).</li><li>A genuine interest in at least one of these areas: SOC operations, infrastructure security, or cloud security.</li><li>Some exposure to scripting — even beginner-level Python or Bash — with a clear appetite to improve.</li></ul>",
+            "nice_to_have": "<ul><li>Hands-on experience with any SIEM, EDR, or vulnerability management platform — even in a lab environment.</li><li>Personal projects, home lab setups, CTF participation, or a GitHub repository showing security-related work.</li><li>Familiarity with virtualisation and basic container concepts (Docker, Kubernetes).</li></ul>",
+            "certifications": "<p>We hold no mandatory certification requirements for this role.</p><p>&quot;A certification only earns its place on your profile the moment you can prove it — not by the letters after your name, but by the depth of skill and judgement you carry because of it. Your certification is only valuable to us if you can showcase its value through your own profound skill.&quot;</p>",
+            "offers": "<ul><li>Competitive Salary</li><li>Exponential learning curve of Cybersecurity Industry</li><li>Mentorship and Guidance</li><li>Workplace of ever learning &amp; thriving opportunity</li><li>Deep Research of Cybersecurity Technologies</li><li>Opportunities regarding Innovation and Creativity in the field of Cybersecurity</li></ul>"
+        }
+    ]
 }

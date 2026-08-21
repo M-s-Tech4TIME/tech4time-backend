@@ -63,7 +63,7 @@ failure.
 | `audit_pages.py` | Per page: `lang`, viewport, canonical, unique title/description, one `<h1>`, no skipped heading levels, `alt` on every image, `width`/`height` on every image, valid JSON-LD, `rel="noopener noreferrer"` on external links, resolvable internal links, and that every `<use href="#icon">` has an inlined symbol. |
 | `check_shared_markup.py` | The header and footer on every page still match `tools/templates/`, and the script tags match. This is what keeps thirteen hand-pasted copies from drifting. |
 | `test_contact_handler.py` | Exercises `contact-handler.php` end to end. Needs the PHP CLI (`sudo apt install php-cli`); skips nothing, fails loudly if it is absent. |
-| `test_careers_admin.py` | Exercises the job post editor end to end — create, validate, publish, reorder, delete, CSRF, and the empty state. Runs against a copy of `content/careers.json` and restores it afterwards. Also needs the PHP CLI. |
+| `test_careers_admin.py` | Exercises the job post editor end to end — create, validate, publish, reorder, delete, CSRF, the empty state, and the HTML sanitiser that guards what the careers page prints unescaped. Runs against a copy of `content/careers.json` and restores it afterwards. Also needs the PHP CLI. |
 
 Quick full pass:
 
@@ -137,6 +137,31 @@ admin/index.php             the editor
 ```
 
 `lib/` and `content/` are both blocked over HTTP by `.htaccess`.
+
+### Formatting
+
+The body fields carry formatted text — bold, italic, underline, bulleted and
+numbered lists, links, and alignment. `assets/js/editor.js` provides the
+toolbar; the fields are plain `<textarea>` elements holding HTML, so the form
+still saves if it never loads.
+
+**Alignment is a class, never an inline style.** The CSP is `style-src 'self'`,
+so a `style="text-align:center"` written by `document.execCommand` would look
+right in the editor and do nothing at all on the published page. The editor
+writes `ta-left` / `ta-center` / `ta-right` / `ta-justify`, which
+`careers.css` styles and `CAREERS_ALLOWED_CLASSES` in `lib/careers.php`
+permits. Those three lists have to stay in step.
+
+**Everything is re-sanitised on save.** `careers_sanitise_html()` rebuilds the
+markup from an allow-list rather than filtering what it is given, so the stored
+HTML cannot contain a construct that function does not know how to write. That
+matters because the careers page prints it unescaped — the only place on the
+site that prints anything unescaped. The editor's own restrictions are a
+convenience for whoever is typing and are bypassed by posting to the endpoint
+directly; the PHP is the boundary.
+
+It is hand-written because this host has no `dom` extension — `DOMDocument`
+does not exist, the same way `mb_strlen` did not.
 
 ### Before the editor works on the host
 

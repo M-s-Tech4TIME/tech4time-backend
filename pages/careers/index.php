@@ -440,20 +440,16 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
 <?php endif; ?>
 
 <?php foreach (CAREERS_SECTIONS as $key => $label): ?>
-<?php $values = $job[$key] ?? []; if (!is_array($values) || !$values) { continue; } ?>
+<?php $body = trim((string)($job[$key] ?? '')); if ($body === '') { continue; } ?>
           <div class="job__section">
             <h4 class="job__section-title"><?= h($label) ?></h4>
-<?php if (in_array($key, CAREERS_PROSE_FIELDS, true)): ?>
-<?php foreach ($values as $para): ?>
-            <p class="job__text"><?= h((string)$para) ?></p>
-<?php endforeach; ?>
-<?php else: ?>
-            <ul class="job__list">
-<?php foreach ($values as $item): ?>
-              <li class="job__item"><?= h((string)$item) ?></li>
-<?php endforeach; ?>
-            </ul>
-<?php endif; ?>
+            <div class="job__body">
+<?php /* Printed unescaped, which is safe for exactly one reason: it was put
+         through careers_sanitise_html() before it was stored, and that
+         function writes its output from an allow-list rather than passing
+         anything through. Nothing else may ever be echoed raw here. */ ?>
+              <?= $body ?>
+            </div>
           </div>
 <?php endforeach; ?>
 

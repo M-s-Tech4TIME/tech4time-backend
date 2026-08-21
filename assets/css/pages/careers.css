@@ -133,27 +133,71 @@
   color: var(--accent-text);
 }
 
-.job__text,
-.job__item {
+/* The body of a section is author-written HTML from the editor, restricted by
+   careers_sanitise_html() to p, br, strong, em, u, ul, ol, li and a. Styling
+   it by element rather than by class is the point: the author cannot add a
+   class, so every tag they can produce needs to already look right. */
+.job__body {
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   color: var(--text-secondary);
 }
 
-.job__text + .job__text {
-  margin-block-start: var(--space-2xs);
+.job__body > :first-child { margin-block-start: 0; }
+.job__body > :last-child { margin-block-end: 0; }
+
+.job__body p {
+  margin-block: var(--space-2xs);
 }
 
-.job__list {
+.job__body ul,
+.job__body ol {
   display: grid;
   gap: var(--space-2xs);
   padding-inline-start: var(--space-md);
-  margin: 0;
+  margin-block: var(--space-2xs);
 }
 
-.job__item::marker {
+.job__body li::marker {
   color: var(--silver-accent-mid);
 }
+
+.job__body strong {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.job__body em {
+  font-style: italic;
+}
+
+/* Underline is the one format that reads as a link on the web. Offsetting it
+   and thinning it keeps the two distinguishable at a glance. */
+.job__body u {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+.job__body a {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
+.job__body a:hover {
+  color: var(--text-primary);
+}
+
+/* The four alignment classes the editor writes. They exist because the CSP is
+   style-src 'self': an inline text-align would be blocked here, so alignment
+   has to arrive as a class the stylesheet already knows. Kept in sync with
+   CAREERS_ALLOWED_CLASSES in lib/careers.php. */
+.job__body .ta-left { text-align: left; }
+.job__body .ta-center { text-align: center; }
+.job__body .ta-right { text-align: right; }
+.job__body .ta-justify { text-align: justify; }
 
 .job__apply {
   margin-block-start: var(--space-xl);

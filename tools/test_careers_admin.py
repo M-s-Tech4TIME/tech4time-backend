@@ -148,7 +148,75 @@ def statuses() -> dict:
     return {j["id"]: j.get("status") for j in json.loads(DATA.read_text())["jobs"]}
 
 
+SANITISER_CASES = [
+    ("a script tag and its contents", '<p>ok</p><script>alert(1)</script>', 'alert'),
+    ("an event handler", '<p onclick="steal()">hi</p>', 'onclick'),
+    ("an inline style", '<p style="text-align:center">hi</p>', 'style'),
+    ("a javascript: link", '<a href="javascript:alert(1)">x</a>', 'javascript'),
+    ("a tab-obfuscated javascript: link", '<a href="java&#09;script:alert(1)">x</a>', 'script:'),
+    ("a data: link", '<a href="data:text/html,<b>x</b>">y</a>', 'data:'),
+    ("an iframe", '<iframe src="//evil.test"></iframe>', 'iframe'),
+    ("an img onerror", '<img src=x onerror=alert(1)>', 'onerror'),
+    ("an svg animate payload", '<svg><animate onbegin=alert(1)></svg>', 'onbegin'),
+    ("a form", '<form action="//evil.test"><input name=p></form>', '<form'),
+    ("a class that is not an alignment", '<p class="evil ta-center">x</p>', 'evil'),
+    ("a style block and its contents", '<style>body{display:none}</style><p>x</p>', 'display:none'),
+    ("a meta refresh", '<meta http-equiv="refresh" content="0;url=//e.test">', 'refresh'),
+    ("a base tag", '<base href="//evil.test/">', '<base'),
+]
+
+KEEP_CASES = [
+    ("plain text in a paragraph", '<p>plain</p>', '<p>plain</p>'),
+    ("bold, italic and underline", '<p><strong>b</strong><em>i</em><u>u</u></p>',
+     '<p><strong>b</strong><em>i</em><u>u</u></p>'),
+    ("a bulleted list", '<ul><li>one</li></ul>', '<ul><li>one</li></ul>'),
+    ("a numbered list", '<ol><li>one</li></ol>', '<ol><li>one</li></ol>'),
+    ("an alignment class", '<p class="ta-center">x</p>', '<p class="ta-center">x</p>'),
+    ("b and i normalised to strong and em", '<p><b>x</b><i>y</i></p>',
+     '<p><strong>x</strong><em>y</em></p>'),
+    ("an unclosed tag is balanced", '<p>x', '<p>x</p>'),
+    ("entities are not double-encoded", '<p>a &amp; b</p>', '<p>a &amp; b</p>'),
+]
+
+
+def check_sanitiser(r: Results):
+    """
+    Run careers_sanitise_html() directly.
+
+    This is the one boundary that matters: whatever it returns is printed on
+    the public page without escaping. The editor's own restrictions are a
+    convenience for whoever is typing and are trivially bypassed by posting to
+    the endpoint directly, so the assertions belong here.
+    """
+    print("\nsanitiser — what must not survive")
+
+    script = (
+        "<?php require 'lib/careers.php';\n"
+        "$in = stream_get_contents(STDIN);\n"
+        "echo careers_sanitise_html($in);"
+    )
+
+    def clean(markup: str) -> str:
+        out = subprocess.run(
+            ["php", "-r", script.replace("<?php ", "")],
+            input=markup, capture_output=True, text=True, cwd=str(ROOT),
+        )
+        return out.stdout
+
+    for label, payload, forbidden in SANITISER_CASES:
+        out = clean(payload)
+        r.check(f"{label} is removed", forbidden.lower() not in out.lower(),
+                f"survived as: {out}")
+
+    print("\nsanitiser — what must survive")
+    for label, payload, expected in KEEP_CASES:
+        out = clean(payload)
+        r.check(f"{label} is kept", out == expected, f"got: {out}")
+
+
 def run(client: Client, r: Results):
+    check_sanitiser(r)
+
     NEW = {
         "title": "Test Automation Engineer",
         "employment_type": "Full-Time",
@@ -159,13 +227,16 @@ def run(client: Client, r: Results):
         "closes": "",
         "status": "open",
         "apply_url": "https://forms.gle/exampleTEST123",
-        "about": "First paragraph about the role.\n\nSecond paragraph.",
-        "responsibilities": "Write tests.\nRun tests.\nRead the failures.",
-        "requirements": "Patience.",
+        "about": "<p>First paragraph about the role.</p>"
+                 "<p class=\"ta-center\">Second paragraph, centred.</p>",
+        "responsibilities": "<ul><li>Write <strong>tests</strong>.</li>"
+                            "<li>Run tests.</li><li>Read the failures.</li></ul>",
+        "requirements": "<ol><li>Patience.</li></ol>",
         "must_have": "",
         "nice_to_have": "",
-        "certifications": "",
-        "offers": "Coffee.",
+        "certifications": "<p>An <em>example</em> with a "
+                          "<a href=\"https://example.com\">link</a>.</p>",
+        "offers": "<ul><li>Coffee.</li></ul>",
     }
 
     print("\nreading")
@@ -188,9 +259,18 @@ def run(client: Client, r: Results):
 
     status, page = client.get("/pages/careers/")
     r.check("it appears on the careers page", "Test Automation Engineer" in page)
-    r.check("its bullets render as list items", page.count("<li class=\"job__item\"") >= 4)
+    r.check("its bullets render as list items", page.count("<li>") >= 4, page[:0])
     r.check("its paragraphs survive the round trip",
-            "First paragraph about the role." in page and "Second paragraph." in page)
+            "<p>First paragraph about the role.</p>" in page)
+    r.check("bold survives the round trip",
+            "<strong>tests</strong>" in page)
+    r.check("a numbered list stays numbered", "<ol><li>Patience.</li></ol>" in page)
+    r.check("an alignment class survives",
+            'class="ta-center"' in page, "alignment must arrive as a class, not a style")
+    r.check("no inline style reaches the page (CSP is style-src 'self')",
+            not re.search(r"<[^>]+\sstyle=", page), "an inline style would be blocked")
+    r.check("an author link opens safely",
+            'href="https://example.com" target="_blank" rel="noopener noreferrer"' in page)
     r.check("it carries a JobPosting for Google Jobs",
             '"title": "Test Automation Engineer"' in page)
     r.check("a role with no closing date emits no validThrough",

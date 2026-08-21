@@ -108,12 +108,11 @@ function admin_job_from_post(array $existing = []): array
         $job[$field] = trim((string)($_POST[$field] ?? ''));
     }
 
-    foreach (CAREERS_LIST_FIELDS as $field) {
-        $job[$field] = careers_lines((string)($_POST[$field] ?? ''));
-    }
-
-    foreach (CAREERS_PROSE_FIELDS as $field) {
-        $job[$field] = careers_paragraphs((string)($_POST[$field] ?? ''));
+    /* Whatever the browser sent is re-sanitised here. The editor's own
+       allow-list is a convenience for whoever is typing; this is the one that
+       decides what gets stored. */
+    foreach (CAREERS_RICH_FIELDS as $field) {
+        $job[$field] = careers_sanitise_html((string)($_POST[$field] ?? ''));
     }
 
     return $job;
@@ -230,14 +229,8 @@ if ($errors) {
 
 function admin_textarea_value(array $job, string $field): string
 {
-    $values = $job[$field] ?? [];
-    if (!is_array($values)) {
-        return '';
-    }
-    /* Paragraphs are separated by a blank line so they survive a round trip
-       through the textarea; bullets are one per line. */
-    $glue = in_array($field, CAREERS_PROSE_FIELDS, true) ? "\n\n" : "\n";
-    return implode($glue, array_map('strval', $values));
+    $value = $job[$field] ?? '';
+    return is_string($value) ? $value : '';
 }
 
 $editing = null;
@@ -246,13 +239,13 @@ if ($action === 'edit' || $action === 'new') {
 }
 
 $fieldLabels = [
-    'about'            => ['About the Role', 'One paragraph per block, separated by a blank line.'],
-    'responsibilities' => ['Key Responsibilities', 'One bullet per line.'],
-    'requirements'     => ['Required Skills & Experience', 'One bullet per line.'],
-    'must_have'        => ['Must Have', 'One bullet per line. Leave empty to hide this section.'],
-    'nice_to_have'     => ['Nice to Have', 'One bullet per line. Leave empty to hide this section.'],
-    'certifications'   => ['Certifications', 'One paragraph per block, separated by a blank line.'],
-    'offers'           => ['What We Offer', 'One bullet per line.'],
+    'about'            => ['About the Role', ''],
+    'responsibilities' => ['Key Responsibilities', 'Use the bulleted list button for the points.'],
+    'requirements'     => ['Required Skills & Experience', 'Use the bulleted list button for the points.'],
+    'must_have'        => ['Must Have', 'Leave empty to hide this section from the post.'],
+    'nice_to_have'     => ['Nice to Have', 'Leave empty to hide this section from the post.'],
+    'certifications'   => ['Certifications', ''],
+    'offers'           => ['What We Offer', 'Use the bulleted list button for the points.'],
 ];
 ?>
 <!DOCTYPE html>
@@ -385,8 +378,9 @@ $fieldLabels = [
       <?php foreach ($fieldLabels as $field => [$label, $hint]): ?>
         <label class="admin__field admin__field--wide">
           <span class="admin__label"><?= h($label) ?></span>
-          <textarea class="admin__input admin__textarea" name="<?= h($field) ?>" rows="7"><?= h(admin_textarea_value($editing, $field)) ?></textarea>
-          <span class="admin__hint"><?= h($hint) ?></span>
+          <textarea class="admin__input admin__textarea" name="<?= h($field) ?>"
+                    rows="8" data-editor><?= h(admin_textarea_value($editing, $field)) ?></textarea>
+          <?php if ($hint !== ''): ?><span class="admin__hint"><?= h($hint) ?></span><?php endif; ?>
         </label>
       <?php endforeach; ?>
 
@@ -497,5 +491,10 @@ $fieldLabels = [
 
   </div>
 </main>
+
+<!-- The fields work as plain HTML textareas without this; it adds the
+     formatting toolbar on top of them. -->
+<script src="/assets/js/editor.js" defer></script>
+<script src="/assets/js/admin-init.js" defer></script>
 </body>
 </html>
