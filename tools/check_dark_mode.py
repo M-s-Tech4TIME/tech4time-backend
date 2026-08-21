@@ -485,7 +485,20 @@ class Browser:
         base = f"http://127.0.0.1:{drv_port}"
         r = rq("POST", base + "/session", {"capabilities": {"alwaysMatch": {
             "browserName": "firefox",
-            "moz:firefoxOptions": {"args": ["-headless"]}}}})
+            "moz:firefoxOptions": {
+                "args": ["-headless"],
+                # Audit the page with the scroll reveal switched off.
+                #
+                # Not because motion affects colour — it does not — but because
+                # paints() below skips anything at opacity 0.05 or less, and an
+                # element the reveal has not reached yet is at zero. It would
+                # be dropped from the audit silently, and the run would still
+                # report every page passing while quietly checking less of them.
+                # With reduced motion requested, theme-init.js never arms the
+                # reveal and nothing is ever transparent. The self-test at
+                # startup confirms this actually took effect.
+                "prefs": {"ui.prefersReducedMotion": 1},
+            }}}})
         self.s = f"{base}/session/{r['value']['sessionId']}"
 
     def size(self, w, h):
@@ -610,17 +623,24 @@ return {
 # loads it has no intrinsic size, and with width:auto in the CSS it measures
 # 0x0 — so it is skipped as "not painting" and never checked. That silently
 # hid every below-the-fold logo from the artwork check.
+#
+# behavior: 'instant' because base.css sets scroll-behavior: smooth on <html>,
+# and that applies to programmatic scrolls: a plain scrollTo starts an
+# animation instead of moving, so the walk falls behind its own loop and never
+# reaches the bottom of a long page. The reduced-motion preference this check
+# runs under happens to force the same thing, but relying on that would make
+# this quietly depend on a setting made for an unrelated reason.
 SCROLL_THROUGH = """
 var done = arguments[arguments.length - 1];
 var y = 0, step = window.innerHeight;
 (function next() {
   if (y < document.body.scrollHeight) {
-    window.scrollTo(0, y);
+    window.scrollTo({top: y, behavior: 'instant'});
     y += step;
     setTimeout(next, 60);
     return;
   }
-  window.scrollTo(0, 0);
+  window.scrollTo({top: 0, behavior: 'instant'});
   setTimeout(function () {
     var imgs = Array.prototype.slice.call(document.images);
     done(imgs.filter(function (i) { return !i.complete; }).length);
@@ -824,6 +844,20 @@ def main() -> None:
             raise SystemExit("the colour resolver is wrong, so every number "
                              "below would be too:\n  " + "\n  ".join(broken))
         print("colour resolver self-test: ok")
+
+        # The other way this run can report a clean pass while measuring less
+        # than it claims. If the reduced-motion preference did not take, the
+        # scroll reveal is live and every element it has not reached is at
+        # opacity 0 — which paints() reads as "not shown" and skips.
+        armed = browser.js(
+            "return document.documentElement.classList.contains('js-reveal');")
+        if armed:
+            raise SystemExit(
+                "the scroll reveal is armed, so elements it has not revealed "
+                "yet would be skipped as invisible and the pass below would "
+                "cover less than it says.\n"
+                "Check the ui.prefersReducedMotion pref in Browser.__init__.")
+        print("scroll reveal is off, so nothing is skipped as invisible: ok")
 
         for label, w, h, scope, drawer in PASSES:
             browser.size(w, h)

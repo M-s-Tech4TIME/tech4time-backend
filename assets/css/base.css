@@ -368,6 +368,14 @@ hr {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    /* The delays have to go too, and this was missing. Shortening a duration
+       to nothing while leaving its delay in place does not remove the motion,
+       it removes the part that explains it: the terminal's last line would
+       still sit blank for a second and a half before snapping in, and a
+       staggered row would still arrive in dribs. Negative rather than zero so
+       an animation that has one starts already past its first frame. */
+    animation-delay: -1ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }

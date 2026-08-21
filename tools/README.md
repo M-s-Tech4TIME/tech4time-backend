@@ -26,6 +26,13 @@ Run in this order after changing source artwork.
 | `build_icon_sprite.py` | `assets/icons/sprite.svg` | Master set of the icons the pages use, from Font Awesome Free metadata. Resolves FA5 → FA6 renames via the official alias index, and appends this project's own symbols from `CUSTOM_SYMBOLS` — currently `grid-dots`, the dock's menu button, which FA Free has no equivalent for in any style. |
 | `inject_icons.py` | Inline `<symbol>` blocks in each page | Run after adding or removing an icon reference. `--check` verifies without writing. |
 
+## Markup
+
+| Script | Does |
+|---|---|
+| `htmltree.py` | Not run directly. A small HTML tree with source offsets, for tools that edit markup structurally. Neither BeautifulSoup nor lxml is installed and this project will not add a dependency for it; `html.parser` alone cannot answer "what are this element's children". Edits are inserted at a recorded offset rather than by re-serialising, so the diff stays readable and the shared blocks keep their byte-identity. |
+| `apply_reveals.py` | Marks the scroll-reveal targets on every page, from one structural rule rather than sixteen hand edits: each section's header, then its body, with runs of sibling cards broken out so they arrive in sequence. Its docstring lists what is deliberately left unmarked and why — heroes hold the LCP element, hidden tab panels never intersect, a legal document should not be animated. `--write` applies, `--strip` reverses the whole pass. |
+
 `tools/masters/` holds the original logo artwork and the trimmed full-resolution
 build sources. It is deliberately outside `assets/` so 2MB of source files is
 never uploaded to the web server.
@@ -68,6 +75,8 @@ failure.
 | `test_editor.py` | Drives the rich text editor in headless Firefox: that clicking text formats nothing, that the buttons do, and that alignment arrives as a class rather than an inline style. Needs Firefox and `geckodriver`; prints a notice and exits 0 without them. |
 | `test_nav.py` | Drives the navigation at both widths: the header nav above 64em with the dock hidden, the dock below it with the header nav hidden, and the section panel opening, trapping focus, closing on Escape and handing focus back. Asserts reachability with `elementFromPoint` rather than attributes — every nav bug it was written for had perfectly correct attributes. |
 | `test_theme.py` | The theme switch itself: the OS preference decides when nothing is stored, an explicit choice wins in both directions, and it survives navigation. Drives `prefers-color-scheme` through a real Firefox pref rather than faking the media query. |
+| `test_motion.py` | The scroll reveal, which works by hiding content and promising to bring it back. Loads all sixteen pages, scrolls each end to end, and requires every `[data-reveal]` to finish opaque — then checks the same with reduced motion requested, with JavaScript disabled, and with the reveal script pretended missing so the watchdog has to lift the hidden state. Also that the reveal moves nothing in the layout, leaves each element's own transitions and transforms alone, and that the shine sweep runs. |
+| `check_hover.py` | Moves a real pointer onto one of every kind of interactive element and checks that something changes — in the element, its wrappers or its contents. A rule can exist in the stylesheet and still do nothing, which is how a link on six pages lost its hover to a specificity tie. Also reports elements the pointer cannot reach, which is how the SOC map's decorative ring was found covering its own buttons. |
 | `test_careers_admin.py` | Exercises the job post editor end to end — create, validate, publish, reorder, delete, CSRF, the empty state, and the HTML sanitiser that guards what the careers page prints unescaped. Runs against a copy of `content/careers.json` and restores it afterwards. Also needs the PHP CLI. |
 
 Quick full pass — static, no browser needed, a few seconds:
@@ -86,9 +95,17 @@ touches CSS or the shared header, not on every save:
 ```bash
 python3 tools/test_nav.py \
   && python3 tools/test_theme.py \
+  && python3 tools/test_motion.py \
+  && python3 tools/check_hover.py \
   && python3 tools/test_editor.py \
   && python3 tools/check_dark_mode.py
 ```
+
+Both browser checks that involve the pointer declare Firefox's pointer
+capability prefs. Headless Firefox otherwise reports `(hover: none)` and
+`(pointer: none)`, which switches off every rule inside
+`@media (hover: hover) and (pointer: fine)` — so an effect written there would
+be measured as missing while working for everyone with a mouse.
 
 On a confined machine geckodriver may survive each run; `pkill geckodriver`
 clears any that pile up.

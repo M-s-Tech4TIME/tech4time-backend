@@ -390,7 +390,7 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
   <!-- ========================= Open positions ======================== -->
   <section class="section openings" aria-labelledby="openings-heading">
     <div class="container">
-      <div class="section__header">
+      <div data-reveal data-reveal-delay class="section__header">
         <span class="section__eyebrow">We are Hiring!</span>
         <h2 class="section__title" id="openings-heading">Positions Available</h2>
         <p class="section__lead">
@@ -401,7 +401,7 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
       </div>
 
 <?php foreach ($jobs as $index => $job): ?>
-      <details class="job" id="<?= h((string)($job['id'] ?? '')) ?>"<?= $index === 0 ? ' open' : '' ?>>
+      <details data-reveal data-reveal-delay class="job" id="<?= h((string)($job['id'] ?? '')) ?>"<?= $index === 0 ? ' open' : '' ?>>
         <summary class="job__summary">
           <h3 class="job__heading">
             <span class="job__label">
@@ -472,7 +472,7 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
   <!-- ========================== Share your CV ======================== -->
   <section class="section section--surface cv" aria-labelledby="cv-heading">
     <div class="container">
-      <div class="section__header">
+      <div data-reveal data-reveal-delay class="section__header">
         <h2 class="section__title" id="cv-heading">Share Your CV With Us</h2>
         <p class="section__lead">
           None of the roles above a fit? We are often up for a hunt. Send us
@@ -481,7 +481,7 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
         </p>
       </div>
 <?php if ($cvForm !== ''): ?>
-      <div class="cv__actions">
+      <div data-reveal data-reveal-delay class="cv__actions">
         <a class="btn btn--secondary btn--lg" href="<?= h($cvForm) ?>"
            target="_blank" rel="noopener noreferrer">
           Ready to take the chance?
@@ -496,7 +496,7 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
   <!-- ===================== No openings right now ===================== -->
   <section class="section openings openings--empty" aria-labelledby="openings-heading">
     <div class="container">
-      <div class="section__header">
+      <div data-reveal data-reveal-delay class="section__header">
         <span class="section__eyebrow">Nothing open today</span>
         <h2 class="section__title" id="openings-heading">Stay Tuned for Opportunities</h2>
         <p class="section__lead">
@@ -506,7 +506,7 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
         </p>
       </div>
 
-      <div class="empty-state">
+      <div data-reveal data-reveal-delay class="empty-state">
         <span class="empty-state__icon">
           <svg class="icon" aria-hidden="true" focusable="false"><use href="#briefcase"></use></svg>
         </span>
@@ -530,13 +530,13 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
   <!-- ============================== CTA ============================== -->
   <section class="cta-band cta-band--base">
     <div class="container cta-band__inner">
-      <h2 class="cta-band__title">Questions before you apply?</h2>
-      <p class="cta-band__text">
+      <h2 data-reveal data-reveal-delay class="cta-band__title">Questions before you apply?</h2>
+      <p data-reveal data-reveal-delay class="cta-band__text">
         Ask us anything about a role, the team or how we work.
       </p>
       <div class="cta-band__actions">
-        <a class="btn btn--primary btn--lg" href="/pages/contact/">Contact Us</a>
-        <a class="btn btn--ghost btn--lg" href="/pages/company-profile/">About the Company</a>
+        <a data-reveal data-reveal-delay class="btn btn--primary btn--lg" href="/pages/contact/">Contact Us</a>
+        <a data-reveal data-reveal-delay class="btn btn--ghost btn--lg" href="/pages/company-profile/">About the Company</a>
       </div>
     </div>
   </section>

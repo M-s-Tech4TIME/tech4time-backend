@@ -141,6 +141,41 @@
   white-space: pre-wrap;
   word-break: break-word;
   text-indent: 0;
+
+  /* The lines arrive one after another, as if the session were running.
+     Appearing, not typing: a character-by-character effect needs the text
+     clipped to a width animated in steps, which only holds for one unwrapped
+     line of monospace — and these wrap. Faking it would break the moment a
+     line was too long for the window, which is the case the pre-wrap rule
+     above exists to handle.
+
+     No script involved. A JavaScript version could stall part way and leave
+     the panel half empty; a CSS animation either runs or does not exist. The
+     whole terminal is aria-hidden, so nothing here is content anyone is
+     waiting to read. */
+  animation: terminal-line var(--duration) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 160ms);
+}
+
+/* Nine lines, nine steps. Written out the way .soc-map__slot is, because a
+   custom property cannot be derived from an element's position in CSS. */
+.terminal__line:nth-child(1) { --i: 0; }
+.terminal__line:nth-child(2) { --i: 1; }
+.terminal__line:nth-child(3) { --i: 2; }
+.terminal__line:nth-child(4) { --i: 3; }
+.terminal__line:nth-child(5) { --i: 4; }
+.terminal__line:nth-child(6) { --i: 5; }
+.terminal__line:nth-child(7) { --i: 6; }
+.terminal__line:nth-child(8) { --i: 7; }
+.terminal__line:nth-child(9) { --i: 8; }
+
+@keyframes terminal-line {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .terminal__prompt {
@@ -171,12 +206,26 @@
   font-weight: 700;
 }
 
+/* The block cursor, waiting for the next command. It sits on the last line, so
+   its blink starts once that line has arrived — otherwise it blinks away in an
+   empty panel while the session is still printing. steps(1) because a cursor
+   snaps on and off; fading one in and out reads as a glow, not a terminal. */
 .terminal__cursor {
   display: inline-block;
   width: 0.55em;
   height: 1.1em;
   vertical-align: text-bottom;
+  animation: terminal-blink 1.06s steps(1, end) infinite;
+  /* When the ninth line has finished: its own delay of 8 steps, plus the time
+     it takes to arrive. */
+  animation-delay: calc(8 * 160ms + var(--duration));
   background-color: #e8e9eb;
+}
+
+@keyframes terminal-blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 /* --------------------------------------------------------------------------

@@ -76,6 +76,26 @@
   color: var(--accent-text);
 }
 
+/* This has to be said again here. `a:hover` in base.css and this rule are both
+   one class-level and one type, so they tie on specificity and the later file
+   wins — setting the colour above silently took the hover away with it. The
+   same override elsewhere (.job__body a, .legal__body a) restates the hover;
+   this one had been missed, on all six service pages. */
+.core-solutions__note a:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+/* Nudge the arrow along, as the service cards on the home page do. */
+.core-solutions__note a .icon {
+  transition: transform var(--duration) var(--ease-out);
+}
+
+.core-solutions__note a:hover .icon {
+  transform: translateX(0.25rem);
+}
+
 /* --------------------------------------------------------------------------
    2. Layer tabs
    The base .tabs component is a row of pills. The dashboards use something
@@ -321,6 +341,13 @@
     content: "";
     position: absolute;
     inset: 0;
+    /* Decoration only. Both pseudo-elements paint above the nodes, which are
+       ordinary in-flow content, and a pseudo-element hit-tests over its whole
+       box whatever it paints — the mask below hides most of this one but hides
+       none of it from the pointer. The ring in ::after covers the inner half
+       of every node, so a click aimed at a node's centre was landing on the
+       <ul>. tools/check_hover.py caught it by moving a real pointer. */
+    pointer-events: none;
     border-radius: 50%;
     background-image: repeating-conic-gradient(
       from -0.2deg,
@@ -336,6 +363,7 @@
     content: "";
     position: absolute;
     inset: calc(var(--size) / 2 - var(--radius));
+    pointer-events: none;             /* see ::before */
     border: var(--border-width) dashed var(--border-subtle);
     border-radius: 50%;
   }

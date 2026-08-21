@@ -69,12 +69,26 @@ Tokens live in `assets/css/theme.css` and switch on a `data-theme` attribute on
 `<html>`.
 
 `assets/js/theme-init.js` is the **only** synchronous script in `<head>`. It
-applies a stored choice before the first paint, which is what prevents a flash
-of the wrong theme. Everything else is deferred and loaded at the end of `<body>`.
+carries the two decisions that have to be made before the first frame is drawn:
+which theme to paint, and whether the scroll reveal is armed. Everything else is
+deferred and loaded at the end of `<body>`.
 
 Order of precedence: an explicit choice in `localStorage` wins; otherwise the
 `prefers-color-scheme` block in `theme.css` applies — so the OS preference is
 still honoured with JavaScript disabled.
+
+### Motion
+
+Sections fade up as they scroll in. The mechanism is deliberately timid about
+its own failure: it hides nothing unless it has already established it can
+reveal it again, and if `animations.js` never arrives, a watchdog registered in
+`theme-init.js` lifts the hidden state at the load event. With scripting off, or
+reduced motion requested, nothing is ever hidden — the reveal is decoration, and
+decoration is not allowed to be the reason something cannot be read.
+
+Markers are applied by `tools/apply_reveals.py` from one structural rule, not by
+hand. `tools/test_motion.py` is the proof: every page, scrolled end to end, with
+every marked element required to finish opaque.
 
 ### CSS
 

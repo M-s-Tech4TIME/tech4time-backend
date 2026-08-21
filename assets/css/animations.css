@@ -34,6 +34,19 @@
   }
 }
 
+/* The scroll reveal. Distinct from fade-in-up because it moves `translate`
+   rather than `transform` — see section 2 for why that distinction matters. */
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    translate: 0 1.25rem;
+  }
+  to {
+    opacity: 1;
+    translate: none;
+  }
+}
+
 /* The shine sweep: a highlight travelling across a surface, evoking light
    catching the metallic clock hands in the logo. */
 @keyframes shine-sweep {
@@ -56,45 +69,81 @@
    Elements marked [data-reveal] start hidden and are revealed by
    assets/js/animations.js via IntersectionObserver.
 
-   Without JavaScript the content must still be visible, so the hidden state is
-   applied only once the observer has claimed the page (html.js-reveal). No-JS
-   visitors simply see everything already in place.
+   The hidden state hangs off html.js-reveal, which theme-init.js adds before
+   first paint and only when the reveal can actually be carried out. Without
+   JavaScript, or with reduced motion requested, the class is never added and
+   every section is simply there — the content does not depend on any of this.
+
+   Markers are applied by tools/apply_reveals.py.
    -------------------------------------------------------------------------- */
 
+/* An animation, not a transition, and `translate` rather than `transform`.
+   Both choices are about not trampling what the element already does:
+
+   `.js-reveal [data-reveal]` outranks `.card`, so declaring `transition` here
+   would replace the card's own transition list wholesale and every revealed
+   card would lose its hover ease. An animation leaves the transition property
+   untouched.
+
+   `translate` is an independent property that composes with `transform` instead
+   of replacing it, so a card can be lifted 1.25rem into place by the reveal and
+   still lift again by -3px on hover. Animating `transform` would have pinned it
+   to `none` for good — animations outrank normal rules — and the hover would
+   have gone dead. */
 .js-reveal [data-reveal] {
   opacity: 0;
-  transform: translateY(1.25rem);
-  transition:
-    opacity var(--duration-slow) var(--ease-out),
-    transform var(--duration-slow) var(--ease-out);
 }
 
 .js-reveal [data-reveal].is-revealed {
-  opacity: 1;
-  transform: none;
+  animation: reveal-rise var(--duration-slow) var(--ease-out) both;
+  /* Position among the element's marked siblings, set from animations.js: a
+     style attribute in the markup is refused by the Content-Security-Policy,
+     the CSSOM is not. Unmarked elements fall back to 0 and start at once.
+
+     animation-delay rather than transition-delay so the wait belongs to the
+     reveal alone; a transition-delay would linger on the element and hold up
+     every hover afterwards. */
+  animation-delay: calc(var(--reveal-delay, 0) * 80ms);
 }
 
-/* Stagger children by index; the delay custom property is set in the markup. */
-[data-reveal-delay] {
-  transition-delay: calc(var(--reveal-delay, 0) * 80ms);
+/* Printing does not scroll, so nothing would ever be revealed: a page sent to
+   the printer, or saved as a PDF, would come out with blank space wherever the
+   reader had not been. Same rule as above, later in the file, so it wins. */
+@media print {
+  .js-reveal [data-reveal] {
+    opacity: 1;
+    animation: none;
+  }
 }
 
 /* --------------------------------------------------------------------------
    3. Shine sweep on hover
-   Applied to primary buttons and interactive cards. The sweep is a pseudo
-   element so it never affects layout, and it is pointer-events: none so it
-   cannot swallow clicks.
+   Light travelling across a metal surface, the way it catches the clock hands
+   in the logo.
 
-   Hover-only effects must not strand touch users, so the sweep is limited to
-   devices that actually hover; :focus-visible triggers it for keyboards.
+   Every primary button carries it, without asking. It used to be opted into
+   with a class, which four of the twenty primary buttons had and sixteen did
+   not — nothing distinguished those four, and the site's main call to action
+   behaved differently depending on which page you were on. The .shine class is
+   still here for surfaces that are not buttons.
+
+   The sweep is a pseudo element, so it never affects layout, and it is
+   pointer-events: none, so it cannot swallow the click it sits on top of.
+
+   Hover-only effects must not strand touch users. Nothing is communicated by
+   the sweep that is not already communicated by the button being a button, so
+   its absence on a touchscreen costs nothing; :focus-visible brings it to the
+   keyboard.
    -------------------------------------------------------------------------- */
 
-.shine {
+.shine,
+.btn--primary {
   position: relative;
   isolation: isolate;
 }
 
-.shine::after {
+.shine::after,
+.btn--primary::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -106,13 +155,15 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .shine:hover::after {
+  .shine:hover::after,
+  .btn--primary:hover:not(:disabled)::after {
     opacity: 1;
     animation: shine-sweep var(--duration-slow) var(--ease-out);
   }
 }
 
-.shine:focus-visible::after {
+.shine:focus-visible::after,
+.btn--primary:focus-visible::after {
   opacity: 1;
   animation: shine-sweep var(--duration-slow) var(--ease-out);
 }
