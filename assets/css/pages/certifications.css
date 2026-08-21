@@ -157,15 +157,17 @@
    would collapse the empty tracks and stretch those five across the full
    width, so one group's chips would be three times the width of another's. */
 
+/* Grid items stretch to the height of the tallest chip in their row, so a
+   one-line entry sitting beside a two-line one gets a two-line box. Centring
+   is therefore about the BOX, not about the text: align-items: center keeps
+   the icon on the chip's middle whatever height the row settles at, and takes
+   the label with it so the two stay on the same line as each other. */
 .cert {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
   gap: var(--space-2xs);
   padding: var(--space-2xs) var(--space-sm);
-  /* Both set here rather than on the label alone. 1lh below resolves against
-     the ICON's own font-size and line-height, so if the label carried them
-     the icon's box would be one line of the wrong size. */
   font-size: var(--text-sm);
   line-height: var(--leading-snug);
   background-color: var(--bg-surface);
@@ -181,22 +183,11 @@
   border-color: var(--silver-accent-mid);
 }
 
-/* The icon's BOX is one line tall; the glyph is not.
-
-   An inline <svg> with a viewBox scales to fit its box and centres itself
-   there (preserveAspectRatio defaults to xMidYMid meet), so giving the box a
-   height of 1lh and a width of 0.9rem draws a 0.9rem glyph centred on the
-   first line of the label. On a single-line entry — which is most of them —
-   that is the vertical centre of the chip. On one that wraps, it stays on the
-   first line where it belongs, instead of drifting to the middle of two.
-
-   1lh rather than a measured nudge because --text-sm is a clamp(): the line
-   height changes with the viewport, so any fixed offset is only correct at
-   one width. */
+/* A plain square, centred by the grid above. No margin nudge: --text-sm is a
+   clamp(), so any fixed offset is only correct at one viewport width. */
 .cert__icon {
   width: 0.9rem;
-  height: 1.15rem;  /* fallback for browsers without lh */
-  height: 1lh;
+  height: 0.9rem;
   fill: var(--accent-text);
 }
 
