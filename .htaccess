@@ -41,13 +41,19 @@
 
     # ----------------------------------------------------------------------
     # 2. Canonical host and scheme
-    # Uncomment once HTTPS and the preferred host are confirmed on the server.
-    # ----------------------------------------------------------------------
-    # RewriteCond %{HTTPS} off
-    # RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+    # Verified against the live server: HTTPS answers and the certificate
+    # covers tech4time.bd and www.tech4time.bd (cPanel AutoSSL, Let's Encrypt).
     #
-    # RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-    # RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+    # This is not only an SEO tidy-up. /admin is protected by HTTP Basic auth,
+    # which sends the password base64-encoded — that is encoding, not
+    # encryption. Over plain http it is readable by anything on the path. The
+    # redirect is what stops that being possible.
+    # ----------------------------------------------------------------------
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 
     # ----------------------------------------------------------------------
     # 3. Clean URLs
@@ -190,8 +196,10 @@ Options -Indexes
 # own .htaccess into that directory. This only keeps it out of search results
 # in case it is ever reachable.
 # --------------------------------------------------------------------------
+# `always` is the operative word: without it the header is attached only to
+# 2xx responses, and once Directory Privacy is on, a crawler's request returns
+# 401 — precisely the response that needs marking. noarchive keeps a cached
+# copy out of results as well as the page itself.
 <IfModule mod_headers.c>
-    <FilesMatch "^index\.php$">
-        Header always set X-Robots-Tag "noindex, nofollow" "expr=%{REQUEST_URI} =~ m#^/admin/#"
-    </FilesMatch>
+    Header always set X-Robots-Tag "noindex, nofollow, noarchive" "expr=%{REQUEST_URI} =~ m#^/admin(/|$)#"
 </IfModule>

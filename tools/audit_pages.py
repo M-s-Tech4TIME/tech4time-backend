@@ -255,6 +255,55 @@ def audit_page(path: Path, seen_titles: dict, seen_descriptions: dict) -> list[s
     return problems
 
 
+def check_admin_is_hidden() -> list[str]:
+    """
+    The job post editor must be findable only by someone who already knows.
+
+    Four things have to hold together, and each is easy to undo by accident:
+    nothing links to it, the sitemap omits it, robots.txt stays silent about
+    it, and the page marks itself noindex.
+
+    The robots.txt one is the counter-intuitive one, so it is asserted rather
+    than left to memory. Disallowing /admin would publish the path — that file
+    is world-readable and is the first thing a scanner fetches — and it would
+    also stop a crawler reading the noindex, so a URL found some other way
+    could still appear as a bare result. Silence is stronger.
+    """
+    problems = []
+
+    for path in pages():
+        markup = path.read_text()
+        for href in re.findall(r'href="([^"]*)"', markup):
+            if re.match(r"^(/|https?://[^/]*tech4time\.bd)?/?admin(/|$)", href):
+                problems.append(f"{path.relative_to(ROOT)}: links to the admin editor ({href})")
+
+    sitemap = ROOT / "sitemap.xml"
+    if sitemap.is_file() and "admin" in sitemap.read_text():
+        problems.append("sitemap.xml: lists the admin editor")
+
+    robots = ROOT / "robots.txt"
+    if robots.is_file():
+        for line in robots.read_text().splitlines():
+            bare = line.strip()
+            if bare.startswith("#") or ":" not in bare:
+                continue
+            if "admin" in bare.lower():
+                problems.append(
+                    "robots.txt: names /admin in a directive — that publishes the "
+                    "path and stops the noindex being read. Leave it unlisted."
+                )
+
+    admin = ROOT / "admin" / "index.php"
+    if admin.is_file() and 'name="robots"' not in admin.read_text():
+        problems.append("admin/index.php: no <meta name=\"robots\"> noindex")
+
+    htaccess = ROOT / ".htaccess"
+    if htaccess.is_file() and "X-Robots-Tag" not in htaccess.read_text():
+        problems.append(".htaccess: no X-Robots-Tag rule covering /admin")
+
+    return problems
+
+
 def main() -> None:
     files = pages()
     if not files:
@@ -282,6 +331,12 @@ def main() -> None:
         print(f"\n{len(pending)} link(s) to pages not built yet (expected during Phase 2):")
         for p in sorted(set(pending))[:20]:
             print(f"  {p}")
+
+    admin_problems = check_admin_is_hidden()
+    if admin_problems:
+        failures.extend(admin_problems)
+    else:
+        print("\n  admin editor is unlinked, unlisted and noindexed  — OK")
 
     if failures:
         print(f"\n{len(failures)} issue(s):\n")

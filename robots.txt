@@ -4,8 +4,19 @@
 User-agent: *
 Allow: /
 
-# Form endpoints have nothing to index and should never appear in results.
+# The form endpoint has nothing to index and should never appear in results.
 Disallow: /contact-handler.php
-Disallow: /careers-handler.php
+
+# NOTE: /admin is deliberately NOT listed here.
+#
+# robots.txt is world-readable and is the first file anyone scanning a site
+# fetches, so a Disallow line advertises the path it is meant to protect. It
+# also makes matters worse rather than better: a disallowed page is never
+# crawled, so the noindex on it is never read, and a URL discovered any other
+# way can still surface as a bare result Google refuses to describe.
+#
+# What actually keeps the editor out of search is that Apache answers it with
+# 401 (cPanel Directory Privacy), nothing on the site links to it, it is absent
+# from the sitemap, and it carries noindex both as a header and in its markup.
 
 Sitemap: https://tech4time.bd/sitemap.xml

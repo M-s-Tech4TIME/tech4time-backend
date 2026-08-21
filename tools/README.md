@@ -164,6 +164,29 @@ directly; the PHP is the boundary.
 It is hand-written because this host has no `dom` extension — `DOMDocument`
 does not exist, the same way `mb_strlen` did not.
 
+### Keeping the editor out of search results
+
+Four things hold this together, and `audit_pages.py` asserts all of them:
+
+- **Nothing on the site links to it.** No link, no crawl path.
+- **It is absent from `sitemap.xml`.**
+- **It is absent from `robots.txt` — deliberately.** A `Disallow: /admin/` would
+  advertise the path in a world-readable file that is the first thing a scanner
+  fetches. Worse, a disallowed page is never crawled, so its `noindex` is never
+  read, and a URL found any other way can still surface as a bare result.
+  Silence is stronger than an advertised `Disallow`.
+- **It marks itself `noindex`** in its own `<head>`, and `.htaccess` sets
+  `X-Robots-Tag: noindex, nofollow, noarchive` for the whole path. That header
+  uses `always`, so it is attached to the 401 as well — which is the response a
+  crawler actually receives once Directory Privacy is on.
+
+The real protection is the 401. Everything above matters for the window before
+Directory Privacy is switched on, or if it is ever removed.
+
+**Never add an `.htaccess` to `admin/` in this repo.** cPanel writes its own
+there when you enable Directory Privacy; uploading one over it would remove the
+password and leave the editor open, with nothing to report the change.
+
 ### Before the editor works on the host
 
 1. **Protect it.** cPanel → *Directory Privacy* → `admin` → tick "Password
