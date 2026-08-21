@@ -19,12 +19,12 @@
    is pointing at it.
 
    It can also be taken hold of and turned. Press and drag and the sphere
-   follows the hand exactly, in any direction, keeping whatever momentum the
-   drag ended with before easing back to its drift. That is an enhancement on
-   top of an enhancement: the logos are a grid with real alt text underneath
-   all of this, every one of them is in the page whether the sphere turns or
-   not, and the sphere turns by itself regardless — so nothing here is reachable
-   only by dragging.
+   follows the hand exactly, in any direction and to any angle, with nothing
+   clamping how far it goes; it keeps whatever momentum the drag ended with and
+   stays where it was put. That is an enhancement on top of an enhancement: the
+   logos are a grid with real alt text underneath all of this, every one of
+   them is in the page whether the sphere turns or not, and the sphere turns by
+   itself regardless — so nothing here is reachable only by dragging.
 
    On a touch screen the sphere claims horizontal drags and leaves vertical
    ones to the page (touch-action: pan-y in company-profile.css). Taking both
@@ -58,11 +58,6 @@
   var TILT = 14;           /* fixed rotateX, for a little depth            */
 
   var DRAG_DEGREES = 0.32; /* degrees of rotation per pixel dragged        */
-  /* How far it can be tilted by hand. Ninety degrees is looking straight down
-     at the sphere from above or below; past that it is upside down, which with
-     billboarded logos reads as broken rather than as rotated. Steering by
-     hover stays inside the much tighter range below. */
-  var MAX_DRAG_TILT = 90;
   /* What is left of the drag's speed when the hand lets go. */
   var THROW = 0.55;
 
@@ -84,6 +79,9 @@
     this.dragging = false;
     this.pointerId = null;
     this.last = null;
+    /* What was last written, so an unchanged value is not written again. */
+    this.paintedX = null;
+    this.paintedY = null;
     this.tick = this.render.bind(this);
   }
 
@@ -116,7 +114,14 @@
     if (this.dragging) {
       /* The hand is setting the rotation directly. Easing towards a target
          speed here would put a lag between the pointer and the sphere, which
-         is the one thing a drag must not have. */
+         is the one thing a drag must not have.
+
+         The drawing still happens here, once per frame, rather than in the
+         pointermove handler. A mouse can report far faster than the screen
+         refreshes — a 1000Hz one fires roughly sixteen times per frame — and
+         each write invalidates the transform of all fifty logos. Painting on
+         the frame does that work once however many events arrived. */
+      this.paint();
       this.frame = global.requestAnimationFrame(this.tick);
       return;
     }
@@ -128,15 +133,14 @@
     this.rotY += this.speedY;
     this.rotX += this.speedX;
 
-    /* Keep the tilt within a range that never flips the sphere over. A sphere
-       left tilted further by a drag is eased back into that range rather than
-       snapped, so letting go does not jerk it. */
-    var limit = TILT + 24;
-    if (this.rotX > limit) {
-      this.rotX -= Math.min(this.rotX - limit, 0.8);
-    } else if (this.rotX < -limit) {
-      this.rotX += Math.min(-limit - this.rotX, 0.8);
-    }
+    /* Nothing clamps the tilt. It used to be held inside a narrow band so that
+       steering by hover could not tip the sphere over, but that band also
+       undid a drag: turn it right round by hand, let go, and it would crawl
+       back to where it was allowed to be. The sphere stays where it is put.
+
+       Upside down is not a broken state here — every logo counter-rotates to
+       face the viewer, so the arrangement turns and the logos stay readable at
+       any angle. */
 
     this.paint();
     this.frame = global.requestAnimationFrame(this.tick);
@@ -144,10 +148,25 @@
 
   /* Two custom properties on one element, not fifty transform writes: the
      items read them through inheritance, so the browser recalculates the lot in
-     a single pass. */
+     a single pass.
+
+     One decimal place, and nothing written when the value has not changed.
+     Fifty logos have to have their transforms recalculated every time these
+     move, and a tenth of a degree is far below anything the eye can see — so
+     during the idle drift, which turns at six hundredths of a degree a frame,
+     this skips roughly every other frame's work for no visible difference. */
   Sphere.prototype.paint = function () {
-    this.list.style.setProperty("--rot-y", this.rotY.toFixed(2) + "deg");
-    this.list.style.setProperty("--rot-x", this.rotX.toFixed(2) + "deg");
+    var y = this.rotY.toFixed(1) + "deg";
+    var x = this.rotX.toFixed(1) + "deg";
+
+    if (y !== this.paintedY) {
+      this.list.style.setProperty("--rot-y", y);
+      this.paintedY = y;
+    }
+    if (x !== this.paintedX) {
+      this.list.style.setProperty("--rot-x", x);
+      this.paintedX = x;
+    }
   };
 
   /* --- taking hold of it ---------------------------------------------------
@@ -187,15 +206,19 @@
 
     this.rotY += dx * DRAG_DEGREES;
     /* Dragging down should tip the top of the sphere towards the viewer, which
-       is a decrease in rotateX — hence the sign. */
+       is a decrease in rotateX — hence the sign.
+
+       No limit on either axis. Any direction, any angle, as far round as the
+       hand cares to take it. */
     this.rotX -= dy * DRAG_DEGREES;
-    this.rotX = Math.max(-MAX_DRAG_TILT, Math.min(MAX_DRAG_TILT, this.rotX));
 
     /* Remembered as a per-frame speed, which is what the throw below uses. */
     this.speedY = dx * DRAG_DEGREES;
     this.speedX = -dy * DRAG_DEGREES;
 
-    this.paint();
+    /* Deliberately no paint here. This handler can run many times between two
+       frames, and each paint invalidates fifty transforms; the frame loop draws
+       the result once, which is as often as a screen can show it anyway. */
   };
 
   Sphere.prototype.onDragEnd = function (event) {

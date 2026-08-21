@@ -797,11 +797,164 @@ def tech_sphere(b: Browser, origin: str, r: Results) -> None:
             coasting[0] != during[0],
             f"--rot-y stopped dead at {during[0]}")
 
-    time.sleep(4.0)
-    settled = rotation()
-    r.check("and the tilt eases back into its resting range",
-            abs(settled[1]) <= 38.5,
-            f"--rot-x is {settled[1]}, outside the ±38 the drift keeps to")
+    # Nothing may limit how far it can be turned. A long drag straight down is
+    # the case that used to be clamped, and the clamp also undid the drag
+    # afterwards by crawling the sphere back into a narrow band.
+    b.js("document.querySelector('[data-tech-sphere]')"
+         ".scrollIntoView({block: 'center', behavior: 'instant'});")
+    time.sleep(0.4)
+    # Started above the middle of the sphere so that 450px of downward drag
+    # still lands inside the window — Firefox refuses a pointer move that ends
+    # outside the viewport, whatever is under it.
+    rq("POST", b.s + "/actions", {"actions": [{
+        "type": "pointer", "id": "mouse",
+        "parameters": {"pointerType": "mouse"},
+        "actions": [
+            {"type": "pointerMove", "duration": 0,
+             "origin": {W3C: eid}, "x": 0, "y": -150},
+            {"type": "pointerDown", "button": 0},
+            {"type": "pointerMove", "duration": 100,
+             "origin": "pointer", "x": 0, "y": 150},
+            {"type": "pointerMove", "duration": 100,
+             "origin": "pointer", "x": 0, "y": 150},
+            {"type": "pointerMove", "duration": 100,
+             "origin": "pointer", "x": 0, "y": 150},
+            {"type": "pointerUp", "button": 0},
+        ]}]})
+    far = rotation()
+    r.check("it can be turned past upright, with nothing clamping it",
+            far[1] < -100,
+            f"--rot-x reached only {far[1]} after dragging 450px down")
+
+    time.sleep(3.0)
+    stayed = rotation()
+    r.check("and it stays where it was put rather than crawling back",
+            stayed[1] < -90,
+            f"--rot-x drifted back to {stayed[1]} from {far[1]}")
+
+
+FRAME_SAMPLER = """
+var done = arguments[arguments.length - 1];
+var ms = arguments[0];
+var frames = [], last = performance.now(), started = last;
+(function tick() {
+  var now = performance.now();
+  frames.push(now - last);
+  last = now;
+  if (now - started < ms) { requestAnimationFrame(tick); return; }
+  frames.shift();                       /* the first gap includes the setup */
+  var sorted = frames.slice().sort(function (a, b) { return a - b; });
+  done({
+    frames: frames.length,
+    median: +(sorted[Math.floor(sorted.length / 2)] || 0).toFixed(1),
+    worst: +(sorted[sorted.length - 1] || 0).toFixed(1)
+  });
+})();
+"""
+
+# The drag is driven from inside the page, one move per frame, so that the
+# sampling and the dragging can happen at the same time — a WebDriver action
+# blocks until it finishes, which would leave nothing to measure.
+DRAG_SAMPLER = """
+var done = arguments[arguments.length - 1];
+var el = document.querySelector('[data-tech-sphere]');
+var box = el.getBoundingClientRect();
+var cx = box.left + box.width / 2, cy = box.top + box.height / 2;
+
+function send(type, x, y) {
+  el.dispatchEvent(new PointerEvent(type, {
+    pointerId: 1, isPrimary: true, pointerType: 'mouse', bubbles: true,
+    clientX: x, clientY: y}));
+}
+
+var before = document.querySelector('.tech-sphere__list')
+  .style.getPropertyValue('--rot-y');
+send('pointerdown', cx, cy);
+
+var frames = [], last = performance.now(), n = 0;
+(function tick() {
+  var now = performance.now();
+  frames.push(now - last);
+  last = now;
+  n += 1;
+  send('pointermove', cx + Math.sin(n / 8) * 160, cy + Math.cos(n / 11) * 90);
+  if (n < 100) { requestAnimationFrame(tick); return; }
+  send('pointerup', cx, cy);
+  frames.shift();
+  var sorted = frames.slice().sort(function (a, b) { return a - b; });
+  done({
+    frames: frames.length,
+    median: +(sorted[Math.floor(sorted.length / 2)] || 0).toFixed(1),
+    worst: +(sorted[sorted.length - 1] || 0).toFixed(1),
+    before: before,
+    after: document.querySelector('.tech-sphere__list')
+      .style.getPropertyValue('--rot-y')
+  });
+})();
+"""
+
+
+def sphere_smoothness(b: Browser, origin: str, r: Results) -> None:
+    """
+    The sphere has to turn smoothly, under the hand and on its own.
+
+    Measured against a page with no sphere on it, taken moments earlier in the
+    same browser — not against a fixed frame rate. An absolute threshold says
+    more about how busy the machine is than about the code, and this repo's
+    tests get run on whatever machine is to hand. A comparison cancels that
+    out: both numbers are gathered under the same load.
+    """
+    print("\nhow smoothly the sphere turns")
+
+    b.go(origin + "/pages/about/")
+    time.sleep(0.8)
+    base = b.js_async(FRAME_SAMPLER, [1800])
+
+    b.go(origin + "/pages/company-profile/")
+    b.js("document.querySelector('[data-tech-sphere]')"
+         ".scrollIntoView({block: 'center', behavior: 'instant'});")
+    time.sleep(1.0)
+    idle = b.js_async(FRAME_SAMPLER, [1800])
+
+    eid = rq("POST", b.s + "/element",
+             {"using": "css selector",
+              "value": "[data-tech-sphere]"})["value"][W3C]
+    rq("POST", b.s + "/actions", {"actions": [{
+        "type": "pointer", "id": "mouse",
+        "parameters": {"pointerType": "mouse"},
+        "actions": [{"type": "pointerMove", "duration": 0,
+                     "origin": {W3C: eid}, "x": 150, "y": 100}]}]})
+    hover = b.js_async(FRAME_SAMPLER, [1800])
+
+    drag = b.js_async(DRAG_SAMPLER)
+
+    print(f"    a page with no sphere: {base['median']}ms median, "
+          f"{base['worst']}ms worst")
+    for name, d in (("drifting", idle), ("steered", hover), ("dragged", drag)):
+        print(f"    {name:>22}: {d['median']}ms median, {d['worst']}ms worst")
+
+    # Turning fifty logos in 3D is not free, but it should not be costing a
+    # whole frame either. Three milliseconds is about a fifth of a frame at
+    # 60Hz — enough headroom for the work, not enough to be seen.
+    for name, d in (("drifting on its own", idle),
+                    ("steered by the pointer", hover),
+                    ("dragged by hand", drag)):
+        r.check(f"{name} costs almost nothing per frame",
+                d["median"] <= base["median"] + 3.0,
+                f"{d['median']}ms a frame against {base['median']}ms on a page "
+                "with no sphere")
+
+    # A vacuous pass to guard against: perfectly smooth because the drag did
+    # nothing at all.
+    r.check("the measured drag actually turned the sphere",
+            drag["before"] != drag["after"],
+            f"--rot-y stayed at {drag['after']!r} throughout")
+
+    worst = max(idle["worst"], hover["worst"], drag["worst"])
+    r.check("and no single frame stalls",
+            worst <= max(base["worst"] * 2, 50),
+            f"worst frame was {worst}ms, against {base['worst']}ms without "
+            "the sphere")
 
 
 def printing(b: Browser, origin: str, r: Results) -> None:
@@ -964,6 +1117,7 @@ def main() -> None:
         counters(browser, origin, results)
         alternating_rows(browser, origin, results)
         tech_sphere(browser, origin, results)
+        sphere_smoothness(browser, origin, results)
         printing(browser, origin, results)
         watchdog(browser, origin, results)
         browser.quit()
