@@ -63,6 +63,7 @@ failure.
 | `audit_pages.py` | Per page: `lang`, viewport, canonical, unique title/description, one `<h1>`, no skipped heading levels, `alt` on every image, `width`/`height` on every image, valid JSON-LD, `rel="noopener noreferrer"` on external links, resolvable internal links, and that every `<use href="#icon">` has an inlined symbol. |
 | `check_shared_markup.py` | The header and footer on every page still match `tools/templates/`, and the script tags match. This is what keeps thirteen hand-pasted copies from drifting. |
 | `test_contact_handler.py` | Exercises `contact-handler.php` end to end. Needs the PHP CLI (`sudo apt install php-cli`); skips nothing, fails loudly if it is absent. |
+| `test_editor.py` | Drives the rich text editor in headless Firefox: that clicking text formats nothing, that the buttons do, and that alignment arrives as a class rather than an inline style. Needs Firefox and `geckodriver`; prints a notice and exits 0 without them. |
 | `test_careers_admin.py` | Exercises the job post editor end to end — create, validate, publish, reorder, delete, CSRF, the empty state, and the HTML sanitiser that guards what the careers page prints unescaped. Runs against a copy of `content/careers.json` and restores it afterwards. Also needs the PHP CLI. |
 
 Quick full pass:

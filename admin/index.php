@@ -227,6 +227,36 @@ if ($errors) {
 
 /* ---------------------------------------------------------------- helpers */
 
+/**
+ * Inline the sprite symbols this page uses.
+ *
+ * Pages under pages/ get theirs from tools/inject_icons.py, which does not
+ * walk this directory. Reading them straight from the sprite keeps the two
+ * icons in step with it without adding the admin to a build step, and a
+ * <use href> pointing at an external file does not resolve cross-document in
+ * Chromium or WebKit — which is why they have to be inlined at all.
+ */
+function admin_icons(array $names): string
+{
+    $sprite = @file_get_contents(__DIR__ . '/../assets/icons/sprite.svg');
+    if ($sprite === false) {
+        return '';
+    }
+
+    $symbols = '';
+    foreach ($names as $name) {
+        $pattern = '#<symbol id="' . preg_quote($name, '#') . '".*?</symbol>#s';
+        if (preg_match($pattern, $sprite, $m)) {
+            $symbols .= $m[0];
+        }
+    }
+
+    return $symbols === ''
+        ? ''
+        : '<svg class="icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+          . $symbols . '</svg>';
+}
+
 function admin_textarea_value(array $job, string $field): string
 {
     $value = $job[$field] ?? '';
@@ -264,6 +294,8 @@ $fieldLabels = [
 <script src="/assets/js/theme-init.js"></script>
 </head>
 <body class="page">
+<?= admin_icons(['sun', 'moon']) ?>
+
 <main class="admin">
   <div class="container">
 
@@ -275,9 +307,20 @@ $fieldLabels = [
           Changes go live on <a href="/pages/careers/">the careers page</a> immediately.
         </p>
       </div>
-      <?php if ($user !== ''): ?>
-        <p class="admin__user">Signed in as <strong><?= h($user) ?></strong></p>
-      <?php endif; ?>
+      <div class="admin__header-actions">
+        <?php if ($user !== ''): ?>
+          <p class="admin__user">Signed in as <strong><?= h($user) ?></strong></p>
+        <?php endif; ?>
+        <button
+          class="btn btn--icon"
+          type="button"
+          data-theme-toggle
+          aria-label="Switch to dark mode"
+          aria-pressed="false">
+          <svg class="icon theme-toggle__icon--moon" aria-hidden="true" focusable="false"><use href="#moon"></use></svg>
+          <svg class="icon theme-toggle__icon--sun" aria-hidden="true" focusable="false"><use href="#sun"></use></svg>
+        </button>
+      </div>
     </header>
 
     <?php if ($notice !== '' && !$errors): ?>
@@ -375,13 +418,22 @@ $fieldLabels = [
         </label>
       </div>
 
+      <?php /* A <div>, not a <label>, and deliberately.
+
+         A <label> forwards a click from anywhere inside it to its first
+         labelable descendant. editor.js inserts its toolbar BEFORE the
+         textarea, so that descendant would be the Bold button — and every
+         click in the text would silently press it. The other fields on this
+         page wrap their input in a <label> because there the forwarding is
+         exactly what you want; here it is a trap. */ ?>
       <?php foreach ($fieldLabels as $field => [$label, $hint]): ?>
-        <label class="admin__field admin__field--wide">
-          <span class="admin__label"><?= h($label) ?></span>
-          <textarea class="admin__input admin__textarea" name="<?= h($field) ?>"
+        <div class="admin__field admin__field--wide">
+          <label class="admin__label" for="field-<?= h($field) ?>"><?= h($label) ?></label>
+          <textarea class="admin__input admin__textarea" id="field-<?= h($field) ?>"
+                    name="<?= h($field) ?>"
                     rows="8" data-editor><?= h(admin_textarea_value($editing, $field)) ?></textarea>
           <?php if ($hint !== ''): ?><span class="admin__hint"><?= h($hint) ?></span><?php endif; ?>
-        </label>
+        </div>
       <?php endforeach; ?>
 
       <div class="admin__actions">
@@ -494,6 +546,7 @@ $fieldLabels = [
 
 <!-- The fields work as plain HTML textareas without this; it adds the
      formatting toolbar on top of them. -->
+<script src="/assets/js/theme-toggle.js" defer></script>
 <script src="/assets/js/editor.js" defer></script>
 <script src="/assets/js/admin-init.js" defer></script>
 </body>

@@ -11,7 +11,15 @@
 
   function start() {
     var api = global.Tech4Time;
-    if (api && api.editor) {
+    if (!api) {
+      return;
+    }
+    /* theme-init.js has already set data-theme before first paint; this wires
+       up the button that changes it. */
+    if (api.theme) {
+      api.theme.init();
+    }
+    if (api.editor) {
       api.editor.init();
     }
   }

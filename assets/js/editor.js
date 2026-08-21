@@ -199,6 +199,19 @@
     this.textarea.setAttribute("aria-hidden", "true");
     this.textarea.tabIndex = -1;
 
+    /* If this editor is ever placed inside a <label> again, that label will
+       forward a click from anywhere inside it to its first labelable
+       descendant — which, since the toolbar is inserted before the textarea,
+       is the Bold button. Every click in the text would then silently press
+       it. The markup keeps these fields in a <div> for exactly this reason;
+       this cancels the activation if that ever changes, because the symptom
+       points nowhere near the cause. */
+    if (this.textarea.closest("label")) {
+      this.root.addEventListener("click", function (event) {
+        event.preventDefault();
+      });
+    }
+
     this.surface.addEventListener("input", this.sync.bind(this));
     this.surface.addEventListener("blur", this.sync.bind(this));
     this.surface.addEventListener("keydown", this.onKey.bind(this));

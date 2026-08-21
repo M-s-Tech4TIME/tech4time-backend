@@ -27,6 +27,15 @@
   font-size: var(--text-3xl);
 }
 
+/* Keeps the signed-in line and the theme button on one row, and lets them
+   wrap under the title on a narrow screen rather than squeezing it. */
+.admin__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
 .admin__subtitle,
 .admin__user {
   font-size: var(--text-sm);
