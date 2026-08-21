@@ -163,6 +163,11 @@
   align-items: start;
   gap: var(--space-2xs);
   padding: var(--space-2xs) var(--space-sm);
+  /* Both set here rather than on the label alone. 1lh below resolves against
+     the ICON's own font-size and line-height, so if the label carried them
+     the icon's box would be one line of the wrong size. */
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
   background-color: var(--bg-surface);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: var(--radius);
@@ -176,18 +181,26 @@
   border-color: var(--silver-accent-mid);
 }
 
+/* The icon's BOX is one line tall; the glyph is not.
+
+   An inline <svg> with a viewBox scales to fit its box and centres itself
+   there (preserveAspectRatio defaults to xMidYMid meet), so giving the box a
+   height of 1lh and a width of 0.9rem draws a 0.9rem glyph centred on the
+   first line of the label. On a single-line entry — which is most of them —
+   that is the vertical centre of the chip. On one that wraps, it stays on the
+   first line where it belongs, instead of drifting to the middle of two.
+
+   1lh rather than a measured nudge because --text-sm is a clamp(): the line
+   height changes with the viewport, so any fixed offset is only correct at
+   one width. */
 .cert__icon {
   width: 0.9rem;
-  height: 0.9rem;
-  /* Optical alignment with the first line of the label rather than the top of
-     the box, which sits a touch high next to text this size. */
-  margin-block-start: 0.28em;
+  height: 1.15rem;  /* fallback for browsers without lh */
+  height: 1lh;
   fill: var(--accent-text);
 }
 
 .cert__name {
-  font-size: var(--text-sm);
-  line-height: var(--leading-snug);
   color: var(--text-secondary);
 }
 
