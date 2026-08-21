@@ -264,13 +264,18 @@
   object-fit: contain;
 }
 
-.journey {
-  display: grid;
-  gap: var(--space-md);
-  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
-  padding: 0;
-  margin: 0;
-  list-style: none;
+/* The photographs are a slideshow, and deliberately not a full-width one. Run
+   to the width of the band a single picture would be three times the size it
+   was in the row, which is not what was asked for — the frame stays as it was
+   and the slider is centred inside the band. One number to change if it should
+   ever fill the width instead.
+
+   --slider-columns is the layout it falls back to without JavaScript: the row
+   it has always been. */
+.journey__slider {
+  --slider-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+  max-width: 30rem;
+  margin-inline: auto;
 }
 
 .journey__item {
@@ -333,7 +338,19 @@
   /* --sphere-size is measured and set by the script. */
   height: var(--sphere-size, 32rem);
   perspective: 1200px;
+  /* Horizontal drags turn the sphere; vertical ones are left to the page, so a
+     visitor who starts a scroll on top of the logos still scrolls. */
   touch-action: pan-y;
+  /* It can be taken hold of and turned — say so. */
+  cursor: grab;
+  /* A drag across the logos would otherwise select their alt text, and the
+     selection would follow the pointer instead of the sphere. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tech-sphere--held {
+  cursor: grabbing;
 }
 
 .tech-sphere--on .tech-sphere__list {

@@ -66,6 +66,10 @@ SUBSTITUTIONS = {
 # grid-dots: the dock's menu button. Font Awesome's "th" is a grid of filled
 # squares; the design calls for nine dots, which FA Free does not carry in any
 # style. Drawn on a 24-unit grid so the spacing stays even at any size.
+# pause / play: the slideshow control. Font Awesome Free does carry both, but
+# only as glyphs sized against its own 448-unit box; drawn here on the same
+# 24-unit grid as grid-dots they line up with each other and with the arrows
+# beside them at any size, which is what matters for a row of controls.
 CUSTOM_SYMBOLS = {
     "grid-dots": (
         '<symbol id="grid-dots" viewBox="0 0 24 24">'
@@ -75,6 +79,18 @@ CUSTOM_SYMBOLS = {
             for x in (5, 12, 19)
         )
         + "</symbol>"
+    ),
+    "pause": (
+        '<symbol id="pause" viewBox="0 0 24 24">'
+        '<rect x="6" y="4.5" width="4" height="15" rx="1.4"/>'
+        '<rect x="14" y="4.5" width="4" height="15" rx="1.4"/>'
+        "</symbol>"
+    ),
+    "play": (
+        '<symbol id="play" viewBox="0 0 24 24">'
+        '<path d="M7.5 4.9v14.2a1 1 0 0 0 1.53.85l11.2-7.1a1 1 0 0 0 0-1.7L9.03 4.05'
+        'A1 1 0 0 0 7.5 4.9z"/>'
+        "</symbol>"
     ),
 }
 

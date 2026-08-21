@@ -90,6 +90,22 @@ Markers are applied by `tools/apply_reveals.py` from one structural rule, not by
 hand. `tools/test_motion.py` is the proof: every page, scrolled end to end, with
 every marked element required to finish opaque.
 
+The rest of the motion follows the same rule — it may decorate, it may not be
+the only way to reach something:
+
+| Where | What | Without JavaScript |
+|---|---|---|
+| Home hero | The terminal session is typed a character at a time by `terminal.js`, output arriving in blocks | The whole session fades in line by line, in CSS |
+| About, Company Profile | Specialities and journey photographs are slideshows (`slider.js`) | Every slide on screen at once, in the grid the section had |
+| Company Profile | The experience figures count up to their value | The figures, which are the real ones in the markup |
+| Company Profile | Client logos arrive a row at a time, alternating left and right, each card following the one before it | All of them, in place |
+| Company Profile | The technology sphere can be taken hold of and turned in any direction | A grid of logos with alt text |
+| Every page with a title band | Circuitry animating along all four edges | The same circuit, still |
+
+Auto-advancing slideshows stop on hover, on focus, when the tab is in the
+background, and on demand — WCAG 2.2.2 requires the last of those, so there is a
+pause control. None of them start at all under `prefers-reduced-motion`.
+
 ### CSS
 
 Loaded in cascade order: `base` → `theme` → `layout` → `components` →

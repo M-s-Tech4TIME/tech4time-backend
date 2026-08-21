@@ -18,6 +18,18 @@
    pointer sits, the faster it turns that way. It drifts on its own when nobody
    is pointing at it.
 
+   It can also be taken hold of and turned. Press and drag and the sphere
+   follows the hand exactly, in any direction, keeping whatever momentum the
+   drag ended with before easing back to its drift. That is an enhancement on
+   top of an enhancement: the logos are a grid with real alt text underneath
+   all of this, every one of them is in the page whether the sphere turns or
+   not, and the sphere turns by itself regardless — so nothing here is reachable
+   only by dragging.
+
+   On a touch screen the sphere claims horizontal drags and leaves vertical
+   ones to the page (touch-action: pan-y in company-profile.css). Taking both
+   would mean a visitor who starts a scroll on top of the logos cannot scroll.
+
    TWO DETAILS WORTH KNOWING
    1. Per-frame work is two custom properties on ONE element, not fifty
       transform writes. The items read --rot-x/--rot-y through inheritance, so
@@ -45,6 +57,15 @@
   var EASING = 0.06;       /* how quickly it takes up a new target speed   */
   var TILT = 14;           /* fixed rotateX, for a little depth            */
 
+  var DRAG_DEGREES = 0.32; /* degrees of rotation per pixel dragged        */
+  /* How far it can be tilted by hand. Ninety degrees is looking straight down
+     at the sphere from above or below; past that it is upside down, which with
+     billboarded logos reads as broken rather than as rotated. Steering by
+     hover stays inside the much tighter range below. */
+  var MAX_DRAG_TILT = 90;
+  /* What is left of the drag's speed when the hand lets go. */
+  var THROW = 0.55;
+
   function Sphere(root) {
     this.root = root;
     this.list = root.querySelector(".tech-sphere__list");
@@ -60,6 +81,9 @@
     this.targetY = DRIFT;
     this.frame = null;
     this.running = false;
+    this.dragging = false;
+    this.pointerId = null;
+    this.last = null;
     this.tick = this.render.bind(this);
   }
 
@@ -89,6 +113,14 @@
   };
 
   Sphere.prototype.render = function () {
+    if (this.dragging) {
+      /* The hand is setting the rotation directly. Easing towards a target
+         speed here would put a lag between the pointer and the sphere, which
+         is the one thing a drag must not have. */
+      this.frame = global.requestAnimationFrame(this.tick);
+      return;
+    }
+
     /* Ease towards the target so the sphere never changes direction abruptly. */
     this.speedY += (this.targetY - this.speedY) * EASING;
     this.speedX += (this.targetX - this.speedX) * EASING;
@@ -96,13 +128,87 @@
     this.rotY += this.speedY;
     this.rotX += this.speedX;
 
-    /* Keep the tilt within a range that never flips the sphere over. */
-    this.rotX = Math.max(-TILT - 24, Math.min(TILT + 24, this.rotX));
+    /* Keep the tilt within a range that never flips the sphere over. A sphere
+       left tilted further by a drag is eased back into that range rather than
+       snapped, so letting go does not jerk it. */
+    var limit = TILT + 24;
+    if (this.rotX > limit) {
+      this.rotX -= Math.min(this.rotX - limit, 0.8);
+    } else if (this.rotX < -limit) {
+      this.rotX += Math.min(-limit - this.rotX, 0.8);
+    }
 
+    this.paint();
+    this.frame = global.requestAnimationFrame(this.tick);
+  };
+
+  /* Two custom properties on one element, not fifty transform writes: the
+     items read them through inheritance, so the browser recalculates the lot in
+     a single pass. */
+  Sphere.prototype.paint = function () {
     this.list.style.setProperty("--rot-y", this.rotY.toFixed(2) + "deg");
     this.list.style.setProperty("--rot-x", this.rotX.toFixed(2) + "deg");
+  };
 
-    this.frame = global.requestAnimationFrame(this.tick);
+  /* --- taking hold of it ---------------------------------------------------
+     The rotation is set straight from the movement, frame by frame, so the
+     sphere stays under the pointer instead of chasing it. The speeds are kept
+     up to date as it goes, and what is left of them when the hand lets go is
+     what it carries on with.
+     ---------------------------------------------------------------------- */
+
+  Sphere.prototype.onDragStart = function (event) {
+    if (!this.running || this.dragging || !event.isPrimary) return;
+
+    this.dragging = true;
+    this.pointerId = event.pointerId;
+    this.last = {x: event.clientX, y: event.clientY};
+    this.speedX = 0;
+    this.speedY = 0;
+    this.root.classList.add("tech-sphere--held");
+
+    /* Capture, so a drag that leaves the sphere — or the window — still ends
+       up back here rather than being lost mid-turn. */
+    if (this.root.setPointerCapture) {
+      try {
+        this.root.setPointerCapture(event.pointerId);
+      } catch (error) {
+        /* Some pointer types refuse capture; the drag still works. */
+      }
+    }
+  };
+
+  Sphere.prototype.onDragMove = function (event) {
+    if (!this.dragging || event.pointerId !== this.pointerId) return;
+
+    var dx = event.clientX - this.last.x;
+    var dy = event.clientY - this.last.y;
+    this.last = {x: event.clientX, y: event.clientY};
+
+    this.rotY += dx * DRAG_DEGREES;
+    /* Dragging down should tip the top of the sphere towards the viewer, which
+       is a decrease in rotateX — hence the sign. */
+    this.rotX -= dy * DRAG_DEGREES;
+    this.rotX = Math.max(-MAX_DRAG_TILT, Math.min(MAX_DRAG_TILT, this.rotX));
+
+    /* Remembered as a per-frame speed, which is what the throw below uses. */
+    this.speedY = dx * DRAG_DEGREES;
+    this.speedX = -dy * DRAG_DEGREES;
+
+    this.paint();
+  };
+
+  Sphere.prototype.onDragEnd = function (event) {
+    if (!this.dragging || (event && event.pointerId !== this.pointerId)) return;
+
+    this.dragging = false;
+    this.pointerId = null;
+    this.root.classList.remove("tech-sphere--held");
+
+    /* Keep part of the speed so it carries on turning and slows down, rather
+       than stopping dead under the finger. */
+    this.speedY *= THROW;
+    this.speedX *= THROW;
   };
 
   Sphere.prototype.onPointerMove = function (event) {
@@ -127,16 +233,41 @@
     var self = this;
     var resizeTimer;
 
-    /* Pointer events rather than mouse events, so a pen works too. Touch is
-       excluded on purpose: on a touch screen a drag over the sphere is a scroll,
-       and hijacking it to spin logos would be hostile. */
+    /* Pointer events rather than mouse events, so a pen and a finger work the
+       same way a mouse does.
+
+       Steering by hover is for pointers that hover. A touch has no hover state,
+       so on a touch screen the position of a finger that is not down means
+       nothing — only the drag applies. */
     this.root.addEventListener("pointermove", function (event) {
-      if (self.running && event.pointerType !== "touch") {
+      if (!self.running) return;
+      if (self.dragging) {
+        self.onDragMove(event);
+      } else if (event.pointerType !== "touch") {
         self.onPointerMove(event);
       }
     });
     this.root.addEventListener("pointerleave", function () {
-      self.onPointerLeave();
+      if (!self.dragging) {
+        self.onPointerLeave();
+      }
+    });
+
+    this.root.addEventListener("pointerdown", function (event) {
+      self.onDragStart(event);
+    });
+    ["pointerup", "pointercancel"].forEach(function (name) {
+      self.root.addEventListener(name, function (event) {
+        self.onDragEnd(event);
+      });
+    });
+
+    /* A drag across logos would otherwise start a native image drag or select
+       the alt text, and the sphere would be left mid-turn. */
+    this.root.addEventListener("dragstart", function (event) {
+      if (self.running) {
+        event.preventDefault();
+      }
     });
 
     global.addEventListener("resize", function () {
@@ -178,6 +309,10 @@
     if (!this.running) {
       return;
     }
+
+    /* A drag in progress when the sphere is taken away — a resize, or a zoom
+       past the breakpoint — would otherwise leave it stuck holding on. */
+    this.onDragEnd(null);
 
     if (this.frame) {
       global.cancelAnimationFrame(this.frame);

@@ -31,22 +31,35 @@ ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / "tools" / "templates"
 
 # name -> (template file, regex for the block in a page, anchor to insert
-#          before when the page does not have the block yet)
+#          before when the page does not have the block yet, optional)
+#
+# "optional" means a page without the anchor simply does not have that block
+# and is not missing anything: the circuit belongs to the page-title band, and
+# the home page and the 404 do not have one.
 BLOCKS = {
     "header": (
         "header.html",
         re.compile(r'<a class="skip-link".*?</header>', re.S),
         None,
+        False,
     ),
     "dock": (
         "dock.html",
         re.compile(r"<!--dock:start-->.*?<!--dock:end-->", re.S),
         re.compile(r"<!-- Deferred so nothing blocks rendering\."),
+        False,
     ),
     "footer": (
         "footer.html",
         re.compile(r'<footer class="site-footer">.*?</footer>', re.S),
         None,
+        False,
+    ),
+    "hero-circuit": (
+        "hero-circuit.html",
+        re.compile(r"<!--hero-circuit:start-->.*?<!--hero-circuit:end-->", re.S),
+        re.compile(r'<div class="container page-hero__inner">'),
+        True,
     ),
 }
 
@@ -96,7 +109,7 @@ def main() -> None:
     args = ap.parse_args()
 
     canonical = {}
-    for name, (filename, _, _) in BLOCKS.items():
+    for name, (filename, _, _, _) in BLOCKS.items():
         path = TEMPLATES / filename
         if not path.exists():
             raise SystemExit(f"Missing template: {path}")
@@ -118,7 +131,7 @@ def main() -> None:
         header_now = header_pattern.search(markup)
         header_current = marked_hrefs(header_now.group(0)) if header_now else set()
 
-        for name, (_, pattern, anchor) in BLOCKS.items():
+        for name, (_, pattern, anchor, optional) in BLOCKS.items():
             found = pattern.search(markup)
 
             # Markers are read from the block being replaced, never from the
@@ -146,7 +159,8 @@ def main() -> None:
 
             spot = anchor.search(markup)
             if not spot:
-                notes.append(f"{name}: MISSING and anchor not found")
+                if not optional:
+                    notes.append(f"{name}: MISSING and anchor not found")
                 continue
             at = spot.start()
             markup = markup[:at] + replacement + "\n\n" + markup[at:]

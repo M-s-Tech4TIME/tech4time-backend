@@ -51,6 +51,7 @@ that holds on every page, the reveal cannot be hiding anything from anyone.
 
 import json
 import os
+import re
 import shutil
 import signal
 import socket
@@ -252,9 +253,9 @@ class Browser:
         return rq("POST", self.s + "/execute/sync",
                   {"script": script, "args": list(args)})["value"]
 
-    def js_async(self, script):
+    def js_async(self, script, args=()):
         return rq("POST", self.s + "/execute/async",
-                  {"script": script, "args": []})["value"]
+                  {"script": script, "args": list(args)})["value"]
 
     def settle(self):
         self.js_async(SCROLL_THROUGH)
@@ -458,6 +459,351 @@ def terminal(b: Browser, origin: str, r: Results) -> None:
             "no infinite animation is running on .terminal__cursor")
 
 
+def typed_terminal(b: Browser, origin: str, r: Results) -> None:
+    """
+    The hero session is typed, not faded in.
+
+    What makes it typing rather than an appearance is that the command's text
+    grows a character at a time, so that is what is measured — the length of it
+    partway through, against the length at the end.
+    """
+    print("\nthe hero terminal, typed")
+    b.go(origin + "/")
+
+    # Sampled every frame rather than read once at a chosen moment. The first
+    # version looked after a second and found the command already complete —
+    # thirteen characters at forty-odd milliseconds each is over before that.
+    # Catching it mid-word means watching, not guessing when to look.
+    lengths = b.js_async("""
+    var done = arguments[arguments.length - 1];
+    var el = document.querySelector('.terminal__command');
+    var seen = [];
+    var started = performance.now();
+    (function sample() {
+      seen.push(el.textContent.length);
+      if (performance.now() - started < 1600) {
+        requestAnimationFrame(sample);
+        return;
+      }
+      done(seen);
+    })();
+    """)
+
+    early = b.js(
+        "var caret = document.querySelector('.terminal__cursor');"
+        "return {typing: document.querySelector('[data-terminal]')"
+        "          .getAttribute('data-typing'),"
+        # Whichever command is being typed, not a named one. Looking for the
+        # first command's text failed because by the time this runs the caret
+        # has correctly moved on to the second — which is the behaviour being
+        # checked, reported as a failure.
+        " caret: !!caret.parentNode.querySelector('.terminal__command')};")
+    r.check("the script has taken the panel over", early["typing"] == "true",
+            f"data-typing is {early['typing']!r}")
+
+    full = len("agents status")
+    partial = sorted(set(n for n in lengths if 0 < n < full))
+    r.check("the first command arrives a character at a time",
+            len(partial) >= 5 and lengths[-1] == full,
+            f"lengths seen: {sorted(set(lengths))}")
+    r.check("the caret is in the line being typed", early["caret"] is True,
+            "the caret is not in the command line")
+
+    time.sleep(7.0)
+    late = b.js(
+        "var lines = document.querySelectorAll('.terminal__line');"
+        "var cmds = Array.prototype.map.call("
+        "  document.querySelectorAll('.terminal__command'),"
+        "  function (c) { return c.textContent; });"
+        "var caret = document.querySelector('.terminal__cursor');"
+        "return {typing: document.querySelector('[data-terminal]')"
+        "          .getAttribute('data-typing'),"
+        " commands: cmds,"
+        " shown: Array.prototype.filter.call(lines, function (l) {"
+        "   return parseFloat(getComputedStyle(l).opacity) > 0.9; }).length,"
+        " total: lines.length,"
+        " caret_last: caret.parentNode === lines[lines.length - 1],"
+        " blinking: caret.getAnimations().some(function (a) {"
+        "   return a.playState === 'running'; })};")
+    r.check("the session finishes", late["typing"] == "done",
+            f"data-typing is {late['typing']!r}")
+    r.check("every command ends up fully typed",
+            late["commands"] == ["agents status",
+                                 "alerts --last 24h --severity high"],
+            f"commands are {late['commands']!r}")
+    r.check("every line of the session is on screen",
+            late["shown"] == late["total"] == 9,
+            f"{late['shown']} of {late['total']} lines shown")
+    r.check("the caret is handed back to the waiting prompt",
+            late["caret_last"] is True and late["blinking"] is True,
+            f"on last line: {late['caret_last']}, "
+            f"blinking: {late['blinking']}")
+
+
+SLIDER = """
+var s = document.querySelector(arguments[0]);
+var track = s.querySelector('[data-slider-track]');
+var slides = Array.prototype.slice.call(track.children);
+
+/* Against the viewport element, not the window. The track is clipped by
+   .slider__viewport, and the slider is narrower than the screen — so the next
+   slide sits just off the clip but still well inside the browser window, and
+   measuring against the window counted it as showing. */
+var clip = s.querySelector('.slider__viewport').getBoundingClientRect();
+var onscreen = slides.filter(function (el) {
+  var r = el.getBoundingClientRect();
+  return r.right > clip.left + 1 && r.left < clip.right - 1;
+});
+return {
+  ready: s.getAttribute('data-ready'),
+  role: s.getAttribute('role'),
+  roledescription: s.getAttribute('aria-roledescription'),
+  labelled: !!s.getAttribute('aria-label'),
+  slides: slides.length,
+  onscreen: onscreen.length,
+  index: track.style.getPropertyValue('--slider-index'),
+  controls: getComputedStyle(s.querySelector('.slider__controls')).display,
+  dots: s.querySelectorAll('.slider__dot').length,
+  current: s.querySelectorAll('.slider__dot[aria-current="true"]').length,
+  paused: s.querySelector('[data-slider-pause]').getAttribute('data-paused')
+};
+"""
+
+
+def sliders(b: Browser, origin: str, r: Results) -> None:
+    print("\nthe slideshows")
+
+    for path, selector, count in (
+        ("/pages/about/", ".specialties__slider", 6),
+        ("/pages/company-profile/", ".journey__slider", 3),
+    ):
+        b.go(origin + path)
+        time.sleep(0.8)
+        d = b.js(SLIDER, [selector])
+
+        r.check(f"{selector} — the script claimed it", d["ready"] == "true",
+                f"data-ready is {d['ready']!r}")
+        r.check(f"{selector} — all {count} slides are present",
+                d["slides"] == count, f"{d['slides']} slides")
+        r.check(f"{selector} — exactly one is on screen", d["onscreen"] == 1,
+                f"{d['onscreen']} slides are within the viewport")
+        r.check(f"{selector} — it announces itself as a carousel",
+                d["role"] == "region"
+                and d["roledescription"] == "carousel"
+                and d["labelled"],
+                f"role={d['role']!r} roledescription={d['roledescription']!r}")
+        r.check(f"{selector} — one dot per slide, one of them current",
+                d["dots"] == count and d["current"] == 1,
+                f"{d['dots']} dots, {d['current']} marked current")
+        r.check(f"{selector} — the controls are shown",
+                d["controls"] != "none", f"display is {d['controls']!r}")
+
+    # Auto-advance, on the six-second one so the wait is bearable.
+    b.go(origin + "/pages/company-profile/")
+    time.sleep(0.6)
+    before = b.js(SLIDER, [".journey__slider"])["index"]
+    time.sleep(7.5)
+    after = b.js(SLIDER, [".journey__slider"])["index"]
+    r.check("it moves on by itself", before != after,
+            f"still on slide {after} after seven and a half seconds")
+
+    # WCAG 2.2.2: anything moving on its own for more than five seconds needs a
+    # way to stop it, and the way has to work.
+    b.js("document.querySelector('.journey__slider [data-slider-pause]').click();")
+    paused_at = b.js(SLIDER, [".journey__slider"])
+    time.sleep(7.5)
+    still = b.js(SLIDER, [".journey__slider"])
+    r.check("the pause control reports itself pressed",
+            paused_at["paused"] == "true",
+            f"data-paused is {paused_at['paused']!r}")
+    r.check("and it actually stops the slideshow",
+            still["index"] == paused_at["index"],
+            f"moved from {paused_at['index']} to {still['index']} while paused")
+
+
+def counters(b: Browser, origin: str, r: Results) -> None:
+    """
+    The figures count up to their value.
+
+    Sampled as it happens rather than checked at the end, because a figure that
+    never animated at all also ends up correct — the final number is what the
+    markup says, and that is exactly what a visitor without JavaScript sees.
+    """
+    print("\nthe figures that count up")
+    b.go(origin + "/pages/company-profile/")
+
+    samples = b.js_async("""
+    var done = arguments[arguments.length - 1];
+    var first = document.querySelector('[data-count-up]');
+    first.scrollIntoView({block: 'center', behavior: 'instant'});
+    var seen = [];
+    var started = performance.now();
+    (function sample() {
+      seen.push(first.textContent);
+      if (performance.now() - started < 1800) {
+        requestAnimationFrame(sample);
+        return;
+      }
+      done(seen);
+    })();
+    """)
+
+    numbers = [int(re.sub(r"\D", "", s) or "0") for s in samples]
+
+    # The first samples are still the markup's own value: the observer has not
+    # reported yet, so the figure is showing its real number. The count starts
+    # when it drops to zero, and that is where the climb is measured from —
+    # reading the whole series as one sequence made it look like it went 5 → 5.
+    low = numbers.index(min(numbers))
+    climb = numbers[low:]
+    r.check("the first figure drops to zero and climbs back to its value",
+            min(numbers) < numbers[-1]
+            and climb == sorted(climb)
+            and len(set(climb)) > 2,
+            f"sampled {numbers[:3]} … then {climb[:4]} … {climb[-2:]}")
+
+    final = b.js(
+        "return Array.prototype.map.call("
+        "  document.querySelectorAll('[data-count-up]'),"
+        "  function (el) { return el.textContent; });")
+    r.check("and every figure lands on the value in the markup",
+            final == ["5+", "7+", "100%", "7+"], f"ended at {final!r}")
+
+
+def alternating_rows(b: Browser, origin: str, r: Results) -> None:
+    print("\nthe client logos, row by row from alternating sides")
+    b.go(origin + "/pages/company-profile/")
+    b.settle()
+    d = b.js(
+        "var cards = document.querySelectorAll("
+        "  '[data-reveal-rows] > [data-reveal]');"
+        "return Array.prototype.map.call(cards, function (c) {"
+        "  return [c.style.getPropertyValue('--reveal-dir'),"
+        "          c.style.getPropertyValue('--reveal-delay')]; });")
+
+    r.check("every logo was assigned a row and a direction",
+            len(d) == 9 and all(x[0] and x[1] for x in d),
+            f"{len(d)} cards: {d!r}")
+
+    # Rows are read off the direction, not off a shared delay: every card in a
+    # row now has its own step, so they follow one another across the row
+    # instead of the row arriving as one block.
+    rows: list[list[int]] = []
+    directions: list[str] = []
+    for direction, delay in d:
+        if not directions or directions[-1] != direction:
+            directions.append(direction)
+            rows.append([])
+        rows[-1].append(int(delay))
+
+    r.check("there is more than one row to alternate", len(rows) > 1,
+            f"all nine logos are on one row: {d!r}")
+    r.check("consecutive rows come from opposite sides",
+            all(directions[i] != directions[i + 1]
+                for i in range(len(directions) - 1)),
+            f"row directions are {directions!r}")
+    r.check("and the cards within a row follow one another",
+            all(row == sorted(row) and len(set(row)) == len(row)
+                for row in rows),
+            f"delays per row are {rows!r}")
+    r.check("with each row starting after the one before it",
+            all(rows[i][-1] < rows[i + 1][0] for i in range(len(rows) - 1)),
+            f"rows overlap: {rows!r}")
+
+
+def tech_sphere(b: Browser, origin: str, r: Results) -> None:
+    """
+    The sphere of logos can be taken hold of and turned.
+
+    Measured as rotation actually applied, not as events received: the drag is
+    only doing its job if the sphere ends up where the hand put it.
+    """
+    print("\nthe technology sphere, dragged")
+    b.go(origin + "/pages/company-profile/")
+    b.js("document.querySelector('[data-tech-sphere]')"
+         ".scrollIntoView({block: 'center', behavior: 'instant'});")
+    time.sleep(1.0)
+
+    running = b.js(
+        "var s = document.querySelector('[data-tech-sphere]');"
+        "return {on: s.classList.contains('tech-sphere--on'),"
+        " cursor: getComputedStyle(s).cursor,"
+        " touch: getComputedStyle(s).touchAction};")
+    r.check("the sphere is running at this width", running["on"] is True,
+            "tech-sphere--on is not set")
+    r.check("it invites being taken hold of", running["cursor"] == "grab",
+            f"cursor is {running['cursor']!r}")
+    # Claiming both axes would trap a visitor trying to scroll past the logos.
+    r.check("vertical scrolling is left to the page on touch",
+            running["touch"] == "pan-y",
+            f"touch-action is {running['touch']!r}")
+
+    def rotation():
+        return b.js(
+            "var l = document.querySelector('.tech-sphere__list');"
+            "return [parseFloat(l.style.getPropertyValue('--rot-y')),"
+            "        parseFloat(l.style.getPropertyValue('--rot-x'))];")
+
+    eid = rq("POST", b.s + "/element",
+             {"using": "css selector", "value": "[data-tech-sphere]"})["value"][W3C]
+    before = rotation()
+
+    # Press in the middle, drag right and down, and hold there.
+    rq("POST", b.s + "/actions", {"actions": [{
+        "type": "pointer", "id": "mouse",
+        "parameters": {"pointerType": "mouse"},
+        "actions": [
+            {"type": "pointerMove", "duration": 0,
+             "origin": {W3C: eid}, "x": 0, "y": 0},
+            {"type": "pointerDown", "button": 0},
+            {"type": "pointerMove", "duration": 120,
+             "origin": {W3C: eid}, "x": 60, "y": 20},
+            {"type": "pointerMove", "duration": 120,
+             "origin": {W3C: eid}, "x": 140, "y": 60},
+        ]}]})
+
+    held = b.js(
+        "var s = document.querySelector('[data-tech-sphere]');"
+        "return {held: s.classList.contains('tech-sphere--held'),"
+        " cursor: getComputedStyle(s).cursor};")
+    during = rotation()
+
+    r.check("holding it is reflected while the button is down",
+            held["held"] is True and held["cursor"] == "grabbing",
+            f"held={held['held']}, cursor is {held['cursor']!r}")
+    # 140px right at a third of a degree each is somewhere around 45 degrees.
+    r.check("dragging right turns it right", during[0] - before[0] > 20,
+            f"--rot-y went {before[0]} → {during[0]}")
+    # Dragging down tips the top of the sphere towards the viewer.
+    r.check("and dragging down tips it", during[1] - before[1] < -5,
+            f"--rot-x went {before[1]} → {during[1]}")
+
+    rq("POST", b.s + "/actions", {"actions": [{
+        "type": "pointer", "id": "mouse",
+        "parameters": {"pointerType": "mouse"},
+        "actions": [{"type": "pointerUp", "button": 0}]}]})
+
+    released = b.js(
+        "return document.querySelector('[data-tech-sphere]')"
+        "  .classList.contains('tech-sphere--held');")
+    r.check("and letting go releases it", released is False,
+            "tech-sphere--held is still set after the button came up")
+
+    # It should carry on turning, then be eased back into its resting tilt
+    # rather than snapped there.
+    time.sleep(0.4)
+    coasting = rotation()
+    r.check("it keeps some of the throw after the hand lets go",
+            coasting[0] != during[0],
+            f"--rot-y stopped dead at {during[0]}")
+
+    time.sleep(4.0)
+    settled = rotation()
+    r.check("and the tilt eases back into its resting range",
+            abs(settled[1]) <= 38.5,
+            f"--rot-x is {settled[1]}, outside the ±38 the drift keeps to")
+
+
 def printing(b: Browser, origin: str, r: Results) -> None:
     """
     Printing never scrolls, so nothing would ever reveal and the page would come
@@ -613,7 +959,11 @@ def main() -> None:
         no_layout_shift(browser, origin, results)
         transitions_survive(browser, origin, results)
         shine(browser, origin, results)
-        terminal(browser, origin, results)
+        typed_terminal(browser, origin, results)
+        sliders(browser, origin, results)
+        counters(browser, origin, results)
+        alternating_rows(browser, origin, results)
+        tech_sphere(browser, origin, results)
         printing(browser, origin, results)
         watchdog(browser, origin, results)
         browser.quit()

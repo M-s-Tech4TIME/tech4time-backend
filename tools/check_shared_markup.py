@@ -39,7 +39,15 @@ BLOCKS = {
         "footer.html",
         re.compile(r'<footer class="site-footer">.*?</footer>', re.S),
     ),
+    # Only on pages with a title band, which the home page and the 404 do not
+    # have. Absence is not drift; a copy that differs is.
+    "hero-circuit": (
+        "hero-circuit.html",
+        re.compile(r"<!--hero-circuit:start-->.*?<!--hero-circuit:end-->", re.S),
+    ),
 }
+
+OPTIONAL_BLOCKS = {"hero-circuit"}
 
 # Feature modules a page may legitimately omit: forms.js when it carries no
 # form, dashboard.js when it has no tabbed panels, tech-sphere.js when it has no
@@ -48,6 +56,9 @@ OPTIONAL_SCRIPTS = {
     "/assets/js/forms.js",
     "/assets/js/dashboard.js",
     "/assets/js/tech-sphere.js",
+    # Two pages have a slideshow, one has the terminal.
+    "/assets/js/slider.js",
+    "/assets/js/terminal.js",
 }
 
 ARIA_CURRENT = re.compile(r'\s*aria-current="page"')
@@ -109,7 +120,8 @@ def main() -> None:
         for name, (_, pattern) in BLOCKS.items():
             match = pattern.search(html)
             if not match:
-                issues.append(f"no {name} block found")
+                if name not in OPTIONAL_BLOCKS:
+                    issues.append(f"no {name} block found")
                 continue
             found = normalise(match.group(0))
             if found != canonical[name]:

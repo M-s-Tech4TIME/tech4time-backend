@@ -463,3 +463,186 @@
     text-align: center;
   }
 }
+
+/* --------------------------------------------------------------------------
+   The circuit around the page title
+
+   Four strips, one per edge, each masked so the traces fade before they reach
+   the title. The whole thing is behind the content and takes no pointer
+   events, so it cannot interfere with anything.
+
+   The two edges of each pair share one set of paths and are flipped, so the
+   right-hand edge is the left one mirrored and the bottom is the top turned
+   over. What keeps that from reading as a mirror is the timing: every charge
+   runs on a different prime number of seconds, so no two edges ever line up.
+
+   Motion here is suppressed by the prefers-reduced-motion block in base.css,
+   which leaves the traces as a still drawing.
+   -------------------------------------------------------------------------- */
+
+.page-hero {
+  position: relative;
+  /* The strips are inset to the edges of this box; without this they would
+     resolve against the page. */
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.hero-circuit {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.page-hero__inner {
+  position: relative;
+}
+
+.hero-circuit__edge {
+  position: absolute;
+  display: block;
+}
+
+.hero-circuit__edge--top,
+.hero-circuit__edge--bottom {
+  inset-inline: 0;
+  width: 100%;
+  height: clamp(3.5rem, 9vw, 4.5rem);
+}
+
+.hero-circuit__edge--top {
+  top: 0;
+  mask-image: linear-gradient(to bottom, #000 20%, transparent 95%);
+}
+
+.hero-circuit__edge--bottom {
+  bottom: 0;
+  /* The same drawing turned over, so the traces run out of the bottom edge
+     rather than into it. */
+  transform: scaleY(-1);
+  mask-image: linear-gradient(to bottom, #000 20%, transparent 95%);
+}
+
+.hero-circuit__edge--left,
+.hero-circuit__edge--right {
+  inset-block: 0;
+  height: 100%;
+  width: clamp(3rem, 7vw, 4.5rem);
+}
+
+.hero-circuit__edge--left {
+  left: 0;
+  mask-image: linear-gradient(to right, #000 20%, transparent 95%);
+}
+
+.hero-circuit__edge--right {
+  right: 0;
+  transform: scaleX(-1);
+  mask-image: linear-gradient(to right, #000 20%, transparent 95%);
+}
+
+/* Below this the title has the band to itself: four strips of circuitry around
+   a heading on a phone is a frame with nothing left in the middle. The side
+   edges go first because they are the ones that eat the width. */
+@media (max-width: 40em) {
+  .hero-circuit__edge--left,
+  .hero-circuit__edge--right {
+    display: none;
+  }
+}
+
+@media (max-width: 26em) {
+  .hero-circuit {
+    display: none;
+  }
+}
+
+.hero-circuit__wires use {
+  stroke: var(--silver-accent-mid);
+  stroke-width: 1.5;
+  opacity: 0.24;
+}
+
+/* A short bright dash travelling the length of a trace. The dasharray is one
+   visible segment followed by a gap longer than any path here, so only one
+   charge is ever on a wire at a time. */
+.hero-circuit__charge {
+  stroke: var(--accent-text);
+  stroke-width: 2.5;
+  stroke-dasharray: 30 1400;
+  animation-name: hero-charge;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes hero-charge {
+  from {
+    stroke-dashoffset: 1430;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Primes, and no two the same anywhere in the four edges: equal durations
+   would resynchronise and the repeat would become visible. */
+.hero-circuit__charge--a { animation-duration: 11s; }
+.hero-circuit__charge--b { animation-duration: 13s; }
+.hero-circuit__charge--c { animation-duration: 17s; }
+.hero-circuit__charge--d { animation-duration: 19s; }
+.hero-circuit__charge--e { animation-duration: 23s; }
+.hero-circuit__charge--f { animation-duration: 29s; }
+.hero-circuit__charge--g { animation-duration: 31s; }
+.hero-circuit__charge--h { animation-duration: 37s; }
+.hero-circuit__charge--i { animation-duration: 41s; }
+.hero-circuit__charge--j { animation-duration: 43s; }
+.hero-circuit__charge--k { animation-duration: 47s; }
+.hero-circuit__charge--l { animation-duration: 53s; }
+.hero-circuit__charge--m { animation-duration: 59s; }
+.hero-circuit__charge--n { animation-duration: 61s; }
+.hero-circuit__charge--o { animation-duration: 67s; }
+.hero-circuit__charge--p { animation-duration: 71s; }
+
+.hero-circuit__node {
+  fill: var(--silver-accent-mid);
+  opacity: 0.3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: hero-pulse;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes hero-pulse {
+  from {
+    opacity: 0.16;
+    scale: 0.85;
+  }
+  to {
+    opacity: 0.5;
+    scale: 1.15;
+  }
+}
+
+.hero-circuit__node--a { animation-duration: 7s; }
+.hero-circuit__node--b { animation-duration: 11s; }
+.hero-circuit__node--c { animation-duration: 13s; }
+.hero-circuit__node--d { animation-duration: 17s; }
+.hero-circuit__node--e { animation-duration: 19s; }
+.hero-circuit__node--f { animation-duration: 23s; }
+.hero-circuit__node--g { animation-duration: 29s; }
+.hero-circuit__node--h { animation-duration: 31s; }
+.hero-circuit__node--i { animation-duration: 37s; }
+.hero-circuit__node--j { animation-duration: 41s; }
+.hero-circuit__node--k { animation-duration: 43s; }
+.hero-circuit__node--l { animation-duration: 47s; }
+.hero-circuit__node--m { animation-duration: 53s; }
+.hero-circuit__node--n { animation-duration: 59s; }
+.hero-circuit__node--o { animation-duration: 61s; }
+.hero-circuit__node--p { animation-duration: 67s; }
+.hero-circuit__node--q { animation-duration: 71s; }
+.hero-circuit__node--r { animation-duration: 73s; }
+.hero-circuit__node--s { animation-duration: 79s; }
+.hero-circuit__node--t { animation-duration: 83s; }

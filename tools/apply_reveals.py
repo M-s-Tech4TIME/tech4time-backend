@@ -55,6 +55,7 @@ WHAT IS DELIBERATELY NOT MARKED, and why each one matters:
       Same reasoning as tab panels.
 """
 
+import re
 import sys
 from pathlib import Path
 
@@ -78,6 +79,12 @@ SKIP_CLASSES = {
 # sibling cards, so they arrive in sequence rather than as one block. Above this
 # many, the stagger becomes a queue the visitor waits in.
 MAX_STAGGER = 12
+
+# How far below a section's own children to go looking for a run of cards.
+# Two is what the markup here actually needs — a block, a grid inside it, the
+# cards inside that. Deeper than that and the walk starts breaking apart things
+# that are one thing.
+MAX_DEPTH = 2
 
 
 def is_card_run(node: htmltree.Node, kids: list[htmltree.Node]) -> bool:
@@ -123,6 +130,55 @@ def content_root(section: htmltree.Node) -> htmltree.Node:
         return node
 
 
+def descend(node: htmltree.Node, depth: int
+            ) -> tuple[list[tuple[htmltree.Node, bool]], bool]:
+    """
+    Find the card run inside this element, however deep it is sitting.
+
+    Returns (targets, found_a_run). When nothing below turns out to be a run,
+    the whole subtree collapses back to a single target — the element itself —
+    so a heading block or a body of prose is still revealed as one thing.
+
+    This exists because the first version only looked one level down, and every
+    run on the company profile is two: the section holds a .background__block,
+    and the cards are inside a grid within that. So the four experience figures,
+    the nine client logos and the four values each arrived as one lump while
+    every other grid on the site arrived in sequence. Same rule, applied at
+    whatever depth the markup happens to put the cards.
+    """
+    if "data-slider" in node.attrs:
+        # A slider shows one slide at a time and animates them itself. Marking
+        # the slides would leave the ones off screen hidden by two different
+        # mechanisms, neither of which knows about the other.
+        return [(node, True)], False
+
+    if node.tag == "details":
+        # A closed <details> gives its contents no layout box, so the observer
+        # never reports them and they would still be transparent when the
+        # visitor opened it. Exactly the trap the tab panels are kept out of —
+        # and it only appeared once the walk went deep enough to reach inside
+        # the job posts and the certification groups. The <details> itself is
+        # the target; what it contains arrives with it.
+        return [(node, True)], False
+
+    kids = [c for c in node.children if not skipped(c)]
+
+    if is_card_run(node, kids):
+        return [(k, True) for k in kids], True
+
+    if depth >= MAX_DEPTH or not kids:
+        return [(node, True)], False
+
+    out: list[tuple[htmltree.Node, bool]] = []
+    found = False
+    for kid in kids:
+        sub, sub_found = descend(kid, depth + 1)
+        out.extend(sub)
+        found = found or sub_found
+
+    return (out, True) if found else ([(node, True)], False)
+
+
 def targets_for(page: htmltree.Node) -> list[tuple[htmltree.Node, bool]]:
     """[(node, staggered)] in document order."""
     main = next(page.find(tag="main"), None)
@@ -139,9 +195,9 @@ def targets_for(page: htmltree.Node) -> list[tuple[htmltree.Node, bool]]:
         stagger_block = len(children) > 1
 
         for child in children:
-            kids = [c for c in child.children if not skipped(c)]
-            if is_card_run(child, kids):
-                out.extend((k, True) for k in kids)
+            targets, found = descend(child, 0)
+            if found:
+                out.extend(targets)
             else:
                 out.append((child, stagger_block))
     return out
@@ -163,15 +219,20 @@ def pages() -> list[Path]:
     return [p for p in found if p.exists()]
 
 
+# Matched with a boundary, not as a prefix. A plain replace of " data-reveal"
+# also ate the front of data-reveal-rows — the attribute that tells
+# animations.js which grid slides its rows in from alternating sides — and left
+# `<ul class="clients" role="list"-rows>` behind. The markup still parsed, the
+# attribute was simply gone, and the effect quietly did not happen.
+MARKERS = re.compile(r'\s+data-reveal(?:-delay)?(?![-\w])(?:="[^"]*")?')
+
+
 def strip(path: Path) -> int:
     text = path.read_text()
-    before = text
-    for attr in (' data-reveal-delay=""', " data-reveal-delay",
-                 ' data-reveal=""', " data-reveal"):
-        text = text.replace(attr, "")
-    if text != before:
-        path.write_text(text)
-    return before.count("data-reveal")
+    stripped = MARKERS.sub("", text)
+    if stripped != text:
+        path.write_text(stripped)
+    return len(MARKERS.findall(text))
 
 
 def apply(path: Path, write: bool) -> tuple[int, int, list[str]]:

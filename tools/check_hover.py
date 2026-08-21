@@ -142,15 +142,34 @@ for (var up = el; up && up !== document.body; up = up.parentElement) {
 nodes = nodes.concat(
   Array.prototype.slice.call(el.querySelectorAll('*')).slice(0, 24));
 
+/* ::before and ::after count too. A good deal of this site's hover work is
+   drawn by a pseudo-element rather than by the element — the slideshow dot is
+   a 44px hit area with the visible mark in its ::after, and the shine sweep
+   across a primary button is nothing but an ::after. Reading only the elements
+   reported the dot as dead when hovering it plainly changes it.
+
+   A pseudo with `content: none` is not rendered at all, so its computed style
+   is not evidence of anything; it contributes a constant instead, and cannot
+   manufacture a reaction that nobody can see. */
+function sample(node) {
+  var out = [];
+  [null, "::before", "::after"].forEach(function (pseudo) {
+    var s = getComputedStyle(node, pseudo);
+    if (pseudo && s.content === "none") {
+      out.push("(not rendered)");
+      return;
+    }
+    out.push(PROPS.map(function (p) { return s[p]; }).join("|"));
+  });
+  return out.join("&");
+}
+
 return {
   /* Did the pointer actually arrive? An element can fail to react because
      nothing is declared, or because something is sitting on top of it — two
      different problems, and worth telling apart. */
   landed: el.matches(':hover'),
-  style: nodes.map(function (n) {
-    var s = getComputedStyle(n);
-    return PROPS.map(function (p) { return s[p]; }).join('|');
-  }).join('~')
+  style: nodes.map(sample).join('~')
 };
 """
 

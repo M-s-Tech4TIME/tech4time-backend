@@ -142,19 +142,21 @@
   word-break: break-word;
   text-indent: 0;
 
-  /* The lines arrive one after another, as if the session were running.
-     Appearing, not typing: a character-by-character effect needs the text
-     clipped to a width animated in steps, which only holds for one unwrapped
-     line of monospace — and these wrap. Faking it would break the moment a
-     line was too long for the window, which is the case the pre-wrap rule
-     above exists to handle.
+  /* The fallback sequence, for a visitor with no JavaScript: the lines arrive
+     one after another as if the session were running. The real typing is done
+     by terminal.js, which switches this off — see the data-typing rules at the
+     end of this file. It has to be a script: typing in CSS means clipping the
+     text to a width animated in steps, which holds only for one unwrapped line
+     of monospace, and these wrap.
 
-     No script involved. A JavaScript version could stall part way and leave
-     the panel half empty; a CSS animation either runs or does not exist. The
-     whole terminal is aria-hidden, so nothing here is content anyone is
-     waiting to read. */
+     The whole terminal is aria-hidden either way. It is a picture of a
+     terminal, not something anyone is waiting to have read to them. */
   animation: terminal-line var(--duration) var(--ease-out) both;
-  animation-delay: calc(var(--i, 0) * 160ms);
+  /* The base wait is what keeps terminal.js from having to fight this. Nothing
+     has appeared yet when the deferred script runs, so it can take the session
+     over without a line flickering half-faded and being reset. Without
+     JavaScript the whole session simply starts four tenths of a second in. */
+  animation-delay: calc(var(--terminal-start, 400ms) + var(--i, 0) * 160ms);
 }
 
 /* Nine lines, nine steps. Written out the way .soc-map__slot is, because a
@@ -216,9 +218,9 @@
   height: 1.1em;
   vertical-align: text-bottom;
   animation: terminal-blink 1.06s steps(1, end) infinite;
-  /* When the ninth line has finished: its own delay of 8 steps, plus the time
-     it takes to arrive. */
-  animation-delay: calc(8 * 160ms + var(--duration));
+  /* When the ninth line has finished: the base wait, its own delay of 8 steps,
+     and the time it takes to arrive. */
+  animation-delay: calc(var(--terminal-start, 400ms) + 8 * 160ms + var(--duration));
   background-color: #e8e9eb;
 }
 
@@ -552,4 +554,35 @@
   max-width: 38rem;
   margin: 0 auto var(--space-lg);
   font-size: var(--text-md);
+}
+
+/* --------------------------------------------------------------------------
+   The typed session
+
+   terminal.js sets data-typing on the panel and takes over: the CSS sequence
+   above is switched off, and each line is shown as the script reaches it. A
+   command is typed into an emptied element character by character; output
+   lines are shown whole, because a shell prints its output, it does not type
+   it.
+   -------------------------------------------------------------------------- */
+
+[data-typing] .terminal__line {
+  animation: none;
+  opacity: 0;
+  transition: opacity 140ms var(--ease-out);
+}
+
+[data-typing] .terminal__line[data-typed="true"] {
+  opacity: 1;
+}
+
+/* A caret is solid while you are typing with it and blinks when it is waiting,
+   so the blink is held back until the session has finished. */
+[data-typing] .terminal__cursor {
+  animation: none;
+}
+
+[data-typing="done"] .terminal__cursor {
+  animation: terminal-blink 1.06s steps(1, end) infinite;
+  animation-delay: 0s;
 }

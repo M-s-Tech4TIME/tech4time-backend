@@ -96,10 +96,49 @@
    3. Specialties
    -------------------------------------------------------------------------- */
 
-.specialties__grid {
-  display: grid;
-  gap: var(--space-md);
-  grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+/* The no-JavaScript fallback layout for the slideshow: the grid this section
+   used to be. slider.js switches the track to a sliding row once it is ready;
+   see section 11 of components.css. */
+.specialties__slider {
+  --slider-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+}
+
+/* One specialty now has the whole width, which is more width than a paragraph
+   should be given: past about 62 characters a line is hard to track back from.
+   So the card is two columns — what it is on the left, what it means on the
+   right — rather than one column of text with half the card left empty.
+
+   min-height: 100% because every slide is as tall as the tallest, and a card
+   that does not fill its slide leaves a gap under it. */
+.specialties__slider .specialty-card {
+  min-height: 100%;
+  padding: var(--space-xl);
+}
+
+@media (min-width: 52em) {
+  .specialties__slider .specialty-card {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    column-gap: var(--space-2xl);
+    align-items: start;
+  }
+
+  .specialties__slider .specialty-card__icon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .specialties__slider .specialty-card__title {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .specialties__slider .specialty-card__text {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    max-width: 62ch;
+  }
 }
 
 .specialty-card {

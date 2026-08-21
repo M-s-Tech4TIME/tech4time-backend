@@ -28,6 +28,17 @@
      waiting longer than the one before. */
   var MAX_STEP = 7;
 
+  /* The row grid runs its own, longer sequence: every card in it has its own
+     step rather than sharing one with its row, so the ceiling has to allow for
+     all of them and for the gap between rows. Nine logos in two rows reach
+     eleven, which is under a second all told. */
+  var MAX_ROW_STEP = 16;
+  var ROW_GAP = 2;
+
+  /* How long a figure takes to count up to its value. Long enough to read as
+     counting, short enough that the number is the true one almost at once. */
+  var COUNT_DURATION = 1400;
+
   function init() {
     var root = document.documentElement;
 
@@ -42,8 +53,12 @@
 
     if (!("IntersectionObserver" in global) || reduced) {
       root.classList.remove(ENABLED_CLASS);
+      /* The figures are already correct in the markup, so there is nothing to
+         restore — they simply stay at their final value. */
       return;
     }
+
+    countUp();
 
     var targets = document.querySelectorAll("[data-reveal]");
     if (!targets.length) {
@@ -51,6 +66,7 @@
     }
 
     stagger(targets);
+    staggerRows();
 
     var observer = new IntersectionObserver(
       function (entries) {
@@ -105,6 +121,120 @@
         String(Math.min(index, MAX_STEP))
       );
     });
+  }
+
+  /* --------------------------------------------------------------------------
+     Rows that arrive from alternating sides.
+
+     For a grid whose rows should slide in rather than rise: the first row from
+     the left, the next from the right, and so on down the block. The rows are
+     not in the markup — the grid is auto-fit, so how many cards share a row is
+     decided by the width of the screen. They have to be read back out of the
+     layout, by grouping the cards on the offsetTop they ended up at.
+
+     The row decides the direction; the card's place in the row decides when.
+     So a row comes in from one side with its cards following one another, and
+     the next row does the same from the other side — rather than each row
+     arriving as a single block.
+     -------------------------------------------------------------------------- */
+  function staggerRows() {
+    var groups = document.querySelectorAll("[data-reveal-rows]");
+
+    Array.prototype.forEach.call(groups, function (group) {
+      var kids = Array.prototype.filter.call(
+        group.children,
+        function (el) { return el.hasAttribute("data-reveal"); }
+      );
+
+      /* Group by where the layout actually put them. A couple of pixels of
+         tolerance, because cards of unequal height in the same row do not all
+         report an identical offset. */
+      var rows = [];
+      var lastTop = null;
+      kids.forEach(function (kid) {
+        var top = kid.offsetTop;
+        if (lastTop === null || Math.abs(top - lastTop) > 4) {
+          rows.push([]);
+          lastTop = top;
+        }
+        rows[rows.length - 1].push(kid);
+      });
+
+      var step = 0;
+      rows.forEach(function (row, index) {
+        /* A beat between rows, so one finishes arriving before the next
+           starts rather than the two overlapping into a single movement. */
+        if (index > 0) {
+          step += ROW_GAP;
+        }
+        row.forEach(function (kid) {
+          kid.style.setProperty(
+            "--reveal-delay",
+            String(Math.min(step, MAX_ROW_STEP))
+          );
+          kid.style.setProperty("--reveal-dir", index % 2 === 0 ? "-1" : "1");
+          step += 1;
+        });
+      });
+    });
+  }
+
+  /* --------------------------------------------------------------------------
+     Figures that count up to their value.
+
+     The number in the markup is the real one, and it is what a visitor without
+     JavaScript, or with reduced motion, sees from the start. This reads it,
+     counts from zero, and puts it back — so the page is never showing a figure
+     that is not the true one for longer than the animation lasts.
+
+     The suffix is kept: "5+" counts to 5 and stays a 5+, "100%" to 100%.
+     -------------------------------------------------------------------------- */
+  function countUp() {
+    var figures = document.querySelectorAll("[data-count-up]");
+    if (!figures.length) return;
+
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          observer.unobserve(entry.target);
+          run(entry.target);
+        });
+      },
+      { threshold: 0, rootMargin: "0px 0px -10% 0px" }
+    );
+
+    Array.prototype.forEach.call(figures, function (figure) {
+      observer.observe(figure);
+    });
+
+    function run(el) {
+      var match = /^\s*(\d+)(.*)$/.exec(el.textContent);
+      if (!match) return;
+
+      var target = parseInt(match[1], 10);
+      var suffix = match[2];
+      var started = null;
+
+      /* Held at the width the final value needs, so the block does not jog
+         sideways as the digits go from one to three characters. */
+      el.style.setProperty("min-width", el.getBoundingClientRect().width + "px");
+
+      function frame(now) {
+        if (started === null) started = now;
+        var progress = Math.min((now - started) / COUNT_DURATION, 1);
+        /* Ease out: quick to most of the way, then settling, which reads as
+           counting rather than as a linear sweep. */
+        var eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = String(Math.round(target * eased)) + suffix;
+        if (progress < 1) {
+          global.requestAnimationFrame(frame);
+        }
+      }
+
+      el.textContent = "0" + suffix;
+      global.requestAnimationFrame(frame);
+    }
   }
 
   global.Tech4Time = global.Tech4Time || {};

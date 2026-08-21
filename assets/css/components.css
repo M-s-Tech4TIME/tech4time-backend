@@ -1008,3 +1008,159 @@ textarea.field__control {
 .dock__node--p { animation-duration: 67s; }
 .dock__node--q { animation-duration: 71s; }
 .dock__node--r { animation-duration: 73s; }
+
+/* --------------------------------------------------------------------------
+   11. Slider
+   The specialities on About and the journey photographs on Company Profile.
+
+   Two states, and the difference between them is the whole progressive
+   enhancement story:
+
+   Without JavaScript there is no [data-ready], the track is the grid the
+   section used to be, every slide is on screen, and the controls are not
+   rendered. Nobody is offered a button that cannot work, and nothing is
+   hidden.
+
+   With it, the track becomes a row as wide as all the slides together and
+   slides along inside a viewport that clips it. The slides are moved, not
+   hidden — they stay in the accessibility tree and in this repo's own colour
+   audit, which is worth more here than the usual advice to hide them, because
+   none of them contains anything focusable to get lost in.
+   -------------------------------------------------------------------------- */
+
+.slider {
+  position: relative;
+}
+
+/* The fallback layout: the same auto-fit grid these sections had. Each page
+   sets its own column width through --slider-columns. */
+.slider__track {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: var(--slider-columns, 1fr);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* Clip sideways only. `overflow: hidden` would also cut the top and bottom,
+   and the cards inside lift and cast a shadow on hover — both would be sliced
+   off at the edge of the frame. `clip` is what allows the other axis to stay
+   visible; `hidden` on one axis forces the other to `auto`, which would add a
+   scrollbar rather than let the shadow through. */
+.slider__viewport {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+.slider[data-ready="true"] .slider__track {
+  display: flex;
+  gap: 0;
+  translate: calc(var(--slider-index, 0) * -100%) 0;
+  transition: translate var(--duration-slow) var(--ease-out);
+}
+
+/* Every slide exactly one viewport wide, so the index doubles as the offset.
+   min-width: 0 because a flex item will otherwise refuse to shrink below the
+   width of its content, and a long word in a paragraph would push the whole
+   track out of step. */
+.slider[data-ready="true"] .slider__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+/* --- the controls -------------------------------------------------------- */
+
+/* Not rendered until the script has claimed the slider. */
+.slider__controls {
+  display: none;
+}
+
+.slider[data-ready="true"] .slider__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+  margin-block-start: var(--space-md);
+}
+
+.slider__arrow,
+.slider__pause {
+  display: grid;
+  place-items: center;
+  /* 2.75rem keeps the tap target at the 44px accessibility minimum. */
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    color var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out);
+}
+
+.slider__arrow:hover,
+.slider__pause:hover,
+.slider__arrow:focus-visible,
+.slider__pause:focus-visible {
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+  border-color: var(--border-strong);
+}
+
+.slider__dots {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3xs);
+}
+
+/* The dot is small, so the button around it is not: the hit area is a full
+   44px square and the mark inside it is drawn by ::after. */
+.slider__dot {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  background-color: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.slider__dot::after {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: var(--border-strong);
+  border-radius: var(--radius-full);
+  transition:
+    background-color var(--duration) var(--ease-out),
+    scale var(--duration) var(--ease-out);
+}
+
+.slider__dot:hover::after {
+  background-color: var(--accent-text);
+}
+
+/* aria-current is the state the script maintains, so the current dot looks
+   current however it was reached — a click, an arrow key, or the slideshow
+   moving on by itself. */
+.slider__dot[aria-current="true"]::after {
+  background-image: var(--silver-gradient-fill);
+  background-color: transparent;
+  scale: 1.5;
+}
+
+/* --- the pause button's two icons ---------------------------------------- */
+
+.slider__pause .slider__icon--play,
+.slider__pause[data-paused="true"] .slider__icon--pause {
+  display: none;
+}
+
+.slider__pause[data-paused="true"] .slider__icon--play {
+  display: block;
+}

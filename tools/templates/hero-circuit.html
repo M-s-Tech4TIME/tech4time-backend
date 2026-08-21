@@ -1,0 +1,128 @@
+<!--hero-circuit:start-->
+    <!-- Circuitry framing the page title, on all four edges. Drawn rather than
+         photographed: about a kilobyte, it tints itself from the theme tokens,
+         and it costs the Largest Contentful Paint nothing because there is no
+         image to fetch.
+
+         aria-hidden, and inside the hero but behind it: this is texture around
+         the title, and it says nothing.
+
+         The geometry is declared once, in the top edge's <defs>. SVG ids are
+         document-scoped, so the other three edges reference the same paths and
+         are flipped in CSS — two sets of geometry, four sides.
+
+         preserveAspectRatio="none" because these strips run the width of the
+         viewport at a fixed height, and any aspect-preserving fit either crops
+         most of the drawing away or letterboxes it. The traces are built from
+         horizontal runs and vertical drops for that reason: stretching one
+         axis lengthens the runs and moves the drops apart, which is what a
+         longer stretch of circuit board would look like anyway.
+
+         Every charge runs on its own prime number of seconds, as the dock's
+         does, so the four edges never settle back into an arrangement anyone
+         has already seen. -->
+    <div class="hero-circuit" aria-hidden="true">
+      <svg class="hero-circuit__edge hero-circuit__edge--top" viewBox="0 0 1440 72"
+           preserveAspectRatio="none" focusable="false">
+        <defs>
+          <path id="hc-h-a" d="M0 18h206v26h178v-26h242v34h198"/>
+          <path id="hc-h-b" d="M1440 46h-286v-22H902v30H628v-30H318"/>
+          <path id="hc-h-c" d="M0 58h122v-30h150v22h268v-40h214"/>
+          <path id="hc-h-d" d="M1440 12h-192v28h-206v20H714v-14H452"/>
+          <path id="hc-v-a" d="M18 0v182h30v148H20v170"/>
+          <path id="hc-v-b" d="M54 480V330h-26V190h30V44"/>
+          <path id="hc-v-c" d="M36 0v96h26v128H30v186"/>
+          <path id="hc-v-d" d="M62 480V366H36V246h26V120"/>
+        </defs>
+
+        <g class="hero-circuit__wires" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <use href="#hc-h-a"/><use href="#hc-h-b"/>
+          <use href="#hc-h-c"/><use href="#hc-h-d"/>
+        </g>
+
+        <g class="hero-circuit__charges" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <use class="hero-circuit__charge hero-circuit__charge--a" href="#hc-h-a"/>
+          <use class="hero-circuit__charge hero-circuit__charge--b" href="#hc-h-b"/>
+          <use class="hero-circuit__charge hero-circuit__charge--c" href="#hc-h-c"/>
+          <use class="hero-circuit__charge hero-circuit__charge--d" href="#hc-h-d"/>
+        </g>
+
+        <g class="hero-circuit__nodes">
+          <circle class="hero-circuit__node hero-circuit__node--a" cx="206" cy="18" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--b" cx="384" cy="44" r="3.4"/>
+          <circle class="hero-circuit__node hero-circuit__node--c" cx="902" cy="24" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--d" cx="628" cy="54" r="3.4"/>
+          <circle class="hero-circuit__node hero-circuit__node--e" cx="272" cy="28" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--f" cx="1248" cy="40" r="3.4"/>
+        </g>
+      </svg>
+
+      <svg class="hero-circuit__edge hero-circuit__edge--bottom" viewBox="0 0 1440 72"
+           preserveAspectRatio="none" focusable="false">
+        <g class="hero-circuit__wires" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <use href="#hc-h-a"/><use href="#hc-h-b"/>
+          <use href="#hc-h-c"/><use href="#hc-h-d"/>
+        </g>
+
+        <g class="hero-circuit__charges" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <use class="hero-circuit__charge hero-circuit__charge--e" href="#hc-h-a"/>
+          <use class="hero-circuit__charge hero-circuit__charge--f" href="#hc-h-b"/>
+          <use class="hero-circuit__charge hero-circuit__charge--g" href="#hc-h-c"/>
+          <use class="hero-circuit__charge hero-circuit__charge--h" href="#hc-h-d"/>
+        </g>
+
+        <g class="hero-circuit__nodes">
+          <circle class="hero-circuit__node hero-circuit__node--g" cx="206" cy="18" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--h" cx="384" cy="44" r="3.4"/>
+          <circle class="hero-circuit__node hero-circuit__node--i" cx="902" cy="24" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--j" cx="628" cy="54" r="3.4"/>
+          <circle class="hero-circuit__node hero-circuit__node--k" cx="1148" cy="24" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--l" cx="452" cy="60" r="3.4"/>
+        </g>
+      </svg>
+
+      <svg class="hero-circuit__edge hero-circuit__edge--left" viewBox="0 0 72 480"
+           preserveAspectRatio="none" focusable="false">
+        <g class="hero-circuit__wires" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <use href="#hc-v-a"/><use href="#hc-v-b"/>
+          <use href="#hc-v-c"/><use href="#hc-v-d"/>
+        </g>
+
+        <g class="hero-circuit__charges" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <use class="hero-circuit__charge hero-circuit__charge--i" href="#hc-v-a"/>
+          <use class="hero-circuit__charge hero-circuit__charge--j" href="#hc-v-b"/>
+          <use class="hero-circuit__charge hero-circuit__charge--k" href="#hc-v-c"/>
+          <use class="hero-circuit__charge hero-circuit__charge--l" href="#hc-v-d"/>
+        </g>
+
+        <g class="hero-circuit__nodes">
+          <circle class="hero-circuit__node hero-circuit__node--m" cx="18" cy="182" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--n" cx="48" cy="330" r="3.4"/>
+          <circle class="hero-circuit__node hero-circuit__node--o" cx="62" cy="224" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--p" cx="36" cy="96" r="3.4"/>
+        </g>
+      </svg>
+
+      <svg class="hero-circuit__edge hero-circuit__edge--right" viewBox="0 0 72 480"
+           preserveAspectRatio="none" focusable="false">
+        <g class="hero-circuit__wires" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <use href="#hc-v-a"/><use href="#hc-v-b"/>
+          <use href="#hc-v-c"/><use href="#hc-v-d"/>
+        </g>
+
+        <g class="hero-circuit__charges" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <use class="hero-circuit__charge hero-circuit__charge--m" href="#hc-v-a"/>
+          <use class="hero-circuit__charge hero-circuit__charge--n" href="#hc-v-b"/>
+          <use class="hero-circuit__charge hero-circuit__charge--o" href="#hc-v-c"/>
+          <use class="hero-circuit__charge hero-circuit__charge--p" href="#hc-v-d"/>
+        </g>
+
+        <g class="hero-circuit__nodes">
+          <circle class="hero-circuit__node hero-circuit__node--q" cx="18" cy="182" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--r" cx="48" cy="330" r="3.4"/>
+          <circle class="hero-circuit__node hero-circuit__node--s" cx="62" cy="224" r="4"/>
+          <circle class="hero-circuit__node hero-circuit__node--t" cx="36" cy="366" r="3.4"/>
+        </g>
+      </svg>
+    </div>
+<!--hero-circuit:end-->

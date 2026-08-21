@@ -11,7 +11,8 @@
 (function (global) {
   "use strict";
 
-  var MODULES = ["theme", "nav", "animations", "forms", "dashboard", "techSphere"];
+  var MODULES = ["theme", "nav", "animations", "forms", "dashboard",
+                 "techSphere", "slider", "terminal"];
 
   /**
    * Keep the footer copyright current.

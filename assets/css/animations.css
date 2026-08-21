@@ -106,6 +106,37 @@
   animation-delay: calc(var(--reveal-delay, 0) * 80ms);
 }
 
+/* Rows that slide in from alternating sides, rather than rising.
+
+   --reveal-dir is set per row by animations.js, which has to read the rows back
+   out of the layout: the grid is auto-fit, so how many cards share a row is
+   decided by the width of the screen and is not in the markup. -1 is a row
+   entering from the left, 1 from the right.
+
+   overflow-x: clip on the container, because a translate still counts towards
+   the scrollable area even though it does not affect layout — without it the
+   first frame of a row coming in from the right would put a horizontal
+   scrollbar on the page. clip rather than hidden so the container does not
+   become a scroll container and start clipping the cards' hover shadows. */
+[data-reveal-rows] {
+  overflow-x: clip;
+}
+
+.js-reveal [data-reveal-rows] > [data-reveal].is-revealed {
+  animation-name: reveal-slide;
+}
+
+@keyframes reveal-slide {
+  from {
+    opacity: 0;
+    translate: calc(var(--reveal-dir, 1) * 3rem) 0;
+  }
+  to {
+    opacity: 1;
+    translate: none;
+  }
+}
+
 /* Printing does not scroll, so nothing would ever be revealed: a page sent to
    the printer, or saved as a PDF, would come out with blank space wherever the
    reader had not been. Same rule as above, later in the file, so it wins. */
