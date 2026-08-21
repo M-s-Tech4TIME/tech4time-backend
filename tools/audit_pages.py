@@ -22,6 +22,8 @@ Exits non-zero if anything fails, so it can gate the Phase 5 audit.
 
 import json
 import re
+import shutil
+import subprocess
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
@@ -30,7 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE_ORIGIN = "https://tech4time.bd"
 
 # Directories that hold deployable pages.
-PAGE_GLOBS = ["*.html", "pages/**/*.html"]
+PAGE_GLOBS = ["*.html", "pages/**/*.html", "pages/**/*.php"]
 
 
 class PageParser(HTMLParser):
@@ -118,17 +120,48 @@ def resolve_internal(href: str) -> Path | None:
     if not path.startswith("/"):
         return None
     target = ROOT / path.lstrip("/")
-    if path.endswith("/"):
-        return target / "index.html"
-    if target.is_dir():
+    if path.endswith("/") or target.is_dir():
+        # DirectoryIndex is "index.html index.php", so either serves the URL.
+        # The careers page is the .php one because its content changes without
+        # a redeploy.
+        for name in ("index.html", "index.php"):
+            if (target / name).is_file():
+                return target / name
         return target / "index.html"
     return target
+
+
+def render_php(path: Path) -> tuple[str, str | None]:
+    """Run a .php page and return what it sends to a browser.
+
+    Auditing the source of a PHP page would check markup no visitor ever
+    receives — the conditional branches, the loops, the tags themselves. What
+    matters is the output, so the audit runs the page and reads that instead.
+    """
+    php = shutil.which("php")
+    if not php:
+        return "", "php not installed, so this page was not audited (sudo apt install php-cli)"
+
+    result = subprocess.run(
+        [php, "-f", str(path)],
+        capture_output=True, text=True, cwd=str(path.parent),
+    )
+    if result.returncode != 0:
+        return "", f"php failed to render this page: {result.stderr.strip()[:200]}"
+
+    return result.stdout, None
 
 
 def audit_page(path: Path, seen_titles: dict, seen_descriptions: dict) -> list[str]:
     rel = path.relative_to(ROOT)
     problems = []
-    html = path.read_text()
+
+    if path.suffix == ".php":
+        html, failure = render_php(path)
+        if failure:
+            return [f"{rel}: {failure}"]
+    else:
+        html = path.read_text()
 
     parser = PageParser()
     parser.feed(html)

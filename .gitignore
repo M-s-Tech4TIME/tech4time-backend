@@ -17,3 +17,9 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Runtime artefacts from the job post editor. careers.json itself IS tracked
+# (it seeds a fresh deploy); its backup and the test harness router are not.
+content/careers.json.bak
+content/*.tmp
+.test-router-*.php

@@ -41,6 +41,7 @@ failure.
 | `audit_pages.py` | Per page: `lang`, viewport, canonical, unique title/description, one `<h1>`, no skipped heading levels, `alt` on every image, `width`/`height` on every image, valid JSON-LD, `rel="noopener noreferrer"` on external links, resolvable internal links, and that every `<use href="#icon">` has an inlined symbol. |
 | `check_shared_markup.py` | The header and footer on every page still match `tools/templates/`, and the script tags match. This is what keeps thirteen hand-pasted copies from drifting. |
 | `test_contact_handler.py` | Exercises `contact-handler.php` end to end. Needs the PHP CLI (`sudo apt install php-cli`); skips nothing, fails loudly if it is absent. |
+| `test_careers_admin.py` | Exercises the job post editor end to end — create, validate, publish, reorder, delete, CSRF, and the empty state. Runs against a copy of `content/careers.json` and restores it afterwards. Also needs the PHP CLI. |
 
 Quick full pass:
 
@@ -93,7 +94,51 @@ the no-JavaScript HTML response.
 3. If `mail()` proves unreliable, the fix is SMTP authentication against the
    host's own mail server, not more `mail()` retries.
 
-## Templates
+## Job posts
+
+The careers page is the one page here that is not a flat file. Job posts change
+on their own schedule, and re-uploading the site to add one is not a workflow
+anyone sustains — so `pages/careers/index.php` renders posts from
+`content/careers.json`, and `/admin/` edits that file.
+
+Rendered on the **server**, not fetched in the browser: a careers page whose
+listings arrive by JavaScript is one search engines index unreliably, and an
+unindexed job post is an unfilled role. Each open post also emits a
+`JobPosting` block, which is what puts it into Google Jobs rather than only
+into ordinary results.
+
+```
+pages/careers/index.php     the public page
+content/careers.json        the data — posts, and the speculative CV form link
+lib/careers.php             shared load/save/validate/render helpers
+admin/index.php             the editor
+```
+
+`lib/` and `content/` are both blocked over HTTP by `.htaccess`.
+
+### Before the editor works on the host
+
+1. **Protect it.** cPanel → *Directory Privacy* → `admin` → tick "Password
+   protect this directory" and add a user. `admin/index.php` refuses to load if
+   it cannot see that protection, so it cannot be left open by accident — but
+   the refusal is a backstop, not the lock.
+2. **Make the data file writable** by PHP. On cPanel, PHP runs as your own
+   user, so `content/` needs no special permissions; if a save reports it could
+   not write, that is the thing to check first.
+
+### Deploying without destroying live posts
+
+**`content/careers.json` is tracked in git, and the copy on the server is the
+one that matters.** It ships seeded with the two roles the live site carries so
+a fresh deploy is not blank — but once anyone has used the editor, the server's
+copy is the real data and the repo's is stale.
+
+So on any re-upload, **exclude `content/`**, or download the live file first and
+put it back afterwards. Overwriting it silently reverts every post added since
+launch, and nothing will report an error.
+
+The editor keeps one generation of backup at `content/careers.json.bak`, which
+is the fastest way back from a bad edit.
 
 `tools/templates/` holds the canonical shared markup. See the README in that
 directory.

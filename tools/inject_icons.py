@@ -51,6 +51,9 @@ def load_symbols() -> dict[str, str]:
 def pages() -> list[Path]:
     found = [p for p in ROOT.glob("*.html")]
     found += sorted(ROOT.glob("pages/**/*.html"))
+    # The careers page is PHP, but its icon references are plain markup and
+    # need the same symbols inlined as every other page.
+    found += sorted(ROOT.glob("pages/**/*.php"))
     return sorted(found)
 
 

@@ -53,7 +53,15 @@ def normalise(markup: str) -> str:
 
 
 def pages() -> list[Path]:
-    found = list(ROOT.glob("*.html")) + list(ROOT.glob("pages/**/*.html"))
+    found = (
+        list(ROOT.glob("*.html"))
+        + list(ROOT.glob("pages/**/*.html"))
+        # The careers page is PHP because its content changes without a
+        # redeploy. Its header and footer are still literal markup pasted in
+        # like everywhere else, so they drift the same way and are checked the
+        # same way.
+        + list(ROOT.glob("pages/**/*.php"))
+    )
     return sorted(found)
 
 

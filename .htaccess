@@ -171,4 +171,27 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteRule ^tools/ - [F,L]
+
+    # lib/ holds PHP that pages include; content/ holds the job post data.
+    # Both are read from disk by PHP and must never be fetched over HTTP —
+    # careers.json is already covered by the .json rule above, but a directory
+    # rule survives someone adding a second file in another format.
+    RewriteRule ^lib/ - [F,L]
+    RewriteRule ^content/ - [F,L]
+</IfModule>
+
+# --------------------------------------------------------------------------
+# 9. The job post editor
+# /admin/ MUST be password protected in cPanel: Directory Privacy -> admin.
+# admin/index.php refuses to run if it cannot see that protection, so this is
+# a second line of defence rather than the only one.
+#
+# Nothing here grants access — protection is added by cPanel, which writes its
+# own .htaccess into that directory. This only keeps it out of search results
+# in case it is ever reachable.
+# --------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    <FilesMatch "^index\.php$">
+        Header always set X-Robots-Tag "noindex, nofollow" "expr=%{REQUEST_URI} =~ m#^/admin/#"
+    </FilesMatch>
 </IfModule>
