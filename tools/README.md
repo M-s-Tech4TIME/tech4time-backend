@@ -117,6 +117,21 @@ the no-JavaScript HTML response.
 3. If `mail()` proves unreliable, the fix is SMTP authentication against the
    host's own mail server, not more `mail()` retries.
 
+## After launch
+
+One line is staged and waiting in `.htaccess`, under "HSTS — READY TO ENABLE":
+delete the `# ` in front of its `Header` directive.
+
+Do it once the site is live and a few pages have loaded over
+`https://tech4time.bd` on the real server — not before. It tells browsers never
+to request the site over plain http again, which closes the one unencrypted
+request that happens before the redirect. That matters because `/admin` is
+behind HTTP Basic auth, and Basic auth sends its password base64-encoded:
+encoding, not encryption.
+
+The reasoning, including why `includeSubDomains` and `preload` are deliberately
+left off, is written above the line itself.
+
 ## Job posts
 
 The careers page is the one page here that is not a flat file. Job posts change

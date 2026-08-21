@@ -27,9 +27,38 @@
     Header always set Cross-Origin-Opener-Policy "same-origin"
     Header always set X-Permitted-Cross-Domain-Policies "none"
 
-    # HSTS. Commented out until HTTPS is confirmed working on the live domain —
-    # enabling it early locks browsers out of an http fallback for a year.
-    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    # HSTS — READY TO ENABLE, ONE STEP LEFT.
+    #
+    # Delete the "# " from the Header line below. Do it AFTER the site is live
+    # and you have loaded a few pages over https://tech4time.bd on the real
+    # server. Not before: until the redirect is proven on the host, the plain
+    # http fallback is worth more than this header.
+    #
+    # WHAT IT DOES
+    # Today a browser asks for http://tech4time.bd first and is redirected to
+    # https. That first request travels in the open. This tells the browser to
+    # remember, for a year, never to ask over plain http again — so after one
+    # visit that unencrypted request stops happening. It matters here because
+    # /admin is behind HTTP Basic auth, which sends its password
+    # base64-encoded: encoding, not encryption.
+    #
+    # THE ONE COST
+    # A browser keeps obeying it even if https later breaks, and there is no
+    # way to clear it remotely. cPanel AutoSSL renews certificates on its own,
+    # which is what makes that unlikely enough to be worth it.
+    #
+    # NO includeSubDomains, DELIBERATELY
+    # It would cover subdomains that do not exist yet. AutoSSL issues a
+    # certificate on its next scheduled run after a subdomain is created, not
+    # instantly — and in that window this header would make the new subdomain
+    # unreachable rather than merely insecure. /admin is on the main domain,
+    # so leaving it off costs nothing that matters here.
+    #
+    # Do NOT add "preload". That submits the domain to a list compiled into
+    # Chrome and Firefox, takes months to reverse, and only protects the very
+    # first visit a browser ever makes.
+    #
+    # Header always set Strict-Transport-Security "max-age=31536000"
 
     # Do not advertise the stack.
     Header unset X-Powered-By
