@@ -708,27 +708,45 @@ textarea.field__control {
   color: var(--text-primary);
 }
 
-/* --- the call to action -------------------------------------------------- */
+/* --- the emphasised destination ------------------------------------------ */
 
-.dock__cta {
+/* Contact is one of the five keys, not a separate control, so it keeps the
+   same icon-over-label shape as its neighbours. What separates it is the
+   filled disc behind the icon: at a glance it is plainly the one to press,
+   and it reads that way in greyscale, which a colour-only highlight would
+   not. */
+.dock__key--contact .dock__key-disc {
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  min-height: 2.75rem;
-  padding-inline: var(--space-md);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  white-space: nowrap;
+  width: 2.1rem;
+  height: 2.1rem;
   color: var(--on-accent);
-  text-decoration: none;
   background-image: var(--silver-gradient-fill);
   border-radius: var(--radius-full);
-  transition: filter var(--duration) var(--ease-out);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration) var(--ease-out);
 }
 
-.dock__cta:hover,
-.dock__cta:focus-visible {
-  filter: brightness(1.06);
+.dock__key--contact .icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.dock__key--contact .dock__key-label {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.dock__key--contact:hover .dock__key-disc,
+.dock__key--contact:focus-visible .dock__key-disc {
+  transform: scale(1.08);
+}
+
+/* The disc already lifts it; the hover colour shift the other keys get would
+   only muddy the ink sitting on the silver. */
+.dock__key--contact:hover,
+.dock__key--contact:focus-visible {
+  color: var(--text-primary);
 }
 
 /* --- the menu button's two icons ----------------------------------------- */
@@ -747,15 +765,19 @@ textarea.field__control {
 .dock__panel {
   position: absolute;
   inset-inline: var(--gutter);
-  bottom: calc(100% - var(--space-sm));
-  display: flex;
-  gap: var(--space-sm);
+  /* Clear of the bar, not tucked behind it. This was
+     calc(100% - var(--space-sm)), which pulled the card down far enough that
+     its last row sat under the bar. 100% is the dock's top edge; the gap is
+     added rather than subtracted. */
+  bottom: calc(100% + var(--space-2xs));
   max-width: 30rem;
   max-height: min(70vh, 32rem);
   padding: var(--space-2xs);
-  margin: 0 auto var(--space-2xs);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  margin-inline: auto;
+  /* The panel clips; the list inside it is what scrolls. Scrolling the panel
+     itself would carry the circuit graphic up and out of view with the list,
+     since the graphic is positioned against the panel. */
+  overflow: hidden;
   pointer-events: auto;
   background-color: var(--bg-elevated);
   border: var(--border-width) solid var(--border-subtle);
@@ -777,36 +799,12 @@ textarea.field__control {
   transform: translateY(0);
 }
 
-/* The photograph is company, not information — it carries an empty alt and is
-   the first thing to go when there is no room for it beside the list.
-
-   The sizing is on the <picture>, which is the flex item; the <img> inside it
-   just fills what the picture is given. Putting flex-basis on the img instead
-   leaves the picture sized by its own content, which on a 520px screen left
-   the section list 102 pixels wide. */
-.dock__media {
-  display: block;
-  flex: 0 0 36%;
-  align-self: stretch;
-  min-height: 0;
-}
-
-.dock__figure {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: var(--radius);
-}
-
-@media (max-width: 26em) {
-  .dock__media {
-    display: none;
-  }
-}
-
 .dock__nav {
-  flex: 1 1 auto;
-  min-width: 0;
+  position: relative;
+  z-index: 1;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .dock__list {
@@ -848,3 +846,165 @@ textarea.field__control {
   text-decoration-thickness: 2px;
   text-underline-offset: 0.25em;
 }
+
+/* --- the circuit behind the list ----------------------------------------- */
+
+/* Drawn traces down both edges of the panel, with charges running along them
+   and nodes lighting as the charges pass.
+
+   ON "NEVER REPEATING"
+   A CSS animation is by definition a loop, so the honest way to build one that
+   never looks like it repeats is to run many loops whose lengths share no
+   common factor and let the eye see only the combination. Every duration here
+   is a distinct prime — 7 through 73 seconds across the two columns — so the
+   whole picture only returns to its exact starting arrangement after their
+   product. That number is longer than the age of the universe by a wide
+   margin. Nothing fades out, resets or pauses; it simply keeps going.
+
+   The two columns are mirror images of one set of paths, which is why their
+   primes are disjoint: identical durations either side would turn the whole
+   thing into one visibly symmetrical loop, which is the effect being avoided.
+
+   It costs nothing to run: stroke-dashoffset, opacity and transform on
+   thirty-six small elements, inside a panel that is usually closed.
+
+   Motion is still suppressed under prefers-reduced-motion by the global rule
+   in base.css. Someone who has asked their system for less movement gets the
+   circuit as a still drawing, which is the one case where stopping is right.
+   -------------------------------------------------------------------------- */
+
+.dock__circuit {
+  position: absolute;
+  inset-block: 0;
+  z-index: 0;
+  width: 22%;
+  max-width: 5.5rem;
+  pointer-events: none;
+}
+
+.dock__circuit svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Each column fades toward the middle of the card, so the traces are strongest
+   at the edge and gone by the time they reach the section titles. */
+.dock__circuit--left {
+  left: 0;
+  -webkit-mask-image: linear-gradient(to right, #000 25%, transparent 95%);
+  mask-image: linear-gradient(to right, #000 25%, transparent 95%);
+}
+
+/* One set of paths, flipped. The geometry is declared once in the left
+   column's <defs>; SVG ids are document-scoped, so the right column points at
+   the same paths and this turns them around. Its charges and nodes run on
+   their own primes, so the mirrored side never moves in step with its twin —
+   without that the symmetry would read as a single looping graphic. */
+.dock__circuit--right {
+  right: 0;
+  transform: scaleX(-1);
+  -webkit-mask-image: linear-gradient(to right, #000 25%, transparent 95%);
+  mask-image: linear-gradient(to right, #000 25%, transparent 95%);
+}
+
+/* Below the phone band the card is too narrow to give up both edges. */
+@media (max-width: 22em) {
+  .dock__circuit {
+    display: none;
+  }
+}
+
+/* The wiring: dim, always there, never moving. */
+.dock__wires use {
+  stroke: var(--silver-accent-mid);
+  stroke-width: 1.5;
+  opacity: 0.26;
+}
+
+/* The charge travelling a wire.
+
+   stroke-dasharray and stroke-dashoffset are inherited properties, so setting
+   them on the <use> reaches the path it clones. A dasharray of one short run
+   and one very long gap puts exactly one dash on the path at a time, and
+   animating the offset walks it from one end to the other. */
+.dock__charge {
+  stroke: var(--accent-text);
+  stroke-width: 2.5;
+  stroke-dasharray: 26 420;
+  opacity: 0.9;
+  animation-name: dock-charge;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes dock-charge {
+  from {
+    stroke-dashoffset: 446;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.dock__charge--a { animation-duration: 7s; }
+.dock__charge--b { animation-duration: 11s; }
+.dock__charge--c { animation-duration: 13s; }
+.dock__charge--d { animation-duration: 17s; }
+.dock__charge--e { animation-duration: 19s; }
+.dock__charge--f { animation-duration: 23s; }
+.dock__charge--g { animation-duration: 29s; }
+.dock__charge--h { animation-duration: 31s; }
+
+.dock__charge--k { animation-duration: 37s; }
+.dock__charge--l { animation-duration: 41s; }
+.dock__charge--m { animation-duration: 43s; }
+.dock__charge--n { animation-duration: 47s; }
+.dock__charge--o { animation-duration: 53s; }
+.dock__charge--p { animation-duration: 59s; }
+.dock__charge--q { animation-duration: 61s; }
+.dock__charge--r { animation-duration: 67s; }
+
+/* Junctions. They breathe on their own primes, so a node's brightest moment
+   drifts against the charge passing through it instead of matching it. */
+.dock__node {
+  fill: var(--silver-accent-mid);
+  opacity: 0.35;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: dock-pulse;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes dock-pulse {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.25);
+  }
+}
+
+.dock__node--a { animation-duration: 7s; }
+.dock__node--b { animation-duration: 11s; }
+.dock__node--c { animation-duration: 13s; }
+.dock__node--d { animation-duration: 17s; }
+.dock__node--e { animation-duration: 19s; }
+.dock__node--f { animation-duration: 23s; }
+.dock__node--g { animation-duration: 29s; }
+.dock__node--h { animation-duration: 31s; }
+.dock__node--i { animation-duration: 37s; }
+.dock__node--j { animation-duration: 41s; }
+
+.dock__node--k { animation-duration: 43s; }
+.dock__node--l { animation-duration: 47s; }
+.dock__node--m { animation-duration: 53s; }
+.dock__node--n { animation-duration: 59s; }
+.dock__node--o { animation-duration: 61s; }
+.dock__node--p { animation-duration: 67s; }
+.dock__node--q { animation-duration: 71s; }
+.dock__node--r { animation-duration: 73s; }

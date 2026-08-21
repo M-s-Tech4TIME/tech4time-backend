@@ -95,9 +95,53 @@ return {
   bar_reachable: reach(barLinks),
   panel_links: panelLinks.length,
   panel_reachable: reach(panelLinks),
-  cta_href: (document.querySelector('.dock__cta') || {}).getAttribute
-    ? document.querySelector('.dock__cta').getAttribute('href') : null,
+  cta_href: (function () {
+    var c = document.querySelector('.dock__key--contact');
+    return c ? c.getAttribute('href') : null;
+  })(),
+  menu_icon: (function () {
+    var open = document.querySelector('.dock__icon--open');
+    var close = document.querySelector('.dock__icon--close');
+    var shown = getComputedStyle(open).display !== 'none' ? open : close;
+    var u = shown.querySelector('use');
+    return u ? u.getAttribute('href') : null;
+  })(),
+  // The circuit must keep running. Count the animations the browser has
+  // actually started, and collect their durations: the whole point of the
+  // design is that they share no common factor, so the picture never settles
+  // back into an arrangement anyone has seen.
+  circuit: (function () {
+    var charges = document.querySelectorAll('.dock__charge');
+    var nodes = document.querySelectorAll('.dock__node');
+    var running = 0, durations = [];
+    Array.prototype.forEach.call(charges, function (c) {
+      c.getAnimations().forEach(function (a) {
+        if (a.playState === 'running') running++;
+        durations.push(Math.round(a.effect.getTiming().duration / 1000));
+      });
+    });
+    var nodeRunning = 0;
+    Array.prototype.forEach.call(nodes, function (n) {
+      n.getAnimations().forEach(function (a) {
+        if (a.playState === 'running') nodeRunning++;
+      });
+    });
+    return {
+      wires: document.querySelectorAll('.dock__wires use').length,
+      charges: charges.length,
+      charges_running: running,
+      nodes: nodes.length,
+      nodes_running: nodeRunning,
+      durations: durations,
+      infinite: Array.prototype.every.call(charges, function (c) {
+        return c.getAnimations().every(function (a) {
+          return a.effect.getTiming().iterations === Infinity;
+        });
+      })
+    };
+  })(),
   hamburgers: document.querySelectorAll('.nav-toggle').length,
+  photos: document.querySelectorAll('.dock img').length,
   body_overflow: document.body.style.overflow
 };
 """
@@ -250,8 +294,10 @@ def run(b: Browser, origin: str, r: Results) -> None:
             f"{d['bar_reachable']} of {d['bar_links']} reachable")
     r.check("the menu button is clickable too", d["toggle_display"] != "none",
             f"display is {d['toggle_display']!r}")
-    r.check("the call to action goes to the contact page",
+    r.check("the emphasised key goes to the contact page",
             d["cta_href"] == "/pages/contact/", f"href is {d['cta_href']!r}")
+    r.check("the menu button shows the dotted grid while closed",
+            d["menu_icon"] == "#grid-dots", f"showing {d['menu_icon']!r}")
 
     print(f"\nmobile ({MOBILE}px): the panel, closed")
     r.check("the menu button reports itself collapsed", d["expanded"] == "false")
@@ -282,6 +328,27 @@ def run(b: Browser, origin: str, r: Results) -> None:
             f"{d['panel_reachable']} of {d['panel_links']} reachable")
     r.check("the page behind it cannot scroll", d["body_overflow"] == "hidden",
             f"body overflow is {d['body_overflow']!r}")
+    r.check("the menu button shows the close mark while open",
+            d["menu_icon"] == "#times", f"showing {d['menu_icon']!r}")
+    r.check("there is no photograph in the dock", d["photos"] == 0,
+            f"found {d['photos']}")
+
+    print("\nmobile: the circuit either side of the panel")
+    c = d["circuit"]
+    r.check("both columns are drawn", c["wires"] == 16, f"{c['wires']} wires")
+    r.check("every trace carries a charge", c["charges"] == 16,
+            f"{c['charges']} charges")
+    r.check("every charge is running", c["charges_running"] == 16,
+            f"{c['charges_running']} of 16 running")
+    r.check("every node is running", c["nodes_running"] == c["nodes"] == 18,
+            f"{c['nodes_running']} of {c['nodes']} running")
+    # The requirement was an animation that never stops and never looks like a
+    # loop. Nothing may be finite, and no two may share a duration: equal
+    # durations would resynchronise and the repeat would become visible.
+    r.check("nothing is set to stop", c["infinite"] is True)
+    r.check("no two charges share a duration",
+            len(set(c["durations"])) == len(c["durations"]) == 16,
+            f"durations: {sorted(c['durations'])}")
 
     print("\nmobile: closing it again")
     b.press_escape()

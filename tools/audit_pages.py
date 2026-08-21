@@ -50,6 +50,10 @@ class PageParser(HTMLParser):
         self.links = []             # dict of attrs
         self.jsonld = []            # raw script bodies
         self.symbol_ids = set()
+        # Every id in the document, not only sprite symbols. The dock's circuit
+        # graphic points <use> at paths in its own <defs>; those resolve, and
+        # reporting them as missing icons would be wrong.
+        self.element_ids = set()
         self.use_refs = set()
         self._in_title = False
         self._in_jsonld = False
@@ -58,6 +62,9 @@ class PageParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
+
+        if a.get("id"):
+            self.element_ids.add(a["id"])
 
         if tag == "html":
             self.lang = a.get("lang")
@@ -84,6 +91,7 @@ class PageParser(HTMLParser):
             self.links.append(a)
         elif tag == "symbol" and a.get("id"):
             self.symbol_ids.add(a["id"])
+            self.element_ids.add(a["id"])
         elif tag == "use":
             href = a.get("href") or a.get("xlink:href") or ""
             if href.startswith("#"):
@@ -244,7 +252,9 @@ def audit_page(path: Path, seen_titles: dict, seen_descriptions: dict) -> list[s
             fail(f"invalid JSON-LD: {e}")
 
     # --- icons -----------------------------------------------------------
-    missing_icons = parser.use_refs - parser.symbol_ids
+    # element_ids covers both the inlined <symbol>s and anything the page
+    # defines itself, such as the dock circuit's <defs> paths.
+    missing_icons = parser.use_refs - parser.element_ids
     if missing_icons:
         fail(
             "icon reference(s) with no inlined <symbol>: "

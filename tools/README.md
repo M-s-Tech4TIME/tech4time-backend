@@ -23,7 +23,7 @@ Run in this order after changing source artwork.
 | `build_og_image.py` | `assets/images/og/tech4time-og.png` | 1200×630 share card. Downloads the Inter TTF to the scratchpad; Pillow cannot read the site's woff2. Depends on `build_logos.py`. |
 | `build_images.py` | `assets/images/{tech,clients,photos,sections,pages}/*` | Copies referenced content images, renames them, and emits WebP plus a fallback. Page artwork comes from the **live site** (staged in `tools/masters/`); third-party product and client logos come from the NextJS `public/` folder, the only place they exist. `trim` crops the flat white margin on the live site's exports. |
 | `fetch_fonts.py` | `assets/fonts/inter-{latin,latin-ext}.woff2` | Prints the `unicode-range` values to keep `base.css` in sync. |
-| `build_icon_sprite.py` | `assets/icons/sprite.svg` | Master set of the 116 icons the pages use, from Font Awesome Free metadata. Resolves FA5 → FA6 renames via the official alias index. |
+| `build_icon_sprite.py` | `assets/icons/sprite.svg` | Master set of the icons the pages use, from Font Awesome Free metadata. Resolves FA5 → FA6 renames via the official alias index, and appends this project's own symbols from `CUSTOM_SYMBOLS` — currently `grid-dots`, the dock's menu button, which FA Free has no equivalent for in any style. |
 | `inject_icons.py` | Inline `<symbol>` blocks in each page | Run after adding or removing an icon reference. `--check` verifies without writing. |
 
 `tools/masters/` holds the original logo artwork and the trimmed full-resolution

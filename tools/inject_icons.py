@@ -34,6 +34,8 @@ START = "<!-- icon-sprite:start -->"
 END = "<!-- icon-sprite:end -->"
 
 USE_REF = re.compile(r'<use\s+href="#([a-z0-9-]+)"')
+# Ids the page defines itself, outside the injected sprite block.
+LOCAL_ID = re.compile(r'<(?!symbol\b)[a-z]+[^>]*\sid="([a-z0-9-]+)"')
 SYMBOL = re.compile(r'<symbol id="([a-z0-9-]+)".*?</symbol>', re.S)
 BLOCK = re.compile(re.escape(START) + r".*?" + re.escape(END), re.S)
 BODY_OPEN = re.compile(r"<body[^>]*>")
@@ -76,7 +78,12 @@ def process(path: Path, symbols: dict[str, str], check_only: bool) -> tuple[bool
     # Only count references outside the injected block, or the block would keep
     # pinning symbols a page no longer actually uses.
     without_block = BLOCK.sub("", original)
-    names = sorted(set(USE_REF.findall(without_block)))
+
+    # A <use href="#x"> is only an icon reference when nothing in the page
+    # already defines #x. The dock draws its circuit by pointing <use> at its
+    # own <defs>, which is a local reference and has no business in the sprite.
+    local_ids = set(LOCAL_ID.findall(without_block))
+    names = sorted(set(USE_REF.findall(without_block)) - local_ids)
 
     if not names:
         # Nothing to inject; drop any stale block that remains.
@@ -126,7 +133,8 @@ def main() -> None:
 
         changed, missing = process(path, symbols, check_only)
         rel = path.relative_to(ROOT)
-        icons = len(set(USE_REF.findall(BLOCK.sub("", path.read_text()))))
+        body = BLOCK.sub("", path.read_text())
+        icons = len(set(USE_REF.findall(body)) - set(LOCAL_ID.findall(body)))
 
         state = "would update" if (changed and check_only) else ("updated" if changed else "up to date")
         print(f"  {rel}  — {icons} icons, {state}")
