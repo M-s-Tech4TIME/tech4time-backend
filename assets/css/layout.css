@@ -262,54 +262,34 @@
   list-style: none;
 }
 
-/* Below the laptop band the inline nav is replaced by the drawer. */
+/* Below the laptop band the header nav is not shown at all. Navigation there
+   is the dock — a floating bar at the bottom of the viewport with a panel of
+   sections above it, styled in section 10 of components.css.
+
+   The header nav used to become a full-screen drawer here instead. Hiding it
+   outright is what keeps exactly one navigation on screen at any width: the
+   drawer needed a hamburger in the header to open it, and a second control
+   that duplicates a nav already visible is how the hamburger ended up sitting
+   beside the full desktop nav.
+
+   The links stay in the markup rather than being removed, so the header nav
+   is still there for anything reading the document rather than viewing it. */
 @media (max-width: 63.999em) {
   .site-nav {
-    position: fixed;
-    inset: 0;
-    z-index: var(--z-overlay);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--header-height) var(--gutter) var(--space-xl);
-    background-color: var(--bg-base);
-    visibility: hidden;
-    opacity: 0;
-    transform: translateX(100%);
-    transition:
-      opacity var(--duration) var(--ease-out),
-      transform var(--duration-slow) var(--ease-out),
-      visibility var(--duration-slow);
-  }
-
-  .site-nav[data-open="true"] {
-    visibility: visible;
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .site-nav__list {
-    flex-direction: column;
-    gap: 0;
-    width: 100%;
-    max-width: 30rem;
-    overflow-y: auto;
-    max-height: 100%;
-  }
-
-  .site-nav__item {
-    width: 100%;
-    border-block-end: var(--border-width) solid var(--border-subtle);
+    display: none;
   }
 }
 
-/* Whether the hamburger shows is decided in components.css, next to the rule
-   that gives it a display in the first place. It used to be decided here, and
-   because layout.css loads before components.css and both selectors are a
-   single class, `.nav-toggle { display: grid }` there quietly beat the
-   `display: none` here at every width — a media query adds no specificity.
-   The button sat next to the full desktop nav on every page. Rules that fight
-   over one property belong in one file. */
+/* Keep the last of the footer clear of the floating bar. --dock-height is
+   declared on .dock in components.css; the fallback covers the case where
+   that rule has not applied. */
+@media (max-width: 63.999em) {
+  .page {
+    padding-block-end: calc(
+      var(--dock-height, 4rem) + var(--space-lg) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
 
 /* --------------------------------------------------------------------------
    5. Site footer

@@ -28,6 +28,14 @@ every other check asked about markup or colour rather than about use.
 So the assertions here are about reachability: elementFromPoint at the centre
 of each link has to return that link. That is the question both bugs failed
 and no attribute check can ask.
+
+WHAT IS BEING TESTED NOW
+The drawer and hamburger are gone. Below 64em the header nav is hidden and
+the navigation is the dock: a floating bar at the bottom of the viewport with
+four real links and a call to action, plus a panel of six sections that opens
+above it. Above 64em the dock is hidden and the header nav is the navigation.
+The rule under all of it is that exactly one navigation is usable at any
+width — having two was what produced the first bug.
 """
 
 import json
@@ -52,28 +60,44 @@ PAGE = "/pages/company-profile/"
 DESKTOP, MOBILE = 1200, 520
 
 PROBE = """
-var toggle = document.querySelector('[data-nav-toggle]');
-var drawer = document.querySelector('[data-nav-drawer]');
-var links = drawer.querySelectorAll('.nav-link');
-var reachable = 0;
-for (var i = 0; i < links.length; i++) {
-  var r = links[i].getBoundingClientRect();
-  if (r.width < 1 || r.height < 1) continue;
-  var at = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-  if (at && (at === links[i] || links[i].contains(at) || links[i].contains(at.parentNode))) {
-    reachable++;
+function reach(nodes) {
+  var n = 0;
+  for (var i = 0; i < nodes.length; i++) {
+    var r = nodes[i].getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    var at = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    if (at && (at === nodes[i] || nodes[i].contains(at))) n++;
   }
+  return n;
 }
-var dr = drawer.getBoundingClientRect();
+
+var toggle = document.querySelector('[data-nav-toggle]');
+var panel = document.querySelector('[data-nav-drawer]');
+var dock = document.querySelector('[data-dock]');
+var headerLinks = document.querySelectorAll('.site-nav .nav-link');
+var barLinks = document.querySelectorAll('.dock__bar a[href]');
+var panelLinks = panel.querySelectorAll('.dock__item');
+var pr = panel.getBoundingClientRect();
+
 return {
   viewport: [window.innerWidth, window.innerHeight],
+  dock_display: getComputedStyle(dock).display,
+  header_nav_display: getComputedStyle(document.querySelector('.site-nav')).display,
   toggle_display: getComputedStyle(toggle).display,
   expanded: toggle.getAttribute('aria-expanded'),
-  open: drawer.getAttribute('data-open'),
-  position: getComputedStyle(drawer).position,
-  rect: [Math.round(dr.x), Math.round(dr.y), Math.round(dr.width), Math.round(dr.height)],
-  links: links.length,
-  reachable: reachable,
+  open: panel.getAttribute('data-open'),
+  panel_visibility: getComputedStyle(panel).visibility,
+  panel_rect: [Math.round(pr.x), Math.round(pr.y),
+               Math.round(pr.width), Math.round(pr.height)],
+  header_links: headerLinks.length,
+  header_reachable: reach(headerLinks),
+  bar_links: barLinks.length,
+  bar_reachable: reach(barLinks),
+  panel_links: panelLinks.length,
+  panel_reachable: reach(panelLinks),
+  cta_href: (document.querySelector('.dock__cta') || {}).getAttribute
+    ? document.querySelector('.dock__cta').getAttribute('href') : null,
+  hamburgers: document.querySelectorAll('.nav-toggle').length,
   body_overflow: document.body.style.overflow
 };
 """
@@ -187,55 +211,88 @@ class Browser:
 
 
 def run(b: Browser, origin: str, r: Results) -> None:
-    print(f"\ndesktop ({DESKTOP}px): the full nav, and no hamburger beside it")
+    print(f"\ndesktop ({DESKTOP}px): the header nav, and no dock")
     b.size(DESKTOP, 900)
     b.go(origin + PAGE)
     d = b.probe()
     r.check("the viewport really is above the 64em breakpoint",
             d["viewport"][0] >= 1024, f"got {d['viewport'][0]}px")
-    r.check("the hamburger is hidden", d["toggle_display"] == "none",
-            f"display is {d['toggle_display']!r}")
-    r.check("the nav is in the bar, not a fixed overlay",
-            d["position"] == "static", f"position is {d['position']!r}")
-    r.check("every link can be clicked", d["reachable"] == d["links"] == 6,
-            f"{d['reachable']} of {d['links']} reachable")
+    r.check("the header nav is shown", d["header_nav_display"] != "none",
+            f"display is {d['header_nav_display']!r}")
+    r.check("all six header links can be clicked",
+            d["header_reachable"] == d["header_links"] == 6,
+            f"{d['header_reachable']} of {d['header_links']} reachable")
+    r.check("the dock is hidden", d["dock_display"] == "none",
+            f"display is {d['dock_display']!r}")
+    r.check("nothing in the dock is reachable",
+            d["bar_reachable"] == 0 and d["panel_reachable"] == 0,
+            f"bar {d['bar_reachable']}, panel {d['panel_reachable']}")
+    # The hamburger is gone entirely rather than hidden. A control that exists
+    # only to duplicate a nav already on screen is the bug, not its display.
+    r.check("no hamburger exists anywhere in the page", d["hamburgers"] == 0,
+            f"found {d['hamburgers']}")
 
-    print(f"\nmobile ({MOBILE}px), closed")
+    print(f"\nmobile ({MOBILE}px): the dock, and no header nav")
     b.size(MOBILE, 800)
     b.go(origin + PAGE)
     d = b.probe()
-    r.check("the hamburger is shown", d["toggle_display"] != "none")
-    r.check("it reports itself collapsed", d["expanded"] == "false")
-    r.check("the drawer is a fixed overlay", d["position"] == "fixed")
-    r.check("no link is reachable while it is closed", d["reachable"] == 0,
-            f"{d['reachable']} reachable with the drawer shut")
+    r.check("the dock is shown", d["dock_display"] != "none")
+    r.check("the header nav is hidden", d["header_nav_display"] == "none",
+            f"display is {d['header_nav_display']!r}")
+    r.check("no header link is reachable", d["header_reachable"] == 0,
+            f"{d['header_reachable']} reachable")
+    # These are plain <a>, so they are the part of the navigation that still
+    # works with JavaScript disabled.
+    # Four links: Home, Services, Careers, and the call to action. The menu
+    # button is a <button> and is counted separately.
+    r.check("all four bar destinations are clickable",
+            d["bar_reachable"] == d["bar_links"] == 4,
+            f"{d['bar_reachable']} of {d['bar_links']} reachable")
+    r.check("the menu button is clickable too", d["toggle_display"] != "none",
+            f"display is {d['toggle_display']!r}")
+    r.check("the call to action goes to the contact page",
+            d["cta_href"] == "/pages/contact/", f"href is {d['cta_href']!r}")
 
-    print(f"\nmobile ({MOBILE}px), opened — the case that was broken")
+    print(f"\nmobile ({MOBILE}px): the panel, closed")
+    r.check("the menu button reports itself collapsed", d["expanded"] == "false")
+    r.check("the panel is hidden", d["panel_visibility"] == "hidden",
+            f"visibility is {d['panel_visibility']!r}")
+    r.check("no panel link is reachable while it is closed",
+            d["panel_reachable"] == 0,
+            f"{d['panel_reachable']} reachable with the panel shut")
+
+    print(f"\nmobile ({MOBILE}px): the panel, opened")
     b.toggle()
     d = b.probe()
-    r.check("it reports itself expanded", d["expanded"] == "true")
-    r.check("the drawer says it is open", d["open"] == "true")
-    # The regression guard. With backdrop-filter on .site-header the drawer's
-    # containing block was the header, and this height came back as 120.
-    r.check("the drawer fills the viewport, not the header",
-            d["rect"][2] == d["viewport"][0] and d["rect"][3] == d["viewport"][1],
-            f"drawer is {d['rect'][2]}x{d['rect'][3]}, "
-            f"viewport is {d['viewport'][0]}x{d['viewport'][1]}")
-    r.check("all six links are on screen and clickable",
-            d["reachable"] == d["links"] == 6,
-            f"{d['reachable']} of {d['links']} reachable")
+    r.check("the menu button reports itself expanded", d["expanded"] == "true")
+    r.check("the panel says it is open", d["open"] == "true")
+    r.check("the panel is visible", d["panel_visibility"] == "visible")
+    # The regression guard from the drawer this replaced: with backdrop-filter
+    # on .site-header its containing block was the header, and everything in
+    # it fell outside the box while still reporting data-open="true".
+    r.check("the panel is on screen, not off the side or clipped to nothing",
+            d["panel_rect"][0] >= 0
+            and d["panel_rect"][1] >= 0
+            and d["panel_rect"][2] > 100
+            and d["panel_rect"][3] > 100,
+            f"panel rect is {d['panel_rect']} in a "
+            f"{d['viewport'][0]}x{d['viewport'][1]} viewport")
+    r.check("all six sections are on screen and clickable",
+            d["panel_reachable"] == d["panel_links"] == 6,
+            f"{d['panel_reachable']} of {d['panel_links']} reachable")
     r.check("the page behind it cannot scroll", d["body_overflow"] == "hidden",
             f"body overflow is {d['body_overflow']!r}")
 
     print("\nmobile: closing it again")
     b.press_escape()
     d = b.probe()
-    r.check("Escape closes the drawer", d["open"] == "false")
-    r.check("and it reports itself collapsed", d["expanded"] == "false")
-    r.check("no link is reachable once closed", d["reachable"] == 0)
+    r.check("Escape closes the panel", d["open"] == "false")
+    r.check("and the menu button reports itself collapsed",
+            d["expanded"] == "false")
+    r.check("no panel link is reachable once closed", d["panel_reachable"] == 0)
     r.check("scrolling is restored", d["body_overflow"] == "",
             f"body overflow is {d['body_overflow']!r}")
-    r.check("focus returns to the hamburger", b.js(
+    r.check("focus returns to the menu button", b.js(
         "return document.activeElement === "
         "document.querySelector('[data-nav-toggle]')"))
 

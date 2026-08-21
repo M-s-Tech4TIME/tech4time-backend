@@ -188,69 +188,10 @@
   border-radius: var(--radius-full);
 }
 
-/* In the mobile drawer the links become large, full-width rows. */
-@media (max-width: 63.999em) {
-  .nav-link {
-    padding-block: var(--space-sm);
-    font-size: var(--text-lg);
-    font-weight: 600;
-    text-align: center;
-  }
-
-  .nav-link[aria-current="page"]::after {
-    inset-inline: 35%;
-  }
-}
-
-/* Hamburger --------------------------------------------------------------- */
-
-.nav-toggle {
-  display: grid;
-  place-content: center;
-  gap: 5px;
-  width: 2.75rem;
-  height: 2.75rem;
-  padding: 0;
-  border-radius: var(--radius-sm);
-}
-
-/* From the laptop band up the full nav is already on screen, so the hamburger
-   has nothing to open and is hidden.
-
-   This lives here, immediately after the rule it overrides, rather than in
-   layout.css with the drawer it controls. Both selectors are one class, and a
-   media query contributes no specificity, so the winner is decided purely by
-   source order — and layout.css loads first. Kept together, the order is not
-   something a future stylesheet reshuffle can get wrong. The breakpoint is
-   the same 64em the drawer uses in layout.css; the two must stay in step. */
-@media (min-width: 64em) {
-  .nav-toggle {
-    display: none;
-  }
-}
-
-.nav-toggle__bar {
-  display: block;
-  width: 1.375rem;
-  height: 2px;
-  background-color: var(--text-primary);
-  border-radius: var(--radius-full);
-  transition:
-    transform var(--duration) var(--ease-out),
-    opacity var(--duration-fast) var(--ease-out);
-}
-
-.nav-toggle[aria-expanded="true"] .nav-toggle__bar:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
-}
-
-.nav-toggle[aria-expanded="true"] .nav-toggle__bar:nth-child(2) {
-  opacity: 0;
-}
-
-.nav-toggle[aria-expanded="true"] .nav-toggle__bar:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
-}
+/* There is no mobile variant of .nav-link, and no hamburger. Below 64em the
+   header nav is not shown at all — the dock in section 10 is the navigation
+   there. Both used to live here, and a hamburger that duplicated a nav
+   already on screen was the bug that came of keeping two. */
 
 /* --------------------------------------------------------------------------
    4. Theme toggle
@@ -664,4 +605,246 @@ textarea.field__control {
 .form__status[data-error="true"] {
   border-color: var(--border-strong);
   color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   10. The dock — small-screen navigation
+
+   A floating bar at the bottom of the viewport, with a card of sections that
+   rises above it. It replaces the header nav below 64em, so exactly one
+   navigation is on screen at any width and there is no second control
+   duplicating the first.
+
+   Bottom-anchored because that is where a thumb reaches on a phone; the top
+   of a tall screen is the hardest place to put a control someone uses often.
+
+   Nothing here introduces a hue. The reference this follows used a purple
+   call-to-action; the palette has no purple to spend, so the emphasis comes
+   from the metallic fill already used by .btn--primary.
+   -------------------------------------------------------------------------- */
+
+.dock {
+  /* Also the page's bottom padding, so a fixed bar never covers the last of
+     the footer. Both read this one value. */
+  --dock-height: 4rem;
+
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: var(--z-overlay);
+  padding: 0 var(--gutter);
+  /* Clear of the home indicator on phones that have one. */
+  padding-block-end: calc(var(--space-sm) + env(safe-area-inset-bottom, 0px));
+  /* The container spans the viewport so the panel can size against it, but it
+     must not swallow taps meant for the page behind it. The bar and panel take
+     their pointer events back. */
+  pointer-events: none;
+}
+
+@media (min-width: 64em) {
+  .dock {
+    display: none;
+  }
+}
+
+/* --- the bar ------------------------------------------------------------- */
+
+.dock__bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3xs);
+  height: var(--dock-height);
+  padding-inline: var(--space-2xs);
+  margin-inline: auto;
+  max-width: 30rem;
+  pointer-events: auto;
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+}
+
+.dock__key {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  flex: 1 1 0;
+  /* A touch target, not an icon with a hit area bolted on: 44px is the floor
+     WCAG 2.5.5 asks for and the reason the bar is 4rem tall. */
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: var(--space-3xs) 0;
+  font: inherit;
+  color: var(--text-secondary);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color var(--duration) var(--ease-out);
+}
+
+.dock__key:hover,
+.dock__key:focus-visible {
+  color: var(--accent-text);
+}
+
+.dock__key .icon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.dock__key-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  line-height: 1;
+}
+
+/* The current section, marked the same way the header nav marks it. */
+.dock__key[aria-current="page"] {
+  color: var(--text-primary);
+}
+
+/* --- the call to action -------------------------------------------------- */
+
+.dock__cta {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding-inline: var(--space-md);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--on-accent);
+  text-decoration: none;
+  background-image: var(--silver-gradient-fill);
+  border-radius: var(--radius-full);
+  transition: filter var(--duration) var(--ease-out);
+}
+
+.dock__cta:hover,
+.dock__cta:focus-visible {
+  filter: brightness(1.06);
+}
+
+/* --- the menu button's two icons ----------------------------------------- */
+
+.dock__icon--close,
+.dock__key--menu[aria-expanded="true"] .dock__icon--open {
+  display: none;
+}
+
+.dock__key--menu[aria-expanded="true"] .dock__icon--close {
+  display: block;
+}
+
+/* --- the panel ----------------------------------------------------------- */
+
+.dock__panel {
+  position: absolute;
+  inset-inline: var(--gutter);
+  bottom: calc(100% - var(--space-sm));
+  display: flex;
+  gap: var(--space-sm);
+  max-width: 30rem;
+  max-height: min(70vh, 32rem);
+  padding: var(--space-2xs);
+  margin: 0 auto var(--space-2xs);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(0.75rem);
+  transition:
+    opacity var(--duration) var(--ease-out),
+    transform var(--duration) var(--ease-out),
+    visibility var(--duration);
+}
+
+.dock__panel[data-open="true"] {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* The photograph is company, not information — it carries an empty alt and is
+   the first thing to go when there is no room for it beside the list.
+
+   The sizing is on the <picture>, which is the flex item; the <img> inside it
+   just fills what the picture is given. Putting flex-basis on the img instead
+   leaves the picture sized by its own content, which on a 520px screen left
+   the section list 102 pixels wide. */
+.dock__media {
+  display: block;
+  flex: 0 0 36%;
+  align-self: stretch;
+  min-height: 0;
+}
+
+.dock__figure {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+@media (max-width: 26em) {
+  .dock__media {
+    display: none;
+  }
+}
+
+.dock__nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dock__list {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.dock__item {
+  display: grid;
+  gap: 1px;
+  padding: var(--space-2xs) var(--space-xs);
+  text-align: center;
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition: background-color var(--duration) var(--ease-out);
+}
+
+.dock__item:hover,
+.dock__item:focus-visible {
+  background-color: var(--bg-surface);
+}
+
+.dock__item-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dock__item-desc {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--accent-text);
+}
+
+.dock__item[aria-current="page"] .dock__item-title {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
 }

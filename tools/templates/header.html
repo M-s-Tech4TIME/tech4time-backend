@@ -42,7 +42,13 @@
       </picture>
     </a>
 
-    <nav class="site-nav" id="site-nav" data-nav-drawer data-open="false" aria-label="Main">
+    <!-- No data-nav-drawer here. This nav is the desktop navigation and
+         nothing opens or closes it; below 64em it is hidden and the dock
+         panel is the thing that opens. nav.js binds to the first
+         [data-nav-drawer] in the document, so leaving the attribute on this
+         element pointed the menu button at a display:none nav — it dutifully
+         set data-open="true" on something nobody could see. -->
+    <nav class="site-nav" id="site-nav" aria-label="Main">
       <ul class="site-nav__list">
         <li class="site-nav__item"><a class="nav-link" href="/">Home</a></li>
         <li class="site-nav__item"><a class="nav-link" href="/pages/about/">About Us</a></li>
@@ -62,18 +68,6 @@
         aria-pressed="false">
         <svg class="icon theme-toggle__icon--moon" aria-hidden="true" focusable="false"><use href="#moon"></use></svg>
         <svg class="icon theme-toggle__icon--sun" aria-hidden="true" focusable="false"><use href="#sun"></use></svg>
-      </button>
-
-      <button
-        class="nav-toggle"
-        type="button"
-        data-nav-toggle
-        aria-controls="site-nav"
-        aria-expanded="false"
-        aria-label="Open navigation menu">
-        <span class="nav-toggle__bar"></span>
-        <span class="nav-toggle__bar"></span>
-        <span class="nav-toggle__bar"></span>
       </button>
     </div>
   </div>

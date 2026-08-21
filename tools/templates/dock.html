@@ -1,0 +1,103 @@
+<!--dock:start-->
+<!-- The small-screen navigation: a floating bar within thumb reach, and a card
+     of sections that rises above it. It replaces the header hamburger below
+     64em, where the header nav is hidden.
+
+     It sits here, a sibling of <header> and <footer>, and NOT inside the
+     header. That is deliberate: .site-header paints a backdrop-filter, and an
+     element with one becomes the containing block for its position:fixed
+     descendants — which is what clamped the old drawer to the header's own
+     box. Keeping this outside the header keeps its containing block the
+     viewport. See the note in layout.css.
+
+     The four destinations in the bar are real links, so they still work with
+     JavaScript disabled. Only the panel needs script, and the footer carries
+     the same links again for that case. -->
+<div class="dock" data-dock>
+  <div class="dock__panel" id="dock-panel" data-nav-drawer data-open="false">
+    <!-- The class belongs on the <picture>, because <picture> is the flex item
+         here — the <img> is its child. Sizing the img instead left the picture
+         at its own content width and squeezed the list beside it to 102px. -->
+    <picture class="dock__media">
+      <source srcset="/assets/images/photos/celebration-1.webp" type="image/webp">
+      <img
+        class="dock__figure"
+        src="/assets/images/photos/celebration-1.jpg"
+        alt=""
+        width="1024"
+        height="768"
+        loading="lazy"
+        decoding="async">
+    </picture>
+
+    <nav class="dock__nav" aria-label="Site sections">
+      <ul class="dock__list">
+        <li>
+          <a class="dock__item" href="/">
+            <span class="dock__item-title">Home</span>
+            <span class="dock__item-desc">Start here</span>
+          </a>
+        </li>
+        <li>
+          <a class="dock__item" href="/pages/about/">
+            <span class="dock__item-title">About Us</span>
+            <span class="dock__item-desc">Who we are and how we work</span>
+          </a>
+        </li>
+        <li>
+          <a class="dock__item" href="/pages/services/">
+            <span class="dock__item-title">Services</span>
+            <span class="dock__item-desc">Security, development, cloud and people</span>
+          </a>
+        </li>
+        <li>
+          <a class="dock__item" href="/pages/company-profile/">
+            <span class="dock__item-title">Company Profile</span>
+            <span class="dock__item-desc">Milestones, clients and the technology we use</span>
+          </a>
+        </li>
+        <li>
+          <a class="dock__item" href="/pages/careers/">
+            <span class="dock__item-title">Careers</span>
+            <span class="dock__item-desc">Open roles, and speculative applications</span>
+          </a>
+        </li>
+        <li>
+          <a class="dock__item" href="/pages/contact/">
+            <span class="dock__item-title">Contact Us</span>
+            <span class="dock__item-desc">Reach us any way you prefer</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <nav class="dock__bar" aria-label="Quick navigation">
+    <a class="dock__key" href="/">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#home"></use></svg>
+      <span class="dock__key-label">Home</span>
+    </a>
+    <a class="dock__key" href="/pages/services/">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#cogs"></use></svg>
+      <span class="dock__key-label">Services</span>
+    </a>
+
+    <a class="dock__cta" href="/pages/contact/">Let&rsquo;s Talk</a>
+
+    <a class="dock__key" href="/pages/careers/">
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#briefcase"></use></svg>
+      <span class="dock__key-label">Careers</span>
+    </a>
+    <button
+      class="dock__key dock__key--menu"
+      type="button"
+      data-nav-toggle
+      aria-controls="dock-panel"
+      aria-expanded="false">
+      <svg class="icon dock__icon--open" aria-hidden="true" focusable="false"><use href="#th"></use></svg>
+      <svg class="icon dock__icon--close" aria-hidden="true" focusable="false"><use href="#times"></use></svg>
+      <span class="dock__key-label">Menu</span>
+    </button>
+  </nav>
+</div>
+<!--dock:end-->

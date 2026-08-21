@@ -28,6 +28,13 @@ BLOCKS = {
         "header.html",
         re.compile(r'<a class="skip-link".*?</header>', re.S),
     ),
+    # The small-screen navigation. Delimited by comments rather than by its
+    # tags: it contains a <nav> and ends in nested </div>s, so there is no
+    # closing tag unique enough to match on safely.
+    "dock": (
+        "dock.html",
+        re.compile(r"<!--dock:start-->.*?<!--dock:end-->", re.S),
+    ),
     "footer": (
         "footer.html",
         re.compile(r'<footer class="site-footer">.*?</footer>', re.S),

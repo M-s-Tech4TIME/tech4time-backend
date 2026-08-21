@@ -59,14 +59,15 @@ PAGES = [
     "/404.html",
 ]
 
-# Each pass is (label, width, height, scope, open_drawer). The drawer is a
-# separate pass rather than a separate width because opening it drops a dimming
-# overlay over the page — every backdrop underneath would be measured through
-# it — so that pass looks only at the drawer itself.
+# Each pass is (label, width, height, scope, open_drawer). Below 64em the
+# navigation is the dock, and its panel of sections only exists once opened —
+# so it needs a pass of its own or its colours are never measured at all. The
+# pass is scoped to the panel because that is the only thing the opening
+# changes.
 PASSES = [
     ("desktop", 1440, 1000, "body", False),
     ("mobile", 390, 900, "body", False),
-    ("mobile nav open", 390, 900, "#site-nav", True),
+    ("mobile nav open", 390, 900, "#dock-panel", True),
 ]
 
 # Colours that are meant to be identical in both themes, and why. Matched on
@@ -577,12 +578,29 @@ return bad;
 OPEN_DRAWER = """
 var t = document.querySelector('[data-nav-toggle]');
 if (t && t.getAttribute('aria-expanded') !== 'true') { t.click(); }
+return true;
+"""
+
+# Measured only after the transition has run. Clicking and measuring in one
+# synchronous script reports the panel as it was before the click: the style
+# change is applied, but the transition starts on the next frame, so computed
+# visibility is still "hidden" — and a hidden element is not hit-testable, so
+# every link comes back unreachable and the guard below fires on working code.
+MEASURE_DRAWER = """
 var n = document.querySelector('[data-nav-drawer]');
 var r = n.getBoundingClientRect();
+var items = n.querySelectorAll('a[href]');
+var reachable = 0;
+for (var i = 0; i < items.length; i++) {
+  var q = items[i].getBoundingClientRect();
+  if (q.width < 1 || q.height < 1) continue;
+  var at = document.elementFromPoint(q.x + q.width / 2, q.y + q.height / 2);
+  if (at && (at === items[i] || items[i].contains(at))) reachable++;
+}
 return {
   open: n.getAttribute('data-open'),
-  covers: Math.round(r.width) >= window.innerWidth - 2 &&
-          Math.round(r.height) >= window.innerHeight - 2,
+  reachable: reachable,
+  items: items.length,
   rect: Math.round(r.width) + "x" + Math.round(r.height),
   viewport: window.innerWidth + "x" + window.innerHeight
 };
@@ -620,25 +638,26 @@ def audit_page(b: Browser, origin: str, path: str, label: str,
         b.load_themed(url, theme)
         b.settle()
         if drawer:
-            # The transitions on transform and visibility run to 400ms, so the
-            # geometry below is only meaningful once they have landed.
-            time.sleep(1.0)
-            state = b.js(OPEN_DRAWER)
+            b.js(OPEN_DRAWER)
+            # Only then measure: the transitions have to land first.
+            time.sleep(1.2)
+            state = b.js(MEASURE_DRAWER)
             if state["open"] != "true":
                 raise SystemExit(f"the nav drawer would not open on {path}")
-            # An audit that measures colours inside a drawer nobody can reach
-            # reports a clean pass, which is what happened while the drawer was
-            # clamped to the header by backdrop-filter: the elements still had
-            # boxes and the boxes still had contrast. Geometry is asserted by
-            # tools/test_nav.py; this is only here so a broken drawer stops the
+            # An audit that measures colours inside a panel nobody can reach
+            # reports a clean pass, which is what happened while the old drawer
+            # was clamped to the header by backdrop-filter: the elements still
+            # had boxes, and boxes still have contrast. Reachability is the
+            # question that catches it. Full coverage is asserted by
+            # tools/test_nav.py; this is only here so a broken panel stops the
             # audit rather than being quietly measured.
-            if not state["covers"]:
+            if state["reachable"] != state["items"] or not state["items"]:
                 raise SystemExit(
-                    f"the nav drawer opened at {state['rect']} but the viewport is "
-                    f"{state['viewport']} on {path}.\n"
-                    "It is not covering the screen, so nothing measured inside it "
-                    "would mean anything. Run tools/test_nav.py, which diagnoses "
-                    "this case.")
+                    f"the nav panel opened at {state['rect']} (viewport "
+                    f"{state['viewport']}) on {path}, but only "
+                    f"{state['reachable']} of {state['items']} links can be hit.\n"
+                    "Nothing measured inside it would mean anything. Run "
+                    "tools/test_nav.py, which diagnoses this case.")
             time.sleep(0.4)
 
         data = b.js(AUDIT_JS.replace("SCOPE", json.dumps(scope)))
