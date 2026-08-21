@@ -72,7 +72,7 @@
   object-fit: contain;
   object-position: center;
   padding: var(--space-sm);
-  background-color: #ffffff;
+  background-color: var(--artwork-plate);
 }
 
 /* The Company section shows the wordmark rather than an illustration, so it

@@ -59,7 +59,8 @@ failure.
 
 | Script | Checks |
 |---|---|
-| `check_contrast.py` | Every functional colour pair meets WCAG AA in both modes. Run after any change to `theme.css`. |
+| `check_contrast.py` | Every functional colour pair meets WCAG AA in both modes. Run after any change to `theme.css`. Note that it holds its own copy of the token values rather than reading them out of the stylesheet, so it proves the palette is sound, not that the pages use it. |
+| `check_dark_mode.py` | The rendered answer to the same question, in a real browser: every page in both themes at desktop and mobile widths, plus the nav drawer open. Measures each text element against the background actually behind it, flags any colour that fails to change with the theme, and checks part-transparent artwork against its plate — the case where a logo reads in one theme and vanishes in the other. Needs Firefox and `geckodriver`; prints a notice and exits 0 without them. |
 | `audit_pages.py` | Per page: `lang`, viewport, canonical, unique title/description, one `<h1>`, no skipped heading levels, `alt` on every image, `width`/`height` on every image, valid JSON-LD, `rel="noopener noreferrer"` on external links, resolvable internal links, and that every `<use href="#icon">` has an inlined symbol. |
 | `check_shared_markup.py` | The header and footer on every page still match `tools/templates/`, and the script tags match. This is what keeps thirteen hand-pasted copies from drifting. |
 | `test_contact_handler.py` | Exercises `contact-handler.php` end to end. Needs the PHP CLI (`sudo apt install php-cli`); skips nothing, fails loudly if it is absent. |

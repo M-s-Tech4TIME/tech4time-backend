@@ -61,6 +61,17 @@
      places true black/white is allowed, never for large surfaces. */
   --contrast-max: #000000;
 
+  /* Plate for artwork we did not draw and cannot recolour: other companies'
+     logos, and the black line-art illustrations. Both assume a light ground,
+     and most of the logos are dark ink on transparency — on a dark surface
+     they disappear entirely rather than merely looking wrong.
+
+     THIS IS THE SAME VALUE IN BOTH THEMES, DELIBERATELY. It is the one token
+     that must not flip: flipping it is the bug it exists to prevent. The
+     surrounding card still carries the theme, so the plate reads as part of
+     the image rather than as a light patch in a dark page. */
+  --artwork-plate: #ffffff;
+
   /* Shine sweep overlay for the metallic hover effect. */
   --silver-shine: rgba(255, 255, 255, 0.55);
 

@@ -308,13 +308,16 @@
   padding-block-start: var(--space-xs);
 }
 
-/* Logo tile for the technology / client grids. */
+/* Logo tile for the technology / client grids. Currently unused — the two
+   grids that exist use .tech-sphere__face and .client-card — but it is kept
+   as the general form, so it carries the same artwork plate they do rather
+   than the themed surface that made those logos disappear in dark mode. */
 .logo-card {
   display: grid;
   place-items: center;
   padding: var(--space-md);
   min-height: 6.5rem;
-  background-color: var(--bg-elevated);
+  background-color: var(--artwork-plate);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: var(--radius);
 }

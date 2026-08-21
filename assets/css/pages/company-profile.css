@@ -232,12 +232,16 @@
   list-style: none;
 }
 
+/* The plate is --artwork-plate, not --bg-elevated. Several of these marks are
+   dark ink on transparency (Aitken Spence, MGC, CDBL are close to solid
+   black), so on the dark theme's elevated surface they did not merely look
+   wrong — they vanished into it at about 1.4:1. */
 .client-card {
   display: grid;
   place-items: center;
   min-height: 7rem;
   padding: var(--space-md);
-  background-color: var(--bg-elevated);
+  background-color: var(--artwork-plate);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: var(--radius);
   transition:
@@ -251,8 +255,8 @@
 }
 
 /* Client marks are supplied in their own colours. Rather than force them to
-   greyscale, which would misrepresent someone else's brand, they sit on a white
-   plate so they read correctly in both themes. */
+   greyscale, which would misrepresent someone else's brand, they sit on the
+   artwork plate so they read correctly in both themes. */
 .client-card__logo {
   width: auto;
   max-width: 100%;
@@ -309,7 +313,7 @@
   place-items: center;
   aspect-ratio: 1;
   padding: var(--space-sm);
-  background-color: #ffffff;
+  background-color: var(--artwork-plate);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: 50%;
 }

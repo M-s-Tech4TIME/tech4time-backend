@@ -18,6 +18,10 @@ __pycache__/
 .venv/
 venv/
 
+# Screenshots from tools/shoot_pages.py — a look-at-it aid, regenerated on
+# demand and large. The script is tracked; its output is not.
+tools/shots/
+
 # Runtime artefacts from the job post editor. careers.json itself IS tracked
 # (it seeds a fresh deploy); its backup and the test harness router are not.
 content/careers.json.bak

@@ -405,7 +405,7 @@
   width: 100%;
   aspect-ratio: 800 / 658;
   object-fit: cover;
-  background-color: #ffffff;
+  background-color: var(--artwork-plate);
   border-block-end: var(--border-width) solid var(--border-subtle);
 }
 
