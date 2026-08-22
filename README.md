@@ -43,8 +43,12 @@ root-relative (`/assets/…`), which `file://` cannot resolve.
 │   ├── resource-certifications/index.html
 │   ├── branding-and-advertisement/index.html
 │   └── privacy-policy/index.html
-├── admin/                           the editors — password protected in cPanel
+├── admin/                           the editors — its own sign-in
 │   ├── index.php                    the shell and router
+│   ├── login.php                    password, then an authenticator code
+│   ├── logout.php                   POST only, with a token
+│   ├── forgot.php  reset.php        recovery by a code emailed to the account
+│   ├── setup.php                    creates the first account, once
 │   └── sections/                    one file per editable page
 ├── lib/                             server-side helpers — never served
 ├── content/                         the edited data — the HOST's copy is real
@@ -71,6 +75,32 @@ the contact page say things that change without a redeploy, so they render from
 `lib/`, `content/` and `tools/` are blocked over HTTP by `.htaccess`.
 See `tools/README.md` for the editors, and for the one thing they cannot
 reach — the contact details repeated in every page's footer.
+
+### The private store, which is not in this repository
+
+Password hashes, the master key they are peppered with, the authenticator
+secrets, sessions, the attempt counters and the audit log live in a directory
+**beside** the document root, not inside it:
+
+```
+/home/USER/
+├── public_html/          ← the document root, everything above
+└── t4t-private/          ← never served, never committed, never deployed
+    ├── secret.key            32 bytes; every other key derives from it
+    ├── admins.json           accounts: argon2id hashes, TOTP secrets
+    ├── sessions/             session.save_path
+    ├── throttle.json         failed-attempt counters
+    ├── resets.json           pending reset codes, stored hashed
+    └── audit.log             every sign-in, successful or not
+```
+
+`.htaccess` blocking a directory is a rule the server chooses to apply. A
+directory outside the document root has no URL at all, which is a stronger
+thing, and `lib/private.php` refuses to start if it finds itself anywhere
+inside the web root. Set `T4T_PRIVATE` if it needs to live elsewhere.
+
+Locally it lands in `../t4t-private`, beside the repository — the same shape,
+so nothing about the layout is different in development.
 
 ---
 
@@ -187,11 +217,60 @@ equivalents in each page are defence in depth for hosts that strip headers.
 
 ### After the first deploy
 
-1. Confirm HTTPS works, then uncomment the HTTPS redirect and the HSTS header in
-   `.htaccess`.
-2. Submit `sitemap.xml` in Google Search Console and request indexing.
-3. Verify `/pages/about/` resolves without `.html`, and that a bad URL renders
+1. Confirm HTTPS works, then uncomment the HSTS header in `.htaccess`. The
+   HTTPS redirect is already active. HSTS matters more now than it did: the
+   admin sets a session cookie, and a cookie that travels once over plain http
+   is a cookie that has been seen.
+2. Upload `tools/host-probe.php` to `public_html/` by hand, set its token, load
+   it once, read the report, and **delete it**. It says whether `mail()` works,
+   whether argon2id is available, and whether the private store is in the right
+   place — all things that fail quietly rather than loudly.
+3. Set up the admin account. See **Turning the admin on**, below.
+4. Submit `sitemap.xml` in Google Search Console and request indexing.
+5. Verify `/pages/about/` resolves without `.html`, and that a bad URL renders
    `404.html`.
+
+### Turning the admin on
+
+Do this in order. The point of the order is that the window in which the admin
+could be created by somebody else never opens.
+
+1. Deploy, with cPanel **Directory Privacy** still switched on for `/admin` if
+   it already is. It is no longer required, but there is no reason to remove it
+   before the replacement is proven.
+2. Read the setup key off the server:
+   `cat ~/t4t-private/setup-token.txt` over SSH, or open that file in cPanel's
+   File Manager. It is created the first time `/admin/setup.php` is loaded.
+3. Open `https://tech4time.bd/admin/setup.php`, paste the key, and create the
+   account. Pair an authenticator app and **save the ten recovery codes** —
+   they are shown once.
+4. Sign out and back in. Change the password once. Confirm other sessions end.
+5. Run a full password recovery: *I have forgotten my password* → check the
+   code arrives → set a new password. This is the step worth not skipping,
+   because it is the one you will need on the day you cannot sign in.
+6. Only now remove Directory Privacy, if it was on.
+
+The setup page refuses to run once an account exists, and deletes the setup key
+at the same moment.
+
+**If email ever fails and you are locked out**, a recovery code signs you in.
+If those are gone too, reset the password from the server itself. Upload
+`tools/admin-cli.php` to your home directory — the level *above* `public_html`,
+so it is never reachable over HTTP — then:
+
+```
+php ~/admin-cli.php list        # what accounts exist
+php ~/admin-cli.php passwd      # set a new password
+php ~/admin-cli.php unlock      # clear a lockout
+php ~/admin-cli.php codes       # issue new recovery codes
+```
+
+Delete it when you are done. It asks for no password, because it does not need
+one: anyone who can run a command on that server can already read the accounts
+file. That is what makes it the floor under every other way back in.
+
+`admin@tech4time.bd` must exist as a real mailbox in cPanel and must be one you
+can open — a reset code goes there and nowhere else.
 
 ### Cache busting
 

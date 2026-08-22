@@ -1,24 +1,20 @@
 <?php
 /**
- * Tech4TIME — the admin.
+ * Tech4TIME — the admin, front door.
  *
- * One entry point for every part of the site that can be edited without a
- * redeploy. Each part is a file in admin/sections/, listed in ADMIN_SECTIONS
- * in lib/admin.php, and reached at /admin/?s=<name>.
+ * Checks that somebody is signed in, then hands over to the section they asked
+ * for. Everything the sections rely on is set up in lib/admin.php.
  *
- * There is no database. Each section reads and writes one JSON file under
- * content/, and the public page renders straight from that same file — so the
- * editor and the page cannot disagree about what the page contains. Change the
- * shape of a page and the model, the form and the renderer move together;
- * tools/check_content_model.py fails if one of them is left behind.
+ * WHO MAY BE HERE
+ * admin_require_auth() either returns the signed-in account or does not return
+ * at all: it redirects to login.php, sends first-run visitors to setup.php, or
+ * refuses outright when the private store is missing or the connection is not
+ * encrypted. Nothing below runs for a stranger.
  *
- * PROTECTING THIS DIRECTORY
- * cPanel: Directory Privacy -> /admin -> add a user with a password. The check
- * in admin_require_auth() refuses to run without it. See lib/admin.php.
- *
- * DO NOT commit an .htaccess into this directory: cPanel writes its own here
- * when Directory Privacy is switched on, and uploading over it removes the
- * password.
+ * This directory used to be protected by cPanel Directory Privacy instead, and
+ * the old warning about it applies to nothing now — but while both exist, DO
+ * NOT commit an .htaccess into this directory: cPanel writes its own here when
+ * Directory Privacy is switched on, and uploading over it removes the password.
  */
 
 declare(strict_types=1);
@@ -27,8 +23,11 @@ define('T4T_ADMIN', true);
 
 require __DIR__ . '/../lib/admin.php';
 
-$user = admin_require_auth();
-admin_start_session();
+$account = admin_require_auth();
+
+/* The sections want a name to print in the bar; the account page wants the
+   whole record. Both are in scope for the file included below. */
+$user = $account['name'] !== '' ? $account['name'] : $account['user'];
 
 $section = admin_section();
 

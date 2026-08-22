@@ -6,8 +6,8 @@
  * much of it there is, and when each part was last changed, so that whoever
  * signs in knows where they are before they change anything.
  *
- * Included by admin/index.php, which has already checked the password and
- * started the session.
+ * Included by admin/index.php, which has already checked that somebody is
+ * signed in and started the session.
  */
 
 declare(strict_types=1);
@@ -155,6 +155,8 @@ admin_notices($errors);
 
 <?php
 admin_foot(
-    '<p>Signed in through cPanel Directory Privacy. Nothing here has its own '
-    . 'password: Apache asks before any of this runs.</p>'
+    '<p>Signed in as <strong>' . h($account['user']) . '</strong>. '
+    . 'Your password, the authenticator app and the recovery codes are on the '
+    . '<a href="' . h(admin_url('account')) . '">Account</a> page, along with a '
+    . 'record of every attempt to sign in.</p>'
 );

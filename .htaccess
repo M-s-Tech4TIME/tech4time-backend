@@ -214,23 +214,34 @@ Options -Indexes
     # another format.
     RewriteRule ^lib/ - [F,L]
     RewriteRule ^content/ - [F,L]
+
+    # The private store — password hashes, the master key, sessions, the audit
+    # log — belongs BESIDE the document root, at /home/USER/t4t-private, and
+    # lib/private.php refuses to run if it finds itself anywhere inside this
+    # directory. This rule is for the one case that check cannot help with:
+    # somebody restoring a backup and dropping the folder in here by hand.
+    RewriteRule ^t4t-private/ - [F,L]
 </IfModule>
 
 # --------------------------------------------------------------------------
 # 9. The editors
-# /admin/ MUST be password protected in cPanel: Directory Privacy -> admin.
-# The check in lib/admin.php refuses to run if it cannot see that protection,
-# so this is a second line of defence rather than the only one. It covers the
-# whole directory, admin/sections/ included.
+# /admin/ has its own accounts now: a password hashed with argon2id, a second
+# factor from an authenticator app, and a lockout. See lib/auth.php.
 #
-# Nothing here grants access — protection is added by cPanel, which writes its
-# own .htaccess into that directory. This only keeps it out of search results
-# in case it is ever reachable.
+# It used to be protected by cPanel Directory Privacy instead, and while both
+# are in place that is belt and braces — but the application is the lock, not
+# Apache. Nothing here grants or denies access; this only keeps the editor out
+# of search results.
 # --------------------------------------------------------------------------
 # `always` is the operative word: without it the header is attached only to
-# 2xx responses, and once Directory Privacy is on, a crawler's request returns
-# 401 — precisely the response that needs marking. noarchive keeps a cached
-# copy out of results as well as the page itself.
+# 2xx responses, and the login page answers a crawler with 200 while every
+# other admin URL answers with a redirect — none of which should be indexed.
+# noarchive keeps a cached copy out of results as well as the page itself.
+#
+# no-store matters more than it used to. There was nothing behind Basic auth
+# for a browser to cache without a password; there is now a signed-in editor,
+# and a shared machine should not be able to press Back into it.
 <IfModule mod_headers.c>
     Header always set X-Robots-Tag "noindex, nofollow, noarchive" "expr=%{REQUEST_URI} =~ m#^/admin(/|$)#"
+    Header always set Cache-Control "no-store, max-age=0" "expr=%{REQUEST_URI} =~ m#^/admin(/|$)#"
 </IfModule>

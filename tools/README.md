@@ -30,6 +30,8 @@ Run in this order after changing source artwork.
 
 | Script | Does |
 |---|---|
+| `host-probe.php` | Uploaded to `public_html/` by hand, loaded once, then **deleted**. Reports what only the host can answer: whether `mail()` is available, whether argon2id is compiled in and how long one hash takes, and whether the private store is outside the document root and writable. Sends one message built exactly the way `lib/mailer.php` builds its own, so a failure here is a failure there. Hard-coded recipient and a token it refuses to run without. |
+| `admin-cli.php` | Uploaded to your **home** directory — above `public_html`, so it is never reachable over HTTP — run over SSH, then deleted. The floor under every other way into the admin: set a password, issue recovery codes, unpair a lost authenticator, clear a lockout, read the audit log. It asks for no password because anyone who can run it can already read the accounts file. Refuses to run under any SAPI but the CLI. |
 | `htmltree.py` | Not run directly. A small HTML tree with source offsets, for tools that edit markup structurally. Neither BeautifulSoup nor lxml is installed and this project will not add a dependency for it; `html.parser` alone cannot answer "what are this element's children". Edits are inserted at a recorded offset rather than by re-serialising, so the diff stays readable and the shared blocks keep their byte-identity. |
 | `apply_reveals.py` | Marks the scroll-reveal targets on every page, from one structural rule rather than sixteen hand edits: each section's header, then its body, with runs of sibling cards broken out — at whatever depth the markup puts them — so they arrive in sequence. Its docstring lists what is deliberately left unmarked and why: heroes hold the LCP element, hidden tab panels and closed `<details>` never intersect, a slider animates its own slides, a legal document should not be animated at all. `--write` applies, `--strip` reverses the whole pass. |
 
@@ -81,6 +83,9 @@ failure.
 | `sync_site_contact.py` | Pushes the contact details out of `content/contact.json` into the two places that repeat them as literal markup: the footer's contact block, and the `address`/`contactPoint` arrays in each page's base Organization structured data. See **The contact page** below. `--dry-run` lists what would change. |
 | `test_contact_admin.py` | Exercises the contact page editor end to end — editing the banner, the copy, the offices and the reach rows; adding, reordering, removing and hiding; validation; CSRF; the sanitiser; the empty state; and what happens when the data file is unreadable. Nearly every case saves through the editor and then reads `/pages/contact/` back, because the question is not whether the editor accepted a change but whether it reached the page. Runs against a copy of `content/contact.json` and restores it afterwards. Also needs the PHP CLI. |
 | `test_careers_admin.py` | Exercises the job post editor end to end — create, validate, publish, reorder, delete, CSRF, the empty state, and the HTML sanitiser that guards what the careers page prints unescaped. Runs against a copy of `content/careers.json` and restores it afterwards. Also needs the PHP CLI. |
+| `test_admin_auth.py` | The sign-in, over HTTP, from first-run setup to a whole password reset. It generates the authenticator codes itself in Python — a separate implementation from `lib/totp.php`, so the two disagreeing is itself a failure — and checks it against the vectors published in RFC 6238. What it is really for is the handful of things that fail silently: that a wrong password and an unknown username give the same answer, that being locked out refuses even the *right* password, that an emailed code alone cannot set a new password, that a code cannot be used twice or in another browser, and that the stored file never contains the password. It found a real one during the build — see the note on `auth_second_factor()`. |
+| `check_secrets.py` | The protections that would go on working after being removed. Nothing secret is committed and a stray private store would be ignored by git; a store inside the document root is actually refused, by running the real code rather than grepping for the check; the old Basic-auth bypass constant has not come back and nothing takes its identity from a request header again; the session cookie is HttpOnly, SameSite and Secure, and its id is replaced on sign-in; no password, code or secret can reach the audit log; and every admin page shape is noindexed. Each check was verified against a deliberate breakage before being trusted. |
+| `admin_session.py` | Not run directly. Gives the editor tests an account in a throwaway private directory and signs them in through the real login page. They used to write `REMOTE_USER` into their router and call it authentication, which was accurate when Apache did the checking and is not any more. |
 
 Quick full pass — static, no browser needed, a few seconds:
 
@@ -89,7 +94,8 @@ python3 tools/check_contrast.py \
   && python3 tools/inject_icons.py --check \
   && python3 tools/check_shared_markup.py \
   && python3 tools/audit_pages.py \
-  && python3 tools/check_content_model.py
+  && python3 tools/check_content_model.py \
+  && python3 tools/check_secrets.py
 ```
 
 The PHP checks, which need `php-cli` and no browser — under a minute:
@@ -97,7 +103,8 @@ The PHP checks, which need `php-cli` and no browser — under a minute:
 ```bash
 python3 tools/test_contact_handler.py \
   && python3 tools/test_careers_admin.py \
-  && python3 tools/test_contact_admin.py
+  && python3 tools/test_contact_admin.py \
+  && python3 tools/test_admin_auth.py
 ```
 
 The browser checks, which is where the interesting failures live. Slower —
@@ -152,7 +159,7 @@ the no-JavaScript HTML response.
 
 ### Still to do on the host
 
-1. Upload `tools/mail-probe.php` by hand, load it once, read the report, and
+1. Upload `tools/host-probe.php` by hand, load it once, read the report, and
    **delete it**. It tests `mail()` on its own, so a mail problem shows up as
    one failed probe rather than as a contact form that quietly swallows
    enquiries. Instructions are in the file's header; it refuses to run until
@@ -188,10 +195,22 @@ edits that file. There is no database.
 
 ```
 admin/index.php             the shell: auth, session, CSRF, and the router
+admin/login.php             password, then six digits from an authenticator app
+admin/logout.php            POST only, with a token
+admin/forgot.php            asks for a reset code
+admin/reset.php             the code, then the app, then the new password
+admin/setup.php             creates the first account; refuses ever after
 admin/sections/overview.php what can be edited, and plainly what cannot
 admin/sections/careers.php  the job post editor        -> content/careers.json
 admin/sections/contact.php  the contact page editor    -> content/contact.json
+admin/sections/account.php  password, second factor, recovery codes, the log
 lib/admin.php               the section registry, the icon rail, the page furniture
+lib/auth.php                accounts, hashing, sessions, the audit log
+lib/totp.php                RFC 6238, hand-written, checked against its vectors
+lib/reset.php               the emailed one-time code
+lib/throttle.php            counting attempts, so guessing costs something
+lib/mailer.php              the one place mail leaves this site
+lib/private.php             where the secrets are, and the keys derived from them
 lib/store.php               reading and writing a JSON file, atomically
 lib/html.php                escaping, and the rich-text sanitiser
 ```
@@ -201,9 +220,104 @@ another editable page is a row in `ADMIN_SECTIONS` in `lib/admin.php` and a file
 beside the others — the rail draws itself from that registry.
 
 Section files refuse to run unless `T4T_ADMIN` is defined, so asking for one by
-its own path gets a 403 however the server is configured. That is a backstop:
-the real protection is that cPanel's Directory Privacy covers the whole
-directory.
+its own path gets a 403 however the server is configured. That is a backstop;
+the real protection is the sign-in.
+
+### Signing in
+
+`/admin` used to be protected by cPanel's Directory Privacy, which meant Apache
+did the checking and PHP never verified a credential at all — it only looked at
+whether `REMOTE_USER` had been filled in. That was a real lock, but it was
+Apache's lock: no logout, no lockout, no record of who signed in, no second
+factor, and a browser dialogue instead of a page.
+
+It has its own accounts now.
+
+- **The password** is stored as `password_hash($pre, PASSWORD_ARGON2ID)`, where
+  `$pre` is an HMAC of the password under a key from `secret.key`. `password_hash`
+  generates a fresh random salt per password and writes it into the hash string,
+  which is why there is no separate salt to keep. The extra HMAC is a *pepper*:
+  it lives in a different file, so a copy of `admins.json` on its own cannot be
+  attacked offline. `password_needs_rehash()` upgrades the stored form at the
+  next sign-in whenever the settings change.
+- **A second factor** from any authenticator app — `lib/totp.php`, about ninety
+  lines, checked against the test vectors published in RFC 6238 by
+  `test_admin_auth.py`. A code is accepted once: the counter it matched is
+  stored, so it cannot be replayed inside the thirty seconds it stays valid.
+- **Ten recovery codes**, shown once and stored hashed, each good for one
+  sign-in when the phone is not to hand.
+- **A lockout.** Five wrong passwords are free; each one after that waits longer
+  than the last, up to an hour. The wait is applied *before* the password is
+  verified, so being locked out cannot be used to find out whether a guess was
+  right.
+- **An audit log**, `t4t-private/audit.log`, one JSON line per event. The
+  Account page shows the last fifteen.
+
+Nothing here is optional or configurable. There is no flag that turns it off:
+the old `ADMIN_REQUIRE_HTTP_AUTH` was exactly that, and its false value granted
+full access, so it is gone and `check_secrets.py` fails the build if it returns.
+
+### Forgetting the password
+
+`/admin/forgot.php` emails a six-digit code to the address on the account —
+never to one typed into the form — and answers identically whether or not the
+account exists. The code lasts ten minutes, allows five guesses, works once,
+and only in the browser that asked for it.
+
+**The code alone will not set a password.** The authenticator app, or a recovery
+code, is still required. If six digits sent to a mailbox were sufficient, that
+mailbox would *be* the admin password, and the second factor would be protecting
+nothing at the one moment it matters most.
+
+Asking is rationed: three times an hour per account, five per address, twenty
+overall. The last of those is not about this site — cPanel caps outbound mail
+per hour, and somebody hammering that page could use the allowance up, which
+would stop the real reset from being delivered.
+
+### When every door is shut
+
+Email can fail, phones are lost, recovery codes get thrown away. The floor under
+all of it is `tools/admin-cli.php`: upload it to your **home** directory — above
+`public_html`, so it is never reachable over HTTP — and run it over SSH.
+
+```
+php ~/admin-cli.php list          who has an account, and what they can sign in with
+php ~/admin-cli.php passwd        set a new password; ends every session
+php ~/admin-cli.php codes         issue ten new recovery codes
+php ~/admin-cli.php totp-clear    unpair the authenticator so a new phone can be paired
+php ~/admin-cli.php unlock        clear a lockout
+php ~/admin-cli.php log 25        the last 25 entries from the audit log
+php ~/admin-cli.php where         which files it is working on
+```
+
+Delete it afterwards. It asks for no password because it does not need one:
+anyone who can run a command on that server can already read the accounts file.
+That is precisely what makes it a floor and not a hole.
+
+### Where the secrets live
+
+Not in `content/`, and not anywhere under the document root.
+
+```
+/home/USER/t4t-private/
+    secret.key      32 bytes; the pepper and every other key derive from it
+    admins.json     accounts: argon2id hashes, TOTP secrets, recovery hashes
+    sessions/       session.save_path
+    throttle.json   failed-attempt counters
+    resets.json     pending reset codes, stored hashed
+    audit.log       every sign-in, successful or not
+```
+
+`.htaccess` forbidding a directory is a rule the server chooses to apply, and
+that is the right protection for site copy: if it ever failed, a stranger would
+read the office addresses the contact page already shows them. A password hash
+is not site copy. A file outside the document root has no URL at all, which is
+a stronger thing than a rule — so `lib/private.php` **refuses to start** if it
+finds itself anywhere inside the web root, rather than trusting the rule.
+
+Locally it lands in `../t4t-private`, beside the repository. `T4T_PRIVATE`
+overrides it; the test harnesses set it to a directory in `/tmp` so a test run
+cannot disturb the account you use for development.
 
 **The editor follows the page, not the other way round.** The page renders
 straight from the JSON, so there is no second copy of the structure to keep in
@@ -338,19 +452,28 @@ The real protection is the 401. Everything above matters for the window before
 Directory Privacy is switched on, or if it is ever removed.
 
 **Never add an `.htaccess` to `admin/` in this repo.** cPanel writes its own
-there when you enable Directory Privacy; uploading one over it would remove the
-password and leave the editor open, with nothing to report the change.
+there when Directory Privacy is switched on; uploading one over it would remove
+that password. Directory Privacy is no longer what protects the admin, but
+while it is still on, this still holds.
 
 ### Before the editor works on the host
 
-1. **Protect it.** cPanel → *Directory Privacy* → `admin` → tick "Password
-   protect this directory" and add a user. `admin_require_auth()` in
-   `lib/admin.php` refuses to load if it cannot see that protection, so it
-   cannot be left open by accident — but the refusal is a backstop, not the
-   lock.
-2. **Make the data files writable** by PHP. On cPanel, PHP runs as your own
+1. **Run `tools/host-probe.php` once.** Upload it to `public_html/` by hand, set
+   its token, load it, read the report, and delete it. It says whether `mail()`
+   works, whether argon2id is available, and whether the private store is in
+   the right place — each of which fails quietly rather than loudly.
+2. **Create the account.** Read the setup key with
+   `cat ~/t4t-private/setup-token.txt`, then open `/admin/setup.php` and paste
+   it. The key proves you are the person who runs the server rather than
+   somebody who found the page — which is what keeps the window between
+   deploying and setting up from being an open door. Save the recovery codes.
+3. **Prove the way back in** before you need it: sign out and in, change the
+   password once, and run a full password recovery end to end. This is the step
+   worth not skipping.
+4. **Make the data files writable** by PHP. On cPanel, PHP runs as your own
    user, so `content/` needs no special permissions; if a save reports it could
    not write, that is the thing to check first.
+5. **Only then** remove Directory Privacy, if it was on.
 
 ### Deploying without destroying live posts
 

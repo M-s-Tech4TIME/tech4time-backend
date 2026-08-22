@@ -1002,3 +1002,311 @@
 .job__body .ta-right { text-align: right; }
 .rte__surface .ta-justify,
 .job__body .ta-justify { text-align: justify; }
+
+/* --------------------------------------------------------------------------
+   5. Signing in
+
+   The pages somebody sees before they are anybody: login, the two-step check,
+   the reset code, and first-run setup. One centred card, no rail — there is
+   nothing to navigate to until they are in, and a menu whose every entry
+   bounces back here is worse than no menu.
+
+   These share the section's own .admin__field, .admin__input and .admin__hint
+   rather than growing a second set of form styles, so a change to how an input
+   looks reaches both.
+   -------------------------------------------------------------------------- */
+
+.signin {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: var(--space-lg) var(--space-md);
+}
+
+.signin__card {
+  width: 100%;
+  max-width: 28rem;
+  padding: var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+@media (min-width: 30em) {
+  .signin__card { padding: var(--space-xl); }
+}
+
+.signin__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-block-end: var(--space-lg);
+}
+
+.signin__brand {
+  display: inline-flex;
+  border-radius: var(--radius-sm);
+}
+
+.signin__logo {
+  display: block;
+  width: auto;
+  height: 2rem;
+}
+
+.signin__head {
+  margin-block-end: var(--space-lg);
+  text-align: center;
+}
+
+/* The plate behind the icon. It is the one ornament on these pages, and it
+   earns its place by telling the four screens apart at a glance — a padlock,
+   a phone, an envelope, a shield. */
+.signin__mark {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-inline: auto;
+  margin-block-end: var(--space-sm);
+  color: var(--accent-text);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.signin__mark .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
+}
+
+.signin__title {
+  font-size: var(--text-lg);
+  line-height: var(--leading-tight);
+}
+
+.signin__lede {
+  margin-block-start: var(--space-3xs);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.signin__form {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.signin__notice {
+  margin-block-end: var(--space-md);
+  font-size: var(--text-sm);
+}
+
+.signin__notice .icon {
+  fill: currentColor;
+  vertical-align: -0.15em;
+}
+
+/* A one-time code is read off a screen and typed in one go. Spacing the
+   characters out makes it possible to check what has been typed against what
+   is being read without counting. */
+.signin__code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-lg);
+  letter-spacing: 0.25em;
+  text-align: center;
+}
+
+.signin__aside,
+.signin__restart {
+  margin-block-start: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* "Start again" ends a half-finished sign-in, which is a change of state, so
+   it is a real submit button. It is dressed as a link because that is what it
+   does from the reader's side. */
+.signin__link {
+  padding: 0;
+  font: inherit;
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.signin__link:hover { color: var(--text-primary); }
+
+.signin__foot {
+  padding-block-start: var(--space-md);
+  margin-block-start: var(--space-lg);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-align: center;
+  border-block-start: var(--border-width) solid var(--border-subtle);
+}
+
+.signin__foot .icon {
+  fill: currentColor;
+  vertical-align: -0.1em;
+}
+
+.signin__steps {
+  display: grid;
+  gap: var(--space-2xs);
+  padding-inline-start: var(--space-md);
+  margin-block-end: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.signin__steps li::marker { color: var(--silver-accent-mid); }
+
+/* The setup key and the recovery codes are transcribed by hand, so both are
+   monospaced and given room. Nothing here is ever selected accidentally and
+   retyped wrongly if the characters cannot be confused. */
+.signin__secret {
+  padding: var(--space-md);
+  margin-block-end: var(--space-md);
+  text-align: center;
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.signin__secret-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.signin__secret-value {
+  margin-block: var(--space-2xs);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-base);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.signin__uri {
+  padding: var(--space-2xs) var(--space-xs);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  word-break: break-all;
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.signin__details { margin-block-end: var(--space-md); }
+
+.signin__codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--space-2xs);
+  padding: var(--space-md);
+  margin-block: var(--space-md);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-sm);
+  text-align: center;
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+/* --------------------------------------------------------------------------
+   6. Signing out, and the record of who signed in
+   -------------------------------------------------------------------------- */
+
+.admin-bar__signout { display: inline-flex; }
+
+.admin-bar__signout-btn {
+  gap: var(--space-3xs);
+  padding-inline: var(--space-xs);
+  font-size: var(--text-xs);
+}
+
+.admin-bar__signout-btn .icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: currentColor;
+}
+
+@media (max-width: 30em) {
+  /* On a narrow screen the padlock says it well enough on its own. */
+  .admin-bar__signout-btn span { display: none; }
+}
+
+.admin__log {
+  display: grid;
+  gap: 0;
+}
+
+.admin__log-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2xs) var(--space-sm);
+  padding-block: var(--space-2xs);
+  font-size: var(--text-sm);
+}
+
+.admin__log-row + .admin__log-row {
+  border-block-start: var(--border-width) solid var(--border-subtle);
+}
+
+.admin__log-event { color: var(--text-primary); }
+
+.admin__log-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   7. The account page
+
+   Four cards of short forms, and they read badly in the auto-fit grid the
+   editors use: at 16rem a column is narrow enough to break "Authenticator app"
+   across two lines and leave the tall card standing on its own. Two columns
+   from 60em, one below it.
+   -------------------------------------------------------------------------- */
+
+.admin__grid--account {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 60em) {
+  .admin__grid--account {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* The editors' forms lay their fields out in a grid, which supplies the
+   spacing. These are a plain stack, so they have to supply their own. */
+.admin__form--stack {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.admin__grid--account .admin__section-title {
+  font-size: var(--text-lg);
+}
+
+.admin__grid--account .admin__section-title .icon {
+  fill: currentColor;
+  vertical-align: -0.1em;
+}

@@ -75,3 +75,58 @@ function store_write(string $file, array $data): bool
 
     return true;
 }
+
+/**
+ * Read, change and write one file under a single exclusive lock.
+ *
+ * store_read() then store_write() is two steps with a gap between them, which
+ * is correct for a person saving a form — nobody else is editing the contact
+ * page in the same half-second. It is wrong for anything the requests racing
+ * each other are themselves changing: two failed logins landing together would
+ * each read "3", each write "4", and one of them would vanish. That is not a
+ * rounding error, it is the attacker's best move.
+ *
+ * $change receives the decoded data by reference and returns whatever the
+ * caller wants back. Everything using this gets its locking from one place,
+ * where it is either right or wrong exactly once.
+ *
+ * Throws rather than returning a default: a counter that cannot be written has
+ * to stop the caller, because carrying on means carrying on uncounted.
+ */
+function store_edit(string $file, callable $change): mixed
+{
+    $handle = @fopen($file, 'c+');
+    if ($handle === false) {
+        throw new RuntimeException('Could not open ' . $file . ' for editing');
+    }
+
+    try {
+        if (!flock($handle, LOCK_EX)) {
+            throw new RuntimeException('Could not lock ' . $file);
+        }
+
+        $raw  = stream_get_contents($handle) ?: '';
+        $data = json_decode($raw, true);
+        $data = is_array($data) ? $data : [];
+
+        $return = $change($data);
+
+        $json = json_encode(
+            $data,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+
+        if ($json !== false) {
+            ftruncate($handle, 0);
+            rewind($handle);
+            fwrite($handle, $json . "\n");
+            fflush($handle);
+        }
+
+        flock($handle, LOCK_UN);
+
+        return $return;
+    } finally {
+        fclose($handle);
+    }
+}

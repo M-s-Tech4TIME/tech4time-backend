@@ -91,7 +91,16 @@ def write_capture_script(workdir: Path) -> Path:
     return script
 
 
-def start_server(port: int, sendmail: Path):
+# Where the handler's rate-limit counter lives for this run. Set in main().
+#
+# The handler allows a handful of submissions an hour from one address, which
+# no visitor notices and which a test making forty of them hits immediately —
+# so post() resets the count before each case. The limit itself is asserted
+# once, deliberately, at the end of run().
+COUNTER: Path | None = None
+
+
+def start_server(port: int, sendmail: Path, private: Path):
     proc = subprocess.Popen(
         [
             "php",
@@ -102,6 +111,7 @@ def start_server(port: int, sendmail: Path):
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         start_new_session=True,
+        env=dict(os.environ, T4T_PRIVATE=str(private)),
     )
     for _ in range(50):
         try:
@@ -117,8 +127,15 @@ def start_server(port: int, sendmail: Path):
     raise SystemExit("php server did not come up")
 
 
-def post(port, data, *, json_accept=True, method="POST", raw=None):
-    """Returns (status, headers, body). Never raises on a 4xx/5xx."""
+def post(port, data, *, json_accept=True, method="POST", raw=None, keep_count=False):
+    """Returns (status, headers, body). Never raises on a 4xx/5xx.
+
+    Clears the rate-limit counter first unless keep_count is set, so that what
+    each case measures is the case and not how many ran before it.
+    """
+    if COUNTER is not None and not keep_count:
+        COUNTER.unlink(missing_ok=True)
+
     url = f"http://127.0.0.1:{port}{ENDPOINT}"
     body = None
     if method == "POST":
@@ -388,6 +405,26 @@ def run(port, maildir, r: Results):
             if "page-hero__subtitle" in body else False)
     drain(maildir)
 
+    # ------------------------------------------------------------ how often
+    print("\nsending too often")
+
+    if COUNTER is not None:
+        COUNTER.unlink(missing_ok=True)
+
+    codes = [post(port, VALID, keep_count=True)[0] for _ in range(5)]
+    r.check("five in a row are all accepted", codes == [200] * 5, str(codes))
+    drain(maildir)
+
+    status, _, body = post(port, VALID, keep_count=True)
+    r.check("the sixth is refused", status == 429, f"{status} {body[:120]}")
+    r.check("and says when to try again", "try again in" in body.lower(), body[:160])
+    r.check("and offers the address instead", "info@tech4time.bd" in body)
+    r.check("and sends nothing", len(list(maildir.glob("*"))) == 0)
+
+    if COUNTER is not None:
+        COUNTER.unlink(missing_ok=True)
+    drain(maildir)
+
 
 # ---------------------------------------------------------------------- main
 
@@ -402,13 +439,17 @@ def main() -> None:
     if not handler.is_file():
         raise SystemExit(f"{handler} not found")
 
+    global COUNTER
+
     workdir = Path(tempfile.mkdtemp(prefix="t4t-mail-"))
     sendmail = write_capture_script(workdir)
     maildir = workdir / "mail"
+    private = workdir / "private"
+    COUNTER = private / "throttle.json"
     port = free_port()
 
     print(f"php -S 127.0.0.1:{port}   (mail captured to {maildir})")
-    proc = start_server(port, sendmail)
+    proc = start_server(port, sendmail, private)
     results = Results()
 
     try:

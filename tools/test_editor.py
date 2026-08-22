@@ -28,19 +28,27 @@ import signal
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import admin_session  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "content" / "careers.json"
 W3C = "element-6066-11e4-a52e-4f735466cecf"
 
 ROUTER = """<?php
-$_SERVER['REMOTE_USER'] = 'browsertest';
+/* No faked sign-in: the browser goes through /admin/login.php like a person. */
 $p = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-if (str_starts_with($p, '/admin')) { require __DIR__ . '/admin/index.php'; return true; }
+if (str_starts_with($p, '/admin')) {
+    $f = __DIR__ . $p;
+    require is_file($f) && str_ends_with($f, '.php') ? $f : __DIR__ . '/admin/index.php';
+    return true;
+}
 if (rtrim($p, '/') === '/pages/careers') { require __DIR__ . '/pages/careers/index.php'; return true; }
 return false;
 """
@@ -146,6 +154,31 @@ class Browser:
         rq("POST", self.s + f"/element/{eid}/click", {})
         time.sleep(0.4)
 
+    def sign_in(self, web_port, secret):
+        """Through the real login page, in the browser, in two steps.
+
+        Submitting the form rather than clicking the button: the point here is
+        to arrive at the editor, and the login page's own behaviour is the
+        subject of tools/test_admin_auth.py.
+        """
+        base = f"http://127.0.0.1:{web_port}"
+
+        self.go(base + "/admin/login.php")
+        self.js(
+            "var f = document.querySelector('.signin__form');"
+            f"f.querySelector('#user').value = {json.dumps(admin_session.USER)};"
+            f"f.querySelector('#password').value = {json.dumps(admin_session.PASSWORD)};"
+            "f.submit();"
+        )
+        time.sleep(1.5)
+
+        self.js(
+            "var f = document.querySelector('.signin__form');"
+            f"f.querySelector('#code').value = {json.dumps(admin_session.totp(secret))};"
+            "f.submit();"
+        )
+        time.sleep(1.5)
+
     def quit(self):
         try:
             rq("DELETE", self.s)
@@ -230,9 +263,13 @@ def main() -> None:
     router.write_text(ROUTER)
     web_port, drv_port = free_port(), free_port()
 
+    work = Path(tempfile.mkdtemp(prefix="t4t-editor-"))
+    private = work / "private"
+
     php = subprocess.Popen(
         ["php", "-S", f"127.0.0.1:{web_port}", "-t", str(ROOT), str(router)],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+        env=dict(os.environ, T4T_PRIVATE=str(private)))
     drv = subprocess.Popen(
         ["geckodriver", "--port", str(drv_port)],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
@@ -246,6 +283,7 @@ def main() -> None:
 
     try:
         browser = Browser(drv_port)
+        browser.sign_in(web_port, admin_session.make_account(private))
         run(browser, web_port, results)
     finally:
         if browser:
@@ -258,6 +296,7 @@ def main() -> None:
                 pass
         router.unlink(missing_ok=True)
         DATA.write_bytes(backup)
+        shutil.rmtree(work, ignore_errors=True)
 
     total = results.passed + len(results.failed)
     print(f"\n{results.passed}/{total} checks passed")

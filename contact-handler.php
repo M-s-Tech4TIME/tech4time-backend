@@ -16,10 +16,10 @@
  * for the visitor and provides no protection at all, since anything can post
  * here directly.
  *
- * NOT SPAM-PROOF ON ITS OWN. The honeypot stops crawlers that fill in every
- * field; it does nothing against a bot written for this form specifically. If
- * that becomes a problem the answer is a rate limit at the host or a real
- * challenge, not more regular expressions.
+ * SPAM. The honeypot stops crawlers that fill in every field. It does nothing
+ * against a bot written for this form specifically, so there is also a rate
+ * limit — a handful an hour from one address, which no visitor will notice.
+ * Beyond that the answer is a real challenge, not more regular expressions.
  */
 
 declare(strict_types=1);
@@ -169,6 +169,36 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
    Answer as though it worked: telling a bot it failed only helps it. */
 if (field('company') !== '') {
     respond(true, 'Thank you — your message has been sent.');
+}
+
+/* ---------------------------------------------------------------- how often */
+
+/* The honeypot catches crawlers that fill in every field. It does nothing at
+   all against something written for this form, and the note at the top of this
+   file has always said the answer to that is a rate limit. Here it is: a
+   handful an hour from one address, which no visitor will ever notice and
+   which makes bulk submission pointless.
+ *
+ * IT FAILS OPEN, DELIBERATELY. The counter lives in the private store, which
+ * is also where the admin's passwords live — and if that directory is ever
+ * unreadable, the right outcome is a contact form that still works rather than
+ * a company that cannot be contacted. This is spam control, not a security
+ * boundary; the boundary is that nothing here is trusted anyway. A store that
+ * cannot be reached shows up in tools/host-probe.php, where it is actionable.
+ */
+try {
+    require_once __DIR__ . '/lib/throttle.php';
+
+    $wait = throttle_quota(throttle_key('contact', throttle_ip()), 5, 3600);
+
+    if ($wait > 0) {
+        respond(false,
+            'That is several messages in a short time. Please try again in '
+            . throttle_wait_text($wait) . ', or email ' . MAIL_TO . ' directly.',
+            429);
+    }
+} catch (Throwable) {
+    /* Counting is unavailable. Carry on: see above. */
 }
 
 /* ---------------------------------------------------------------- the fields */

@@ -15,17 +15,25 @@ renders its addresses and numbers, the admin edits both, and the contact form
 posts to a handler. A static file server shows you their source instead of
 their output.
 
-WHAT IS FAKED HERE
-The password on /admin. On the host, cPanel's Directory Privacy makes Apache
-ask for it before any PHP runs; there is no Apache here, so tools/dev-router.php
-supplies the authenticated user directly. The editor behaves exactly as it will
-in production — but locally anyone who can reach the port can open it, so do
-not run this on a public interface. It binds to localhost only.
+NOTHING IS FAKED ANY MORE
+/admin used to be waved through here, because on the host cPanel's Directory
+Privacy made Apache ask for a password before any PHP ran and there is no
+Apache locally. The admin has its own accounts now, so the local sign-in is the
+real one: visit /admin/setup.php once to create an account and pair an
+authenticator app, then sign in as you would on the host.
+
+The accounts, sessions and audit log go in ../t4t-private — beside this
+repository, never inside it, the same shape as /home/USER/t4t-private on the
+server. Delete that directory to start over.
+
+It binds to localhost only, but it is still a real sign-in on a real port: do
+not run it on a public interface.
 
 WHAT STILL WILL NOT WORK LOCALLY
 mail(). The contact form validates and answers correctly, then reports that it
-could not send, because there is no mail server here. That path is verified on
-the host with tools/mail-probe.php.
+could not send, because there is no mail server here — and a password reset
+code has nowhere to go for the same reason. Both paths are verified on the host
+with tools/host-probe.php. Locally, use a recovery code from setup instead.
 """
 
 import os
@@ -41,9 +49,12 @@ ROUTER = ROOT / "tools" / "dev-router.php"
 
 PAGES = [
     ("Home", "/"),
+    ("Admin — sign in", "/admin/login.php"),
+    ("Admin — first-run setup", "/admin/setup.php"),
     ("Admin — overview", "/admin/"),
     ("Admin — job posts", "/admin/?s=careers"),
     ("Admin — contact page", "/admin/?s=contact"),
+    ("Admin — your account", "/admin/?s=account"),
     ("Careers  (renders content/careers.json)", "/pages/careers/"),
     ("Contact  (renders content/contact.json)", "/pages/contact/"),
     ("Resource Certifications", "/pages/resource-certifications/"),
@@ -78,10 +89,20 @@ def main() -> None:
     print(f"\n  Serving {ROOT}\n")
     for label, path in PAGES:
         print(f"    {label.ljust(width)}   {base}{path}")
+    private = ROOT.parent / "t4t-private"
+    first_run = not (private / "admins.json").is_file()
+
+    if first_run:
+        print(
+            "\n  No admin account yet. Open /admin/setup.php to make one — you will\n"
+            "  need an authenticator app to hand. Nothing is faked locally; this is\n"
+            "  the same sign-in that runs on the host.\n"
+        )
+    else:
+        print(f"\n  Signing in uses the account in {private}\n")
+
     print(
-        "\n  The editor's password is FAKED locally — there is no Apache here to ask\n"
-        "  for one. On the host it is cPanel > Directory Privacy that protects it.\n"
-        "\n  Editing writes content/careers.json and content/contact.json for real.\n"
+        "  Editing writes content/careers.json and content/contact.json for real.\n"
         "  Restore them with:\n"
         "    git checkout content/careers.json content/contact.json\n"
         "\n  Ctrl-C to stop.\n"

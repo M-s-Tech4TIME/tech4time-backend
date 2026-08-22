@@ -16,10 +16,10 @@ Every test runs against a COPY of the real data file, which is restored
 afterwards whether the run passes or fails.
 
 WHAT IT CANNOT COVER
-The cPanel Directory Privacy that protects /admin in production. The test
-harness supplies REMOTE_USER itself, which is exactly what Apache does once
-the directory is protected — so what is tested is the editor's behaviour after
-authentication, not the authentication.
+The sign-in itself. This harness creates an admin account in a throwaway
+private directory and signs in through the real login page — so what is tested
+here is the editor's behaviour once past it. The sign-in is the subject of
+tools/test_admin_auth.py.
 """
 
 import os
@@ -37,6 +37,9 @@ import urllib.request
 from http.cookiejar import CookieJar
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import admin_session  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "content" / "careers.json"
 
@@ -45,14 +48,15 @@ DATA = ROOT / "content" / "careers.json"
 ADMIN = "/admin/?s=careers"
 
 ROUTER = """<?php
-/* Test harness only. Stands in for the Basic auth that cPanel Directory
-   Privacy applies to /admin in production. */
-$_SERVER['REMOTE_USER'] = 'testadmin';
-
+/* Test harness only. It fakes nothing: the admin has its own accounts now, and
+   the harness signs in through /admin/login.php like a person would. */
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 if (str_starts_with($path, '/admin')) {
-    require __DIR__ . '/admin/index.php';
+    $file = __DIR__ . $path;
+    require is_file($file) && str_ends_with($file, '.php')
+        ? $file
+        : __DIR__ . '/admin/index.php';
     return true;
 }
 if (rtrim($path, '/') === '/pages/careers') {
@@ -83,10 +87,11 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
-def start_server(port: int, router: Path):
+def start_server(port: int, router: Path, private: Path):
     proc = subprocess.Popen(
         ["php", "-S", f"127.0.0.1:{port}", "-t", str(ROOT), str(router)],
         stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True,
+        env=dict(os.environ, T4T_PRIVATE=str(private)),
     )
     for _ in range(50):
         try:
@@ -357,13 +362,22 @@ def main() -> None:
     router.write_text(ROUTER)
     port = free_port()
 
+    # The accounts, sessions and counters go somewhere disposable, so this run
+    # cannot disturb whatever account is used locally.
+    work = Path(tempfile.mkdtemp(prefix="t4t-careers-"))
+    private = work / "private"
+
     print(f"php -S 127.0.0.1:{port}   (content/careers.json is restored afterwards)")
-    proc = start_server(port, router)
+    proc = start_server(port, router, private)
     results = Results()
 
     try:
-        run(Client(port), results)
+        secret = admin_session.make_account(private)
+        client = Client(port)
+        admin_session.sign_in(client.opener, client.base, secret)
+        run(client, results)
     finally:
+        shutil.rmtree(work, ignore_errors=True)
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         proc.wait(timeout=5)
         router.unlink(missing_ok=True)
