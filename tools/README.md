@@ -77,6 +77,9 @@ failure.
 | `test_theme.py` | The theme switch itself: the OS preference decides when nothing is stored, an explicit choice wins in both directions, and it survives navigation. Drives `prefers-color-scheme` through a real Firefox pref rather than faking the media query. |
 | `test_motion.py` | The scroll reveal, which works by hiding content and promising to bring it back. Loads all sixteen pages, scrolls each end to end, and requires every `[data-reveal]` to finish opaque — then checks the same with reduced motion requested, with JavaScript disabled, and with the reveal script pretended missing so the watchdog has to lift the hidden state. Also the rest of the motion: the shine sweep, the typed terminal, the two slideshows (including that the pause control genuinely stops them, which WCAG 2.2.2 requires), the figures that count up, the client logos arriving row by row from alternating sides, and the technology sphere being dragged with a real pointer. The count-up is sampled while it happens, because a figure that never animated also ends on the right number. |
 | `check_hover.py` | Moves a real pointer onto one of every kind of interactive element and checks that something changes — in the element, its wrappers or its contents. A rule can exist in the stylesheet and still do nothing, which is how a link on six pages lost its hover to a specificity tie. Also reports elements the pointer cannot reach, which is how the SOC map's decorative ring was found covering its own buttons. |
+| `check_content_model.py` | That the three halves of an editable page still describe the same thing: every field `lib/contact.php` defines is written by `admin/sections/contact.php` and read by `pages/contact/index.php`, and neither of those reaches for a field the model does not keep. Nothing at runtime catches a mismatch — a band added to the page and forgotten in the editor is simply unmanageable, and a field left in the editor after the page drops it is a box that changes nothing. Also compares the contact fingerprint computed in PHP against the one computed in Python, since a disagreement there makes the editor's footer-drift warning wrong in one direction or the other. |
+| `sync_site_contact.py` | Pushes the contact details out of `content/contact.json` into the two places that repeat them as literal markup: the footer's contact block, and the `address`/`contactPoint` arrays in each page's base Organization structured data. See **The contact page** below. `--dry-run` lists what would change. |
+| `test_contact_admin.py` | Exercises the contact page editor end to end — editing the banner, the copy, the offices and the reach rows; adding, reordering, removing and hiding; validation; CSRF; the sanitiser; the empty state; and what happens when the data file is unreadable. Nearly every case saves through the editor and then reads `/pages/contact/` back, because the question is not whether the editor accepted a change but whether it reached the page. Runs against a copy of `content/contact.json` and restores it afterwards. Also needs the PHP CLI. |
 | `test_careers_admin.py` | Exercises the job post editor end to end — create, validate, publish, reorder, delete, CSRF, the empty state, and the HTML sanitiser that guards what the careers page prints unescaped. Runs against a copy of `content/careers.json` and restores it afterwards. Also needs the PHP CLI. |
 
 Quick full pass — static, no browser needed, a few seconds:
@@ -85,7 +88,16 @@ Quick full pass — static, no browser needed, a few seconds:
 python3 tools/check_contrast.py \
   && python3 tools/inject_icons.py --check \
   && python3 tools/check_shared_markup.py \
-  && python3 tools/audit_pages.py
+  && python3 tools/audit_pages.py \
+  && python3 tools/check_content_model.py
+```
+
+The PHP checks, which need `php-cli` and no browser — under a minute:
+
+```bash
+python3 tools/test_contact_handler.py \
+  && python3 tools/test_careers_admin.py \
+  && python3 tools/test_contact_admin.py
 ```
 
 The browser checks, which is where the interesting failures live. Slower —
@@ -167,12 +179,104 @@ encoding, not encryption.
 The reasoning, including why `includeSubDomains` and `preload` are deliberately
 left off, is written above the line itself.
 
+## The admin
+
+Two pages here are not flat files, because what they say changes on its own
+schedule and re-uploading the site to change a phone number is not a workflow
+anyone sustains. Each renders from a JSON file under `content/`, and `/admin/`
+edits that file. There is no database.
+
+```
+admin/index.php             the shell: auth, session, CSRF, and the router
+admin/sections/overview.php what can be edited, and plainly what cannot
+admin/sections/careers.php  the job post editor        -> content/careers.json
+admin/sections/contact.php  the contact page editor    -> content/contact.json
+lib/admin.php               the section registry, the icon rail, the page furniture
+lib/store.php               reading and writing a JSON file, atomically
+lib/html.php                escaping, and the rich-text sanitiser
+```
+
+Each section is at `/admin/?s=<name>`; `/admin/` itself is the overview. Adding
+another editable page is a row in `ADMIN_SECTIONS` in `lib/admin.php` and a file
+beside the others — the rail draws itself from that registry.
+
+Section files refuse to run unless `T4T_ADMIN` is defined, so asking for one by
+its own path gets a 403 however the server is configured. That is a backstop:
+the real protection is that cPanel's Directory Privacy covers the whole
+directory.
+
+**The editor follows the page, not the other way round.** The page renders
+straight from the JSON, so there is no second copy of the structure to keep in
+step. Change the shape of a page and the model, the form and the renderer move
+together — `check_content_model.py` fails the build if one of the three is left
+behind, in either direction.
+
+## The contact page
+
+`pages/contact/index.php` renders from `content/contact.json`, and
+`/admin/?s=contact` edits it. Rendered on the **server** for the same reason
+the careers page is: a contact page whose addresses arrive by JavaScript is
+indexed unreliably, and it is the page a search engine is most often asked for
+by name.
+
+```
+pages/contact/index.php     the public page
+content/contact.json        the data
+lib/contact.php             the shape of the page, and its ContactPage schema
+admin/sections/contact.php  the editor
+tools/sync_site_contact.py  pushes the details into the footer and the schema
+```
+
+The editor is one form of several bands, each matching a band of the page, in
+the order a visitor meets them — the banner, the copy around the enquiry form,
+the "Reach Us Directly" rows, the offices, and the search/sharing text nobody
+sees on the page itself. Add, remove and reorder submit the form **without
+saving**, so nothing typed is lost on the way; only "Save the contact page"
+writes.
+
+A reach row holds a **list** of values, so three numbers can sit under one
+"Phone" heading rather than as three rows each headed "Phone". One per line.
+"Add a row" is still there for a number that deserves a heading of its own.
+
+Office flags come from `/assets/images/flags/`. Dropping a `.jpg` or `.png` in
+there makes it appear in the picker on the next reload; a matching `.webp`
+beside it is used automatically when one exists, and the `width`/`height` are
+read from the file itself, so a flag added by hand needs nothing typed in.
+
+### The footer says the same things, and cannot be edited
+
+The email address, the phone numbers, the addresses and the opening hours also
+appear in **the footer of every page**, and in the `address` and `contactPoint`
+arrays of each page's base Organization structured data. This project forbids
+runtime partials, so those are literal markup in sixteen files — nothing on the
+server can update them from a file.
+
+Rather than let that go unnoticed, `contact_fingerprint()` digests exactly the
+facts that appear in both places, `sync_site_contact.py` stores that digest as
+`footer_synced` when it rebuilds them, and the editor compares the two and says
+plainly when they have parted.
+
+To bring them back into line:
+
+```bash
+# 1. the server's copy is the real one
+#    (download content/contact.json from the host first)
+python3 tools/sync_site_contact.py
+python3 tools/check_shared_markup.py
+python3 tools/audit_pages.py
+# 2. upload the pages — and NOT content/, which the host owns
+```
+
+The digest is computed twice, once in PHP and once in Python, from a delimited
+string rather than JSON — the two languages do not spell a JSON document the
+same way, and PHP escapes the slash in `278/3` where Python does not.
+`check_content_model.py` asserts the two implementations still agree, because
+they have already drifted once.
+
 ## Job posts
 
-The careers page is the one page here that is not a flat file. Job posts change
-on their own schedule, and re-uploading the site to add one is not a workflow
-anyone sustains — so `pages/careers/index.php` renders posts from
-`content/careers.json`, and `/admin/` edits that file.
+`pages/careers/index.php` renders posts from `content/careers.json`, and
+`/admin/?s=careers` edits that file.
 
 Rendered on the **server**, not fetched in the browser: a careers page whose
 listings arrive by JavaScript is one search engines index unreliably, and an
@@ -183,8 +287,8 @@ into ordinary results.
 ```
 pages/careers/index.php     the public page
 content/careers.json        the data — posts, and the speculative CV form link
-lib/careers.php             shared load/save/validate/render helpers
-admin/index.php             the editor
+lib/careers.php             the shape of a job post, and its JobPosting schema
+admin/sections/careers.php  the editor
 ```
 
 `lib/` and `content/` are both blocked over HTTP by `.htaccess`.
@@ -200,14 +304,14 @@ still saves if it never loads.
 so a `style="text-align:center"` written by `document.execCommand` would look
 right in the editor and do nothing at all on the published page. The editor
 writes `ta-left` / `ta-center` / `ta-right` / `ta-justify`, which
-`careers.css` styles and `CAREERS_ALLOWED_CLASSES` in `lib/careers.php`
-permits. Those three lists have to stay in step.
+`careers.css` styles and `RT_ALLOWED_CLASSES` in `lib/html.php` permits. Those
+three lists have to stay in step.
 
-**Everything is re-sanitised on save.** `careers_sanitise_html()` rebuilds the
-markup from an allow-list rather than filtering what it is given, so the stored
-HTML cannot contain a construct that function does not know how to write. That
-matters because the careers page prints it unescaped — the only place on the
-site that prints anything unescaped. The editor's own restrictions are a
+**Everything is re-sanitised on save.** `rt_sanitise_html()` in `lib/html.php`
+rebuilds the markup from an allow-list rather than filtering what it is given,
+so the stored HTML cannot contain a construct that function does not know how
+to write. That matters because the careers page and the contact page print it
+unescaped — the only places on the site that print anything unescaped. The editor's own restrictions are a
 convenience for whoever is typing and are bypassed by posting to the endpoint
 directly; the PHP is the boundary.
 
@@ -240,26 +344,28 @@ password and leave the editor open, with nothing to report the change.
 ### Before the editor works on the host
 
 1. **Protect it.** cPanel → *Directory Privacy* → `admin` → tick "Password
-   protect this directory" and add a user. `admin/index.php` refuses to load if
-   it cannot see that protection, so it cannot be left open by accident — but
-   the refusal is a backstop, not the lock.
-2. **Make the data file writable** by PHP. On cPanel, PHP runs as your own
+   protect this directory" and add a user. `admin_require_auth()` in
+   `lib/admin.php` refuses to load if it cannot see that protection, so it
+   cannot be left open by accident — but the refusal is a backstop, not the
+   lock.
+2. **Make the data files writable** by PHP. On cPanel, PHP runs as your own
    user, so `content/` needs no special permissions; if a save reports it could
    not write, that is the thing to check first.
 
 ### Deploying without destroying live posts
 
-**`content/careers.json` is tracked in git, and the copy on the server is the
-one that matters.** It ships seeded with the two roles the live site carries so
+**Both files under `content/` are tracked in git, and the copies on the server
+are the ones that matter.** They ship seeded with what the live site carries so
 a fresh deploy is not blank — but once anyone has used the editor, the server's
-copy is the real data and the repo's is stale.
+copies are the real data and the repo's are stale.
 
-So on any re-upload, **exclude `content/`**, or download the live file first and
-put it back afterwards. Overwriting it silently reverts every post added since
-launch, and nothing will report an error.
+So on any re-upload, **exclude `content/`**, or download the live files first
+and put them back afterwards. Overwriting them silently reverts every change
+made since launch, and nothing will report an error.
 
-The editor keeps one generation of backup at `content/careers.json.bak`, which
-is the fastest way back from a bad edit.
+The editor keeps one generation of backup beside each file —
+`content/careers.json.bak`, `content/contact.json.bak` — which is the fastest
+way back from a bad edit.
 
 `tools/templates/` holds the canonical shared markup. See the README in that
 directory.

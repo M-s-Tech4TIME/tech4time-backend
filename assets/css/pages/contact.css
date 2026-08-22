@@ -40,6 +40,62 @@
   color: var(--text-secondary);
 }
 
+/* --------------------------------------------------------------------------
+   The two edited leads
+
+   Both are written in /admin/ and stored as sanitised HTML, so each is a
+   wrapper holding one or more <p> rather than being a paragraph itself. The
+   reset zeroes every margin — right everywhere else, and here it would run two
+   paragraphs into one. These give the elements inside their spacing back.
+
+   Kept in step with the same rules for .job__body in careers.css and for
+   .rte__surface in admin.css: all three render what the same editor writes, so
+   what the admin shows is what the page shows.
+   -------------------------------------------------------------------------- */
+
+.contact__lead > :first-child,
+.section__lead > :first-child { margin-block-start: 0; }
+
+.contact__lead > :last-child,
+.section__lead > :last-child { margin-block-end: 0; }
+
+.contact__lead p,
+.section__lead p {
+  margin-block: var(--space-2xs);
+  font-size: inherit;
+  color: inherit;
+}
+
+.contact__lead ul,
+.contact__lead ol,
+.section__lead ul,
+.section__lead ol {
+  display: grid;
+  gap: var(--space-2xs);
+  padding-inline-start: var(--space-md);
+  margin-block: var(--space-2xs);
+  text-align: start;
+}
+
+.contact__lead li::marker,
+.section__lead li::marker { color: var(--silver-accent-mid); }
+
+.contact__lead strong,
+.section__lead strong {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.contact__lead em,
+.section__lead em { font-style: italic; }
+
+.contact__lead u,
+.section__lead u {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
 .form {
   display: grid;
   gap: var(--space-md);
@@ -106,6 +162,15 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
+}
+
+/* A row may carry several values — three numbers under one "Phone" heading.
+   Stacked rather than run together, so each is its own tap target on a phone,
+   and laid out the same way .office__phones lays out the same numbers on the
+   office card below: the two are the same fact and should not look like two. */
+.reach__value--many {
+  display: grid;
+  gap: var(--space-3xs);
 }
 
 /* --------------------------------------------------------------------------

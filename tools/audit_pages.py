@@ -303,9 +303,28 @@ def check_admin_is_hidden() -> list[str]:
                     "path and stops the noindex being read. Leave it unlisted."
                 )
 
-    admin = ROOT / "admin" / "index.php"
-    if admin.is_file() and 'name="robots"' not in admin.read_text():
-        problems.append("admin/index.php: no <meta name=\"robots\"> noindex")
+    # The admin's <head> is written once, by admin_head() in lib/admin.php, and
+    # the refusal page that admin_require_auth() sends writes its own. Both
+    # have to carry the noindex, so both are checked — a page nobody linked to
+    # is still a page a crawler can be told about.
+    for path in (ROOT / "lib" / "admin.php", ROOT / "admin" / "index.php"):
+        if not path.is_file():
+            continue
+        text = path.read_text()
+        if 'name="robots"' in text:
+            break
+    else:
+        problems.append(
+            "the admin does not emit <meta name=\"robots\"> noindex "
+            "(looked in lib/admin.php and admin/index.php)"
+        )
+
+    shell = ROOT / "lib" / "admin.php"
+    if shell.is_file() and shell.read_text().count('name="robots"') < 2:
+        problems.append(
+            "lib/admin.php: only one <meta name=\"robots\"> — the editor shell "
+            "and the not-protected refusal page each need their own"
+        )
 
     htaccess = ROOT / ".htaccess"
     if htaccess.is_file() and "X-Robots-Tag" not in htaccess.read_text():

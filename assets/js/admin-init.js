@@ -19,6 +19,9 @@
     if (api.theme) {
       api.theme.init();
     }
+    if (api.adminNav) {
+      api.adminNav.init();
+    }
     if (api.editor) {
       api.editor.init();
     }

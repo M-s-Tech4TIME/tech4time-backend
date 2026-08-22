@@ -1,50 +1,385 @@
 /* ==========================================================================
    Tech4TIME — admin.css
-   The job post editor at /admin/. Not part of the public site.
+   The editors at /admin/. Not part of the public site.
 
-   Deliberately plain. It reuses the site's tokens and .btn so it does not
-   look like a different product, but it carries no animation, no reveal and
-   no decoration: this is a tool for one person to change a job post quickly,
-   and every flourish is something between them and a saved file.
+   It reuses the site's tokens, its .btn and its silver so that it reads as the
+   same product, and it carries no scroll reveals, no shine and no decoration
+   for its own sake: this is a tool for changing a phone number quickly, and
+   every flourish is something between the person using it and a saved file.
+
+   The one place it does spend on appearance is the rail. A menu that is
+   pleasant to use is a menu people find things in, and it is the only part of
+   this page that is looked at rather than filled in.
    ========================================================================== */
 
-.admin {
-  padding-block: var(--space-xl) var(--space-3xl);
+/* --------------------------------------------------------------------------
+   1. The shell
+
+   A rail beside a scrolling column. The rail is position: sticky rather than
+   fixed so that it belongs to the grid — a fixed element is out of flow, and
+   the body column would then have to be pushed clear of it by a hard-coded
+   width that has to be kept in step with the rail's own.
+   -------------------------------------------------------------------------- */
+
+.admin-page {
+  /* The two widths the rail has, named once so the grid and the rail itself
+     cannot disagree about them. */
+  --rail-wide: 16.5rem;
+  --rail-narrow: 4.5rem;
+  background-color: var(--bg-surface);
 }
 
-.admin__header {
+.admin-shell {
+  display: grid;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+@media (min-width: 60em) {
+  .admin-shell {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.admin-shell__body {
+  min-width: 0;
+  background-color: var(--bg-base);
+}
+
+/* --------------------------------------------------------------------------
+   2. The icon rail
+   -------------------------------------------------------------------------- */
+
+.rail {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
+  flex-direction: column;
   gap: var(--space-md);
-  padding-block-end: var(--space-lg);
-  margin-block-end: var(--space-lg);
+  padding: var(--space-md) var(--space-sm);
+  background-color: var(--bg-surface);
   border-block-end: var(--border-width) solid var(--border-subtle);
 }
 
-.admin__title {
-  font-size: var(--text-3xl);
+@media (min-width: 60em) {
+  .rail {
+    position: sticky;
+    inset-block-start: 0;
+    width: var(--rail-wide);
+    height: 100vh;
+    height: 100dvh;
+    padding: var(--space-lg) var(--space-sm);
+    border-block-end: 0;
+    border-inline-end: var(--border-width) solid var(--border-subtle);
+    transition: width var(--duration) var(--ease-out);
+  }
+
+  .rail[data-rail="narrow"] { width: var(--rail-narrow); }
 }
 
-/* Keeps the signed-in line and the theme button on one row, and lets them
-   wrap under the title on a narrow screen rather than squeezing it. */
-.admin__header-actions {
+/* The brand plate. The logo is a raster with its own background baked in for
+   the mode it belongs to, which is why there are two of them and why
+   .theme-swap swaps them rather than a filter doing it. */
+.rail__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding-inline: var(--space-2xs);
+}
+
+.rail__brand {
+  display: block;
+  min-width: 0;
+}
+
+.rail__logo {
+  display: block;
+  width: auto;
+  height: 1.75rem;
+}
+
+.rail__kicker {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Below the breakpoint the rail is a strip across the top, where the brand
+   plate would push the sections off the screen. */
+@media (max-width: 59.99em) {
+  .rail__head { display: none; }
+}
+
+.rail__nav { min-width: 0; }
+
+@media (min-width: 60em) {
+  /* Takes the slack, so the two footer links sit at the bottom of the column
+     rather than under the last section. */
+  .rail__nav { flex: 1 1 auto; }
+}
+
+.rail__list {
+  display: flex;
+  gap: var(--space-3xs);
+  padding: 0;
+  margin: 0;
+  overflow-x: auto;
+  list-style: none;
+}
+
+@media (min-width: 60em) {
+  .rail__list {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+}
+
+.rail__item,
+.rail__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-height: 2.75rem;
+  padding: var(--space-2xs);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+/* Across the top the items are chips in a scrolling row, and a wrapped chip
+   would be taller than the strip. */
+@media (max-width: 59.99em) {
+  .rail__item,
+  .rail__link { white-space: nowrap; }
+}
+
+.rail__item:hover,
+.rail__link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+}
+
+.rail__item:focus-visible,
+.rail__link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* The current section. The fill is the site's silver, and the bar on the
+   leading edge is what carries the state for anyone who cannot separate two
+   tones — this palette has no hue to signal with. */
+.rail__item[aria-current="page"] {
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+}
+
+.rail__item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 20%;
+  width: 3px;
+  background-image: var(--silver-gradient-fill);
+  border-start-end-radius: var(--radius-sm);
+  border-end-end-radius: var(--radius-sm);
+}
+
+@media (max-width: 59.99em) {
+  /* Across the top the leading edge is the bottom one. */
+  .rail__item[aria-current="page"]::before {
+    inset: auto 20% 0;
+    width: auto;
+    height: 3px;
+  }
+}
+
+.rail__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.rail__icon .icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: currentColor;
+}
+
+.rail__item[aria-current="page"] .rail__icon .icon {
+  fill: var(--accent-text);
+}
+
+.rail__text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.rail__label {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Wraps rather than truncating. An ellipsis in a menu hides the half of the
+   line that says which of two similar sections this is. */
+.rail__desc {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+  white-space: normal;
+  text-wrap: balance;
+}
+
+/* The description is the first thing to go: it is the least of the three and
+   the widest. */
+@media (max-width: 74.99em) {
+  .rail__desc { display: none; }
+}
+
+/* Narrowed to icons. The text is hidden the accessible way rather than with
+   display: none, so each item keeps its name for a screen reader — an icon
+   rail whose items announce only as "link" is a rail nobody can navigate. */
+@media (min-width: 60em) {
+  .rail[data-rail="narrow"] .rail__text,
+  .rail[data-rail="narrow"] .rail__kicker {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .rail[data-rail="narrow"] .rail__item,
+  .rail[data-rail="narrow"] .rail__link {
+    justify-content: center;
+  }
+}
+
+.rail__foot {
+  display: flex;
+  gap: var(--space-3xs);
+  padding-block-start: var(--space-sm);
+  border-block-start: var(--border-width) solid var(--border-subtle);
+}
+
+@media (min-width: 60em) {
+  .rail__foot { flex-direction: column; }
+}
+
+@media (max-width: 59.99em) {
+  .rail__foot {
+    padding-block-start: 0;
+    border-block-start: 0;
+  }
+
+  /* Hidden the accessible way, not with display: none. These two are the only
+     controls in the strip with no visible label, and display: none would take
+     their name out of the accessibility tree with the picture — leaving two
+     links that announce as "link" and nothing else. */
+  .rail__foot .rail__text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+.rail__link .icon {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+/* --------------------------------------------------------------------------
+   3. The bar above the section
+   -------------------------------------------------------------------------- */
+
+.admin-bar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--gutter);
+  background-color: var(--bg-base);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+.admin-bar__title { font-size: var(--text-2xl); }
+
+.admin-bar__lede,
+.admin-bar__user {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.admin-bar__lede code,
+.admin__footer code,
+.admin-tile__file code,
+.admin__notes code,
+.admin__hint code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.admin-bar__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-sm);
 }
 
-.admin__subtitle,
-.admin__user {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+.admin-bar__user {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
 }
 
-.admin__subtitle code {
-  font-family: var(--font-mono);
-  font-size: 0.9em;
+.admin-bar__user .icon { fill: currentColor; }
+
+/* Only one of the two chevrons is ever right. */
+.rail-toggle__icon--wide { display: none; }
+.rail-toggle[aria-expanded="false"] .rail-toggle__icon--narrow { display: none; }
+.rail-toggle[aria-expanded="false"] .rail-toggle__icon--wide { display: block; }
+
+@media (max-width: 59.99em) {
+  /* Across the top there is nothing to narrow. */
+  .rail-toggle { display: none; }
+}
+
+/* --------------------------------------------------------------------------
+   4. The section itself
+   -------------------------------------------------------------------------- */
+
+.admin {
+  padding-block: var(--space-xl) var(--space-3xl);
+}
+
+/* The editors are forms, and a form is read one line at a time. This is the
+   measure at which that stays comfortable; the rail takes whatever is left. */
+.admin__inner {
+  max-width: 62rem;
+  padding-inline: var(--gutter);
+  margin-inline: auto;
 }
 
 /* ---------------------------------------------------------------- notices */
@@ -68,6 +403,22 @@
 .admin__notice--error {
   border-inline-start: 4px solid var(--text-primary);
   background-color: var(--bg-surface);
+}
+
+/* Not an error — nothing failed — but something is out of step and will stay
+   that way until somebody acts. It borrows the error's weight because it is
+   the same kind of message: something needs doing. What tells the two apart is
+   the wording, which is the only signal this palette can spend. */
+.admin__notice--warn {
+  border-inline-start: 4px solid var(--text-primary);
+  background-color: var(--bg-surface);
+}
+
+.admin__notice--warn p + p { margin-block-start: var(--space-2xs); }
+
+.admin__notice--warn .icon {
+  fill: currentColor;
+  vertical-align: -0.15em;
 }
 
 .admin__notice ul {
@@ -272,6 +623,245 @@
 
 .admin__footer code {
   font-family: var(--font-mono);
+}
+
+/* --------------------------------------------------------------------------
+   Overview tiles
+   -------------------------------------------------------------------------- */
+
+.admin__cards {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  padding: 0;
+  margin: 0 0 var(--space-2xl);
+  list-style: none;
+}
+
+.admin-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.admin-tile__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.admin-tile__icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  background-image: var(--silver-gradient-fill);
+  border-radius: var(--radius);
+}
+
+.admin-tile__icon .icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: var(--on-accent);
+}
+
+.admin-tile__title { font-size: var(--text-lg); }
+
+.admin-tile__facts {
+  display: grid;
+  gap: var(--space-3xs);
+  padding: 0;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  list-style: none;
+}
+
+.admin-tile__saved,
+.admin-tile__file {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.admin-tile__warn {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3xs);
+  padding: var(--space-2xs) var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+  border-inline-start: 3px solid var(--text-primary);
+  border-radius: var(--radius-sm);
+}
+
+.admin-tile__warn .icon {
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+.admin-tile__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin-block-start: auto;
+}
+
+.admin__notes {
+  display: grid;
+  gap: var(--space-sm);
+  padding-inline-start: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.admin__notes strong { color: var(--text-primary); }
+
+/* --------------------------------------------------------------------------
+   Blocks and repeating rows
+
+   The contact editor is one long form of several bands, each matching a band
+   of the page it edits. A <fieldset> because that is what a named group of
+   controls is, with its border removed — the border is drawn by the block.
+   -------------------------------------------------------------------------- */
+
+.admin__block {
+  /* flow-root so the block contains its own floated heading; see below. */
+  display: flow-root;
+  padding: var(--space-lg);
+  margin-block-end: var(--space-lg);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+/* A <legend> is laid out ON its fieldset's top border, which cuts a notch out
+   of it and leaves the heading half in and half out of the box. Floating it
+   puts it back into normal flow, which is where it belongs here: the border is
+   the block's, not the group of controls'. */
+.admin__block > .admin__section-title {
+  float: left;
+  width: 100%;
+  padding-inline: 0;
+  font-size: var(--text-lg);
+}
+
+.admin__blurb {
+  margin-block-end: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* One repeated record: a reach row, or an office. */
+.admin-card {
+  padding: var(--space-md);
+  margin-block-end: var(--space-md);
+  background-color: var(--bg-base);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.admin-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding-block-end: var(--space-sm);
+  margin-block-end: var(--space-md);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+/* The number is the row's position, which is the thing the arrows change —
+   without it "move down" has nothing to be relative to. */
+.admin-card__index {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-full);
+}
+
+.admin-card__preview {
+  display: flex;
+  flex: 1 1 12rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3xs) var(--space-2xs);
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.admin-card__preview .icon {
+  width: 1rem;
+  height: 1rem;
+  align-self: center;
+  fill: var(--silver-accent-mid);
+}
+
+.admin-card__value {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.admin-card__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+  margin-inline-start: auto;
+}
+
+.admin-card__controls .btn {
+  min-height: 2.25rem;
+  padding-inline: var(--space-sm);
+  font-size: var(--text-xs);
+  border: var(--border-width) solid var(--border-subtle);
+}
+
+.admin__details {
+  padding: var(--space-sm) var(--space-md);
+  margin-block-start: var(--space-md);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.admin__summary {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin__summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.admin__details[open] .admin__summary {
+  padding-block-end: var(--space-sm);
+  margin-block-end: var(--space-sm);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+/* The save bar follows the page, because the contact form is long enough that
+   the button would otherwise be several screens away from whatever was just
+   changed — and a change nobody can save is a change that gets lost. */
+.admin__actions--sticky {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: var(--z-sticky);
+  padding: var(--space-md) 0;
+  background-color: var(--bg-base);
+  border-block-start: var(--border-width) solid var(--border-subtle);
 }
 
 /* --------------------------------------------------------------------------

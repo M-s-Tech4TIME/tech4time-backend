@@ -10,9 +10,10 @@ Development tool. NOT deployed to the web server (see tools/README.md).
 Requires the PHP CLI:  sudo apt install php-cli
 
 WHY NOT python3 -m http.server
-Three pages need PHP now: the careers page renders job posts, the admin edits
-them, and the contact form posts to a handler. A static file server shows you
-their source instead of their output.
+Four pages need PHP now: the careers page renders job posts, the contact page
+renders its addresses and numbers, the admin edits both, and the contact form
+posts to a handler. A static file server shows you their source instead of
+their output.
 
 WHAT IS FAKED HERE
 The password on /admin. On the host, cPanel's Directory Privacy makes Apache
@@ -40,9 +41,11 @@ ROUTER = ROOT / "tools" / "dev-router.php"
 
 PAGES = [
     ("Home", "/"),
+    ("Admin — overview", "/admin/"),
+    ("Admin — job posts", "/admin/?s=careers"),
+    ("Admin — contact page", "/admin/?s=contact"),
     ("Careers  (renders content/careers.json)", "/pages/careers/"),
-    ("Job post editor", "/admin/"),
-    ("Contact", "/pages/contact/"),
+    ("Contact  (renders content/contact.json)", "/pages/contact/"),
     ("Resource Certifications", "/pages/resource-certifications/"),
     ("Branding & Advertisement", "/pages/branding-and-advertisement/"),
 ]
@@ -78,8 +81,9 @@ def main() -> None:
     print(
         "\n  The editor's password is FAKED locally — there is no Apache here to ask\n"
         "  for one. On the host it is cPanel > Directory Privacy that protects it.\n"
-        "\n  Editing a post writes content/careers.json for real. Restore it with:\n"
-        "    git checkout content/careers.json\n"
+        "\n  Editing writes content/careers.json and content/contact.json for real.\n"
+        "  Restore them with:\n"
+        "    git checkout content/careers.json content/contact.json\n"
         "\n  Ctrl-C to stop.\n"
     )
 

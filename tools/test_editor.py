@@ -154,7 +154,9 @@ class Browser:
 
 
 def run(b: Browser, web_port: int, r: Results):
-    b.go(f"http://127.0.0.1:{web_port}/admin/?action=edit&id=security-engineer")
+    # The admin gained a second editor and an icon rail: the job posts moved
+    # from /admin/ to /admin/?s=careers.
+    b.go(f"http://127.0.0.1:{web_port}/admin/?s=careers&action=edit&id=security-engineer")
 
     print("\nsetup")
     r.check("the editors are built", b.js(

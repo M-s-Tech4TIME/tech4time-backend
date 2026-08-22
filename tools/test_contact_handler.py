@@ -162,7 +162,24 @@ def check_form_matches_handler(r: Results):
     reason that points at the visitor. Worth one static check.
     """
     print("\nform / handler agreement")
-    page = (ROOT / "pages" / "contact" / "index.html").read_text("utf-8")
+
+    # The contact page is PHP now — its addresses and copy come out of
+    # content/contact.json. The form's own fields are still literal markup, but
+    # this renders the page rather than reading it, so that stays true by
+    # observation instead of by assumption.
+    source = ROOT / "pages" / "contact" / "index.php"
+    php = shutil.which("php")
+    if not php:
+        r.check("php is available to render the contact page", False,
+                "sudo apt install php-cli")
+        return
+
+    rendered = subprocess.run([php, "-f", str(source)],
+                              capture_output=True, text=True, cwd=str(source.parent))
+    if rendered.returncode != 0:
+        r.check("the contact page renders", False, rendered.stderr.strip()[:200])
+        return
+    page = rendered.stdout
 
     form = re.search(r"<form\b.*?</form>", page, re.S)
     if not form:

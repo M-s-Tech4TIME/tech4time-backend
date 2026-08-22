@@ -1,0 +1,145 @@
+{
+    "updated": "",
+    "footer_synced": "4d3f0075b40b7fb4e5b594735a8fe790bb36281e7b5be26da3db77c0e7de857f",
+    "meta": {
+        "title": "Contact Us — Dhaka, Selangor & Brussels | Tech4TIME",
+        "description": "Get in touch with Tech4TIME. Offices in Dhaka, Selangor and Brussels, email info@tech4time.bd, and a reply within one working day.",
+        "share_title": "Ask for a quote or just contact us"
+    },
+    "hero": {
+        "title": "Contact Us",
+        "subtitle": "Ask for a quote, or just get in touch"
+    },
+    "form": {
+        "title": "Ask for a quote or just contact us",
+        "lead": "<p>Tell us what you need and we will come back to you within one working day. Everything below is required except where marked.</p>",
+        "subject_hint": "Pick one of ours or describe your own.",
+        "note": "Sent over an encrypted connection and used only to answer your enquiry.",
+        "service_types": [
+            "Cybersecurity",
+            "Software Development",
+            "Cloud Infrastructure",
+            "HRaaS — Human Resource as a Service",
+            "IT Equipment Supply",
+            "IT Consultancy & Training"
+        ]
+    },
+    "reach": {
+        "title": "Reach Us Directly",
+        "items": [
+            {
+                "icon": "envelope",
+                "label": "Email",
+                "type": "email",
+                "values": [
+                    "info@tech4time.bd"
+                ],
+                "text": ""
+            },
+            {
+                "icon": "phone",
+                "label": "Phone",
+                "type": "phone",
+                "values": [
+                    "+880 1320571562",
+                    "+880 1881873463",
+                    "+880 1847313835"
+                ],
+                "text": ""
+            },
+            {
+                "icon": "clock",
+                "label": "Response Time",
+                "type": "text",
+                "values": [
+                    "Within one working day"
+                ],
+                "text": ""
+            },
+            {
+                "icon": "linkedin",
+                "label": "LinkedIn",
+                "type": "url",
+                "values": [
+                    "https://www.linkedin.com/company/tech4time-bd/"
+                ],
+                "text": "Tech4TIME"
+            }
+        ]
+    },
+    "offices": {
+        "eyebrow": "Where We Are",
+        "title": "Our Offices",
+        "lead": "<p>Three offices across Asia and Europe, so there is someone on your clock.</p>",
+        "items": [
+            {
+                "id": "bangladesh",
+                "name": "Bangladesh",
+                "flag": "bangladesh",
+                "address": "278/3, Manikdi, Dhaka - 1206",
+                "phones": [
+                    "+880 1320571562",
+                    "+880 1881873463",
+                    "+880 1847313835"
+                ],
+                "hours": "Sun – Thu: 9:00 AM – 6:00 PM",
+                "languages": [
+                    "English",
+                    "Bengali"
+                ],
+                "status": "shown",
+                "schema": {
+                    "street": "278/3, Manikdi",
+                    "locality": "Dhaka",
+                    "region": "",
+                    "postal_code": "1206",
+                    "country": "BD"
+                }
+            },
+            {
+                "id": "malaysia",
+                "name": "Malaysia",
+                "flag": "malaysia",
+                "address": "68100 Batu Caves, Selangor, Malaysia",
+                "phones": [
+                    "+60 198527096"
+                ],
+                "hours": "Mon – Fri: 9:00 AM – 6:00 PM",
+                "languages": [
+                    "English"
+                ],
+                "status": "shown",
+                "schema": {
+                    "street": "68100 Batu Caves",
+                    "locality": "",
+                    "region": "Selangor",
+                    "postal_code": "",
+                    "country": "MY"
+                }
+            },
+            {
+                "id": "belgium",
+                "name": "Belgium",
+                "flag": "belgium",
+                "address": "367, Avenue Louise, Brussels, Belgium",
+                "phones": [
+                    "+880 1320571562",
+                    "+880 1881873463",
+                    "+880 1847313835"
+                ],
+                "hours": "",
+                "languages": [
+                    "English"
+                ],
+                "status": "shown",
+                "schema": {
+                    "street": "367, Avenue Louise",
+                    "locality": "Brussels",
+                    "region": "",
+                    "postal_code": "",
+                    "country": "BE"
+                }
+            }
+        ]
+    }
+}

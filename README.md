@@ -38,17 +38,23 @@ root-relative (`/assets/…`), which `file://` cannot resolve.
 │   │   ├── cloud-infrastructure/index.html
 │   │   └── hr-solutions/index.html
 │   ├── company-profile/index.html
-│   ├── careers/index.html
-│   ├── contact/index.html
+│   ├── careers/index.php            renders content/careers.json
+│   ├── contact/index.php            renders content/contact.json
 │   ├── resource-certifications/index.html
 │   ├── branding-and-advertisement/index.html
 │   └── privacy-policy/index.html
+├── admin/                           the editors — password protected in cPanel
+│   ├── index.php                    the shell and router
+│   └── sections/                    one file per editable page
+├── lib/                             server-side helpers — never served
+├── content/                         the edited data — the HOST's copy is real
 ├── assets/
-│   ├── css/      base, theme, layout, components, animations, pages/
+│   ├── css/      base, theme, layout, components, animations, admin, pages/
 │   ├── js/       theme-init, theme-toggle, nav, animations, forms, main
 │   ├── fonts/    self-hosted Inter (latin, latin-ext)
 │   ├── icons/    master SVG sprite
-│   └── images/   logo, favicon, og, tech, clients, photos, sections
+│   └── images/   logo, favicon, og, tech, clients, photos, sections, flags
+├── contact-handler.php              the enquiry form's endpoint
 ├── tools/                           build and audit scripts — NOT deployed
 ├── .htaccess                        security headers, caching, clean URLs
 ├── robots.txt
@@ -56,8 +62,15 @@ root-relative (`/assets/…`), which `file://` cannot resolve.
 └── site.webmanifest
 ```
 
-Every page except the homepage lives at `/pages/[name]/index.html`, so it is
-served at `/pages/[name]/` with no `.html` in the address bar.
+Every page except the homepage lives at `/pages/[name]/index.*`, so it is
+served at `/pages/[name]/` with no extension in the address bar.
+
+Two of them are `.php` rather than `.html`, and only two: the careers page and
+the contact page say things that change without a redeploy, so they render from
+`content/*.json` and are edited at `/admin/`. Everything else is a flat file.
+`lib/`, `content/` and `tools/` are blocked over HTTP by `.htaccess`.
+See `tools/README.md` for the editors, and for the one thing they cannot
+reach — the contact details repeated in every page's footer.
 
 ---
 
@@ -192,11 +205,14 @@ either append a version query to the `<link>`/`<script>` tags
 
 ## Contact form
 
-The site stays static; the forms post to small PHP handlers
-(`contact-handler.php`, `careers-handler.php`) that run on cPanel with no
-dependencies. They validate server-side, use a honeypot, and mail to
-`info@tech4time.bd`. Client-side validation in `assets/js/forms.js` is a
-convenience only — never the security boundary.
+The site stays static; the enquiry form posts to one small PHP handler,
+`contact-handler.php`, which runs on cPanel with no dependencies. It validates
+server-side, uses a honeypot, and mails to `info@tech4time.bd`. Client-side
+validation in `assets/js/forms.js` is a convenience only — never the security
+boundary.
+
+Job applications do not post here at all: each role links out to its own Google
+Form, and the link is set per role in the editor.
 
 `mail()` cannot be tested locally; verify the forms on the live host before
 launch.

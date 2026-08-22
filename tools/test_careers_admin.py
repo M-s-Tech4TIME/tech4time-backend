@@ -40,6 +40,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "content" / "careers.json"
 
+# The admin gained a second editor and an icon rail, so /admin/ is now the
+# overview and each editor has its own address. The job posts are here.
+ADMIN = "/admin/?s=careers"
+
 ROUTER = """<?php
 /* Test harness only. Stands in for the Basic auth that cPanel Directory
    Privacy applies to /admin in production. */
@@ -240,7 +244,7 @@ def run(client: Client, r: Results):
     }
 
     print("\nreading")
-    status, html = client.get("/admin/")
+    status, html = client.get(ADMIN)
     r.check("the editor loads once authenticated", status == 200 and "Job posts" in html,
             f"{status}")
     token = csrf_of(html)
@@ -249,7 +253,7 @@ def run(client: Client, r: Results):
     before = job_ids()
 
     print("\ncreating")
-    status, headers, _ = client.post("/admin/", dict(NEW, action="save", csrf=token, id=""))
+    status, headers, _ = client.post(ADMIN, dict(NEW, action="save", csrf=token, id=""))
     r.check("a new post redirects rather than re-rendering",
             status == 302, f"{status}")
     ids = job_ids()
@@ -277,20 +281,20 @@ def run(client: Client, r: Results):
             page.count('"validThrough"') == 0, "an empty date must not be published")
 
     print("\nvalidating")
-    status, _, html = client.post("/admin/", dict(NEW, action="save", csrf=token, id="",
+    status, _, html = client.post(ADMIN, dict(NEW, action="save", csrf=token, id="",
                                                   title=""))
     r.check("a post with no title is refused", "A job title is required" in html)
-    status, _, html = client.post("/admin/", dict(NEW, action="save", csrf=token, id="",
+    status, _, html = client.post(ADMIN, dict(NEW, action="save", csrf=token, id="",
                                                   apply_url="not-a-url"))
     r.check("a post with a broken apply link is refused",
             "must be a full URL" in html, html[:200])
-    status, _, html = client.post("/admin/", dict(NEW, action="save", csrf=token, id="",
+    status, _, html = client.post(ADMIN, dict(NEW, action="save", csrf=token, id="",
                                                   closes="31-10-2026"))
     r.check("a misformatted closing date is refused", "YYYY-MM-DD" in html)
     r.check("none of those wrote anything", len(job_ids()) == len(before) + 1)
 
     print("\npublishing")
-    client.post("/admin/", {"action": "toggle", "csrf": token,
+    client.post(ADMIN, {"action": "toggle", "csrf": token,
                             "id": "test-automation-engineer"})
     r.check("unpublishing sets the post to draft",
             statuses().get("test-automation-engineer") == "draft", str(statuses()))
@@ -299,7 +303,7 @@ def run(client: Client, r: Results):
     r.check("a draft emits no JobPosting either",
             '"Test Automation Engineer"' not in page)
 
-    client.post("/admin/", {"action": "toggle", "csrf": token,
+    client.post(ADMIN, {"action": "toggle", "csrf": token,
                             "id": "test-automation-engineer"})
     r.check("publishing brings it back",
             statuses().get("test-automation-engineer") == "open")
@@ -308,22 +312,22 @@ def run(client: Client, r: Results):
     ids = job_ids()
     if len(ids) >= 2:
         last = ids[-1]
-        client.post("/admin/", {"action": "move", "csrf": token, "id": last,
+        client.post(ADMIN, {"action": "move", "csrf": token, "id": last,
                                 "direction": "up"})
         r.check("moving up reorders the file", job_ids()[-2] == last, str(job_ids()))
-        client.post("/admin/", {"action": "move", "csrf": token, "id": ids[0],
+        client.post(ADMIN, {"action": "move", "csrf": token, "id": ids[0],
                                 "direction": "up"})
         r.check("moving the first post up is a no-op, not an error",
                 job_ids()[0] == ids[0], str(job_ids()))
 
     print("\nCSRF")
-    status, _, _ = client.post("/admin/", {"action": "delete", "csrf": "wrong",
+    status, _, _ = client.post(ADMIN, {"action": "delete", "csrf": "wrong",
                                            "id": "test-automation-engineer"})
     r.check("a request with a bad token is rejected", status == 400, f"{status}")
     r.check("and nothing was deleted", "test-automation-engineer" in job_ids())
 
     print("\ndeleting")
-    client.post("/admin/", {"action": "delete", "csrf": token,
+    client.post(ADMIN, {"action": "delete", "csrf": token,
                             "id": "test-automation-engineer"})
     r.check("the post is removed", "test-automation-engineer" not in job_ids())
     r.check("the others are untouched", job_ids() and len(job_ids()) == len(before),
@@ -333,7 +337,7 @@ def run(client: Client, r: Results):
 
     print("\nempty state")
     for jid in list(job_ids()):
-        client.post("/admin/", {"action": "delete", "csrf": token, "id": jid})
+        client.post(ADMIN, {"action": "delete", "csrf": token, "id": jid})
     _, page = client.get("/pages/careers/")
     r.check("with no posts the page invites a CV instead",
             "Stay Tuned for Opportunities" in page and "empty-state" in page)

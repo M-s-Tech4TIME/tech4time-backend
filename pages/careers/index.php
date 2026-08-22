@@ -134,7 +134,7 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
         {
           "@type": "PostalAddress",
           "streetAddress": "68100 Batu Caves",
-          "addressLocality": "Selangor",
+          "addressRegion": "Selangor",
           "addressCountry": "MY"
         },
         {
@@ -151,7 +151,10 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
           "email": "info@tech4time.bd",
           "contactType": "customer service",
           "areaServed": "BD",
-          "availableLanguage": ["English"]
+          "availableLanguage": [
+            "English",
+            "Bengali"
+          ]
         },
         {
           "@type": "ContactPoint",
@@ -159,7 +162,10 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
           "email": "info@tech4time.bd",
           "contactType": "customer service",
           "areaServed": "BD",
-          "availableLanguage": ["English"]
+          "availableLanguage": [
+            "English",
+            "Bengali"
+          ]
         },
         {
           "@type": "ContactPoint",
@@ -167,7 +173,10 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
           "email": "info@tech4time.bd",
           "contactType": "customer service",
           "areaServed": "BD",
-          "availableLanguage": ["English"]
+          "availableLanguage": [
+            "English",
+            "Bengali"
+          ]
         },
         {
           "@type": "ContactPoint",
@@ -175,7 +184,9 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
           "email": "info@tech4time.bd",
           "contactType": "customer service",
           "areaServed": "MY",
-          "availableLanguage": ["English"]
+          "availableLanguage": [
+            "English"
+          ]
         }
       ],
       "sameAs": [
@@ -771,12 +782,12 @@ $cvForm = trim((string)($data['cv_form_url'] ?? ''));
           <div class="contact-item">
             <svg class="icon contact-item__icon" aria-hidden="true" focusable="false"><use href="#map-marker-alt"></use></svg>
             <div>
-              <span class="contact-item__label">Dhaka, Bangladesh</span>
+              <span class="contact-item__label">Bangladesh</span>
               278/3, Manikdi, Dhaka - 1206<br>
-              <span class="contact-item__label">Selangor, Malaysia</span>
-              68100 Batu Caves<br>
-              <span class="contact-item__label">Brussels, Belgium</span>
-              367, Avenue Louise
+              <span class="contact-item__label">Malaysia</span>
+              68100 Batu Caves, Selangor, Malaysia<br>
+              <span class="contact-item__label">Belgium</span>
+              367, Avenue Louise, Brussels, Belgium
             </div>
           </div>
 
