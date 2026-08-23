@@ -576,9 +576,16 @@ textarea.field__control {
   gap: var(--space-3xs) var(--space-2xs);
 }
 
+/* 1.5rem is 24px, which is WCAG 2.2 SC 2.5.8 exactly.
+   The consent row is one tap target — the box and its label both toggle it —
+   and at 1.15rem the box was 18px while a label that fits on one line is 23,
+   so the target was 23px tall and a pixel short. Only at the widths where the
+   label does not wrap, which is why reading the stylesheet would never have
+   shown it. Sizing the box to the criterion is also the honest fix: this is
+   the control someone has to hit to give consent. */
 .field__checkbox {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.5rem;
+  height: 1.5rem;
   margin-block-start: 0.15em;
   accent-color: var(--accent-text);
 }

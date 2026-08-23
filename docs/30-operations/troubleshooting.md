@@ -247,7 +247,8 @@ and every one of its checks was verified against a deliberate breakage.
 
 ### `check_responsive.py` fails
 
-A page scrolls sideways, or a control is wider than the screen, at one of six widths.
+A page scrolls sideways, a control is wider than the screen, or a tap target is under 24px, at one
+of seven widths.
 
 The message names the page, the width and the element. Two things to know before chasing it:
 
@@ -258,9 +259,22 @@ The message names the page, the width and the element. Two things to know before
   sideways`,** and the page can look perfect while failing it. `.btn` clips its own overflow for the
   shine sweep, so an over-long label is cut off in silence rather than pushing the layout.
 
+- **`… has no tap target under 24px` is WCAG 2.2 SC 2.5.8, with its exceptions applied.** Before
+  enlarging anything, check which exception was meant to cover it: a `<label>` counts towards the
+  control it names, an inline link in a sentence is exempt, and a small target with 24px of clear
+  space around it is exempt however small. The reported size is the *union* of the control and its
+  label, which is why a checkbox can be reported as `597x23`. Note the height, not the width.
+
+  The stylesheet aims higher than this check enforces — several components declare `2.75rem` for a
+  44px target. That is deliberate: the check holds the line at the AA standard, and the design
+  exceeds it. Do not lower a 44px control to 24 because the check would still pass.
+
 Each width is measured in a frame, and the run prints the viewport it actually got. If that number
 stops matching the width asked for, stop and read
 [0015](../90-decisions/0015-narrow-widths-need-a-frame.md) — nothing in the run can be believed.
+
+Two of the widths are criteria rather than devices: 320px is SC 1.4.10 Reflow, defined at exactly
+that width, and 640px is a 1280px desktop at 200% zoom, which is SC 1.4.4 Resize Text.
 
 ### `check_docs.py` fails
 
@@ -278,6 +292,11 @@ Current behaviour, documented because it is surprising rather than because it is
 | The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly; keep subdomain docroots outside `public_html` |
 
 That one is a fix scheduled with the Phase B hardening.
+
+**Fixed 2026-08-23** — the contact form's consent checkbox was a 23px tap target at the widths where
+its label fits on one line, one pixel under WCAG 2.2 SC 2.5.8. The box is now `1.5rem`, which is 24
+exactly. Reading the stylesheet would never have shown it: the box was 18px, the label 23, and the
+target is the two together.
 
 **Fixed 2026-08-23** — the About page scrolled sideways on a 320px screen, and its call to action
 was cut off. The specialities slider's control row is eight 44px tap targets, centred, which is

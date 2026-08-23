@@ -35,6 +35,14 @@ number ever stops matching the width asked for, the run is not to be believed.
 WHAT IT ASSERTS
   - the document does not scroll horizontally: scrollWidth <= clientWidth
   - no link, button or form control is wider than the viewport
+  - no tap target is under 24x24 CSS px — WCAG 2.2 SC 2.5.8, Level AA — with
+    the criterion's own exceptions applied, so a label counts towards the
+    control it names and an isolated small target with room around it passes
+
+Two of the widths are criteria in their own right. 320px is SC 1.4.10 Reflow,
+which is defined at exactly that width, so the no-sideways-scrolling assertion
+is that criterion tested rather than merely argued. 640px is what a 1280px
+desktop becomes at 200% zoom, which is SC 1.4.4 Resize Text.
 
 The second is not implied by the first. .btn clips its own overflow for the
 shine sweep and .cta-band clips again, so a button too wide for the screen is
@@ -64,9 +72,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # 320 is the narrowest screen still in use and the one that found both bugs.
-# 360 and 414 are the common Android and iPhone widths; the rest are the
+# It is also WCAG 2.2 SC 1.4.10 Reflow, which is defined as exactly this width
+# — so the no-sideways-scrolling assertion below is that criterion, tested.
+# 360 and 414 are the common Android and iPhone widths. 640 is what a 1280px
+# desktop becomes at 200% zoom, which is SC 1.4.4 Resize Text. The rest are the
 # breakpoints in layout.css, so a failure lands near a rule somebody wrote.
-WIDTHS = [320, 360, 414, 768, 1024, 1440]
+WIDTHS = [320, 360, 414, 640, 768, 1024, 1440]
 
 # Every page, by the URL a visitor uses rather than the file behind it, so the
 # two .php pages are exercised through PHP like everything else.
@@ -172,8 +183,79 @@ for (var i = 0; i < controls.length; i++) {
   }
 }
 
+/* --- tap targets: WCAG 2.2 SC 2.5.8, Level AA, 24x24 CSS px -------------
+   Measured rather than read off the stylesheet, because a control can declare
+   2.75rem and still be squeezed by the flex or grid it sits in. That is the
+   only failure worth catching here, and a stylesheet cannot show it.
+
+   Every exception in the criterion is applied, because without them the check
+   reports things that are not wrong and gets switched off:
+
+     - a control with an associated <label> is as large as the two together,
+       since clicking the label operates the control
+     - an inline link inside a run of text is exempt; its height is the line's
+     - a small target with clear space around it is exempt however small
+     - aria-hidden or tabindex="-1" is not a target at all — the contact
+       form's honeypot is exactly that, and 26px wide on purpose
+*/
+var targets = [];
+var candidates = doc.querySelectorAll(
+  'a[href], button, input, select, textarea, summary, [role="button"]');
+for (var i = 0; i < candidates.length; i++) {
+  var el = candidates[i], cs = view.getComputedStyle(el);
+  if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+  if (el.disabled) continue;
+  if (el.getAttribute('tabindex') === '-1') continue;
+  if (el.closest('[aria-hidden="true"]')) continue;
+
+  var r = el.getBoundingClientRect();
+  if (r.width < 1 || r.height < 1) continue;
+
+  var box = {left: r.left, top: r.top, right: r.right, bottom: r.bottom};
+  if (el.id) {
+    var lab = doc.querySelector('label[for="' + CSS.escape(el.id) + '"]');
+    if (lab) {
+      var lr = lab.getBoundingClientRect();
+      if (lr.width > 0 && lr.height > 0) {
+        box.left = Math.min(box.left, lr.left);
+        box.top = Math.min(box.top, lr.top);
+        box.right = Math.max(box.right, lr.right);
+        box.bottom = Math.max(box.bottom, lr.bottom);
+      }
+    }
+  }
+  box.w = box.right - box.left;
+  box.h = box.bottom - box.top;
+  box.cx = box.left + box.w / 2;
+  box.cy = box.top + box.h / 2;
+  targets.push({box: box, inline: cs.display === 'inline', el: el});
+}
+
+var small = [];
+for (var i = 0; i < targets.length; i++) {
+  var t = targets[i], box = t.box;
+  if (Math.min(box.w, box.h) >= 24) continue;
+  if (t.inline) continue;
+
+  /* The spacing exception: undersized is allowed when nothing else is close
+     enough to mis-tap. Centre to centre, against the same 24px. */
+  var crowded = false;
+  for (var j = 0; j < targets.length && !crowded; j++) {
+    if (j === i) continue;
+    var o = targets[j].box;
+    var dx = box.cx - o.cx, dy = box.cy - o.cy;
+    if (Math.sqrt(dx * dx + dy * dy) < 24) crowded = true;
+  }
+  if (!crowded) continue;
+
+  var name = (t.el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 30);
+  small.push(Math.round(box.w) + 'x' + Math.round(box.h) + '  ' + describe(t.el)
+             + (name ? '  "' + name + '"' : ''));
+}
+
 return {loading: false, vw: vw, over: sw - vw,
-        culprits: culprits.slice(0, 3), toowide: toowide.slice(0, 3)};
+        culprits: culprits.slice(0, 3), toowide: toowide.slice(0, 3),
+        small: small.slice(0, 4)};
 """
 
 
@@ -294,6 +376,11 @@ def run(b: Browser, origin: str, r: Results) -> None:
                 f"{page} has no control wider than the screen at {width}px",
                 not out["toowide"],
                 "\n          ".join(out["toowide"]),
+            )
+            r.check(
+                f"{page} has no tap target under 24px at {width}px",
+                not out["small"],
+                "\n          ".join(out["small"]),
             )
 
         # Said out loud every time, because the day this stops matching the

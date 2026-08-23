@@ -41,3 +41,15 @@ the frame, so 320 means 320. It is same-origin, so the document inside can be me
   real device. This proves layout, not rendering.
 - **Any future browser check that cares about width below 488px must use a frame too.** Resizing the
   window will look like it worked.
+
+## What the widths mean
+
+Two of them are success criteria rather than devices, which is why they are not round numbers of
+anyone's phone:
+
+| Width | Why |
+|---|---|
+| 320 | SC 1.4.10 Reflow is *defined* at 320 CSS px, so the no-sideways-scrolling assertion is that criterion tested rather than argued |
+| 640 | a 1280px desktop at 200% zoom, which is SC 1.4.4 Resize Text |
+| 360, 414 | the common Android and iPhone widths |
+| 768, 1024, 1440 | the breakpoints in `layout.css`, so a failure lands near a rule somebody wrote |

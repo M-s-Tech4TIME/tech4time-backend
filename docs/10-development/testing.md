@@ -44,7 +44,7 @@ python3 tools/test_theme.py            # the theme switch, with a real OS prefer
 python3 tools/test_editor.py           # the job post editor, in a real browser
 python3 tools/check_hover.py           # a real pointer over every kind of control
 python3 tools/check_dark_mode.py       # every page as the browser actually paints it
-python3 tools/check_responsive.py      # no page scrolls sideways, 320px and up
+python3 tools/check_responsive.py      # sideways scroll and tap targets, 320px and up
 ```
 
 > Interrupted browser runs leave processes behind. `pkill firefox geckodriver` clears them.
@@ -96,7 +96,7 @@ private directory under `/tmp` — so a test run cannot disturb your own local a
 | `test_editor.py` | the job post editor driven as a person drives it, including a real sign-in |
 | `check_hover.py` | every interactive element visibly responds to a real pointer |
 | `check_dark_mode.py` | every page in both themes, as painted — catching what a CSS reader cannot, like a token that resolves to the same colour as its background |
-| `check_responsive.py` | every page at 320, 360, 414, 768, 1024 and 1440px: the document does not scroll sideways, and no link, button or field is wider than the screen. Each width is a frame, not a window — see [0015](../90-decisions/0015-narrow-widths-need-a-frame.md), because Firefox silently clamps a window at about 488px and a check written the obvious way reports widths it never tested |
+| `check_responsive.py` | every page at 320, 360, 414, 640, 768, 1024 and 1440px: the document does not scroll sideways, no link, button or field is wider than the screen, and no tap target is under 24px. Each width is a frame, not a window — see [0015](../90-decisions/0015-narrow-widths-need-a-frame.md), because Firefox silently clamps a window at about 500px and a check written the obvious way reports widths it never tested |
 
 They skip with a notice and exit 0 when Firefox or geckodriver is missing, rather than failing —
 so a machine without a browser can still run everything else.
