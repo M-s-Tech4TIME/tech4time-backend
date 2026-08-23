@@ -25,7 +25,8 @@ Nothing about the two kinds of flag looks different. That is the problem being f
 |---|---|
 | `tools/build_deploy_set.py` | builds the upload set, and asserts what is in it |
 | `.github/workflows/test.yml` | every check this repository has, on every push |
-| `.github/workflows/deploy.yml` | **not built yet** — see [the transport decision](#the-transport-decision) |
+| `.github/workflows/deploy.yml` | push to `main` → checks → dry run → gate → sync → seed → verify |
+| `tools/verify_live.py` | asks the deployed site whether its protections are still there |
 
 ---
 
@@ -104,30 +105,68 @@ Mozilla's tarball and symlinked, rather than from apt.
 
 ---
 
-## The transport decision
+## The deploy workflow
 
-`deploy.yml` is not written, because how it reaches the host depends on what the hosting plan
-allows. Check cPanel and see which of these exists:
+`.github/workflows/deploy.yml` runs on push to `main`, and on demand. Merging `dev` into `main` is
+the approval step; there is no staging site.
 
-| In cPanel | Transport | Notes |
-|---|---|---|
-| **SSH Access** / **Terminal** | `rsync` over SSH with a deploy key | The good path. Incremental, understands `--delete`, and a `--dry-run` can be read before the real run. |
-| **Git™ Version Control** | cPanel pulls, `.cpanel.yml` deploys | No key leaves GitHub, but it cannot easily delete files removed from the repository. |
-| neither | FTPS mirror | Works everywhere. Slower, no dry run worth reading, and the credentials are a password rather than a key. |
+```
+test       .github/workflows/test.yml, called as a reusable workflow
+build      python3 tools/build_deploy_set.py --out _deploy
+ssh        write the deploy key, pin the host key, prove the connection
+dry run    rsync --delete --itemize-changes --dry-run  →  /tmp/plan.txt
+gate       read /tmp/plan.txt; fail the job if it deletes anything protected
+sync       rsync --delete             _deploy/site/  →  ~/public_html/
+seed       rsync --ignore-existing    _deploy/seed/  →  ~/public_html/content/
+verify     python3 tools/verify_live.py https://tech4time.bd
+```
 
-Whichever it is, the shape stays the same and the safety property does not move:
+Transport is **rsync over SSH**, using a deploy-only key. The host key is pinned in
+`known_hosts` from a secret rather than accepted with `ssh-keyscan` on each run — keyscanning into
+`known_hosts` accepts whatever answers, which is a formality rather than a check.
 
-1. `test.yml` must have passed.
-2. Build the set with `build_deploy_set.py` — *not* with a rule typed into the workflow.
-3. Dry run, and **fail the job** if the output proposes deleting anything under `content/` or
-   `admin/.htaccess`.
-4. Sync `site/`.
-5. Sync `seed/` with `--ignore-existing`.
-6. Fetch `/` and `/pages/careers/` and check they return 200, and that `/lib/` and `/content/`
-   still return 403.
+### The protect list, and why the gate is not redundant
 
-Step 6 matters more than it looks: an `.htaccess` that failed to arrive takes the blocking rules
-with it, and nothing about the site's appearance will tell you.
+`rsync --delete` into a cPanel document root is destructive by default, and what it would destroy
+is not in the repository: `content/`, `admin/.htaccess`, `.well-known/`, `cgi-bin/`, `error_log`,
+the MultiPHP ini files. The full list and its reasoning is
+[ADR 0016](../90-decisions/0016-a-deploy-protects-what-the-panel-owns.md).
+
+The filters prevent those deletions. The gate then reads the dry run and fails the job if any were
+proposed anyway. That is deliberately two mechanisms for one rule, because a typo in a filter path
+produces a rule that matches nothing, reports no error, and leaves every run green.
+
+**The gate's own pattern was wrong when it was written** — it expected `*deleting ` with one space
+where `--itemize-changes` emits three — so it matched nothing and passed everything while looking
+entirely healthy. It was caught by running it against a dry run with the filters removed. That is
+now how any change to either is verified:
+
+```bash
+rsync -a --delete --itemize-changes --dry-run SRC/ DST/ > plan.txt   # no filters
+grep -E '^\*deleting[[:space:]]+(content/|\.well-known/|cgi-bin/|error_log)' plan.txt
+```
+
+If that prints nothing, the gate is broken. A gate that has never been seen to fail has not been
+tested.
+
+### Secrets
+
+Set under Settings → Secrets and variables → Actions:
+
+| Secret | What |
+|---|---|
+| `SSH_HOST` | the hostname or IP cPanel gives for SSH |
+| `SSH_PORT` | cPanel often uses something other than 22 |
+| `SSH_USER` | the cPanel account name — `techtime` |
+| `SSH_KEY` | the **private** half of a deploy-only key, no passphrase |
+| `SSH_HOST_KEY` | one line of `ssh-keyscan -p PORT HOST`, pinned |
+
+Generate the key in cPanel → SSH Access → Manage SSH Keys, and authorize it there. Use a key made
+for this and nothing else: it is stored by GitHub, used unattended, and should be revocable without
+disturbing anything a person signs in with.
+
+Every secret reaches the shell through `env:` rather than `${{ }}` interpolation. The values here
+are trusted; the habit is not about these values.
 
 ---
 

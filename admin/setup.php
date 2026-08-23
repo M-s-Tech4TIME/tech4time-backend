@@ -46,7 +46,7 @@ if (auth_has_accounts() && ($state['stage'] ?? '') !== 'codes') {
     exit;
 }
 
-$need_token = !auth_is_loopback();
+$need_token = !auth_is_loopback() && !auth_has_accounts();
 $error      = '';
 $stage      = (string)($state['stage'] ?? 'details');
 
@@ -55,7 +55,20 @@ $stage      = (string)($state['stage'] ?? 'details');
    that demands it has rendered — not first appear once they have already
    guessed wrong. Called for that side effect; the value is never shown here,
    because a page that displays the token proves nothing about who is reading
-   it. */
+   it.
+
+   auth_has_accounts() is in that condition because of what it costs to leave
+   out. The redirect above lets one case through on purpose — stage 'codes',
+   so the recovery codes can be shown after the account exists — and this line
+   ran on that render too. auth_setup_done() had just deleted the token; this
+   put it straight back, seconds later, and it then sat in the private store
+   indefinitely. Found on the live host: setup-complete logged at 14:13:40 and
+   setup-token.txt still there, mtime 14:13.
+
+   The token was inert — with an account present and no 'codes' stage in the
+   session, a stranger is redirected to login.php before it is ever compared —
+   but the file's own header promises it is "destroyed the moment an account
+   exists", and it was not. */
 if ($need_token) {
     auth_setup_token();
 }

@@ -38,6 +38,23 @@ not have been created on the live server at all. Every other test in the suite d
 `127.0.0.1`, where the key is deliberately skipped, so none of them could see it. A gate that no
 test has ever passed through is a gate nobody has opened.
 
+**Learned the hard way, twice.** The same blind spot produced a second defect, found on the live
+host in August 2026: `setup-token.txt` was still in the private store beside a working account.
+`auth_setup_done()` had deleted it, and the recovery-codes screen — which skips the "setup is over"
+redirect on purpose — called `auth_setup_token()` on its next render and put it straight back.
+
+The suite already asserted "the setup key file is gone". It asserted it from `127.0.0.1`, where the
+key is never demanded and never written, so the check passed because there was nothing there to
+begin with. **An assertion that can only be true is not an assertion.**
+
+Two changes, so it cannot recur by a different route. The guard moved into `auth_setup_token()`
+itself — the only place that can create the file — rather than living at the call site that happened
+to be wrong; a condition on one caller fixes one caller. And `auth_setup_token_check()` now refuses
+outright once an account exists, because a function that answers `''` for a finished store would
+otherwise meet an empty submission in `hash_equals()` and agree with it, turning "no token" into a
+valid one. `check_secrets.py` drives both through the real functions in a throwaway store, and each
+was confirmed by removing it and watching the check fail.
+
 **Also true.** The token is regenerated if the whole store is ever lost, so it protects a rebuild as
 well as a first install — [rung 7](../30-operations/secrets-recovery.md#7-the-whole-store-is-gone).
 

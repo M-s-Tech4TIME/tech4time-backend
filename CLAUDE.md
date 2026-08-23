@@ -124,6 +124,11 @@ constrains future work? A record in [docs/90-decisions/](docs/90-decisions/).
 
 Work happens on `dev`; pull requests to `main` need explicit approval.
 
-**Not done, and not missing:** the site has never been deployed; two of sixteen pages are editable;
-the repository has not been split into frontend and backend yet; there is no CI/CD; the
-accessibility / Core Web Vitals / responsiveness audit is still outstanding.
+**Live** at `https://tech4time.bd` — cPanel, LiteSpeed, PHP 8.2.33, admin signed in and working.
+**A push to `main` deploys it.** Checks run, rsync over SSH, and the site is asked afterwards
+whether `lib/`, `content/` and dotted paths still answer 403 —
+[ci-cd.md](docs/20-deployment/ci-cd.md). Never sync `content/`; it is seeded with
+`--ignore-existing` and the host's copy always wins.
+
+**Not done, and not missing:** two of sixteen pages are editable; the repository has not been split
+into frontend and backend yet; field-measured LCP/CLS/INP against the live host is outstanding.

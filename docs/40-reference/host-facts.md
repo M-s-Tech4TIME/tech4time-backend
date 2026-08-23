@@ -5,7 +5,7 @@
 The live state of the hosting account. **This file is a record, not a design** — update it whenever
 something on the host changes, or it stops being useful.
 
-Last confirmed: **2026-08-23**, before the first production deploy.
+Last confirmed: **2026-08-23**, from `tools/host-probe.php` run on the live host.
 
 ---
 
@@ -14,11 +14,14 @@ Last confirmed: **2026-08-23**, before the first production deploy.
 | | |
 |---|---|
 | Provider | cPanel shared hosting |
+| Web server | **LiteSpeed** |
 | Primary domain | `tech4time.bd` |
 | Server IP | `103.138.189.25` |
-| Document root | `/home/USER/public_html` *(confirm the exact username on the host)* |
-| Private store | `/home/USER/t4t-private` |
-| SSH | **enabled** |
+| Account | `techtime` |
+| Document root | `/home/techtime/public_html` |
+| Private store | `/home/techtime/t4t-private` — 0700, writable, **outside the web root** |
+| HTTPS | on, AutoSSL |
+| SSH | **enabled**, with Terminal and Git Version Control also available |
 
 ## PHP
 
@@ -26,11 +29,24 @@ Last confirmed: **2026-08-23**, before the first production deploy.
 |---|---|
 | Required | 8.1 or newer — the code uses the `never` return type |
 | Developed against | 8.3 |
-| On the host | **unconfirmed** — `tools/host-probe.php` reports it |
-| argon2id | **unconfirmed** — the probe decides; bcrypt cost 12 is the fallback |
-| `mail()` | expected available; the probe confirms it is not in `disable_functions` |
+| On the host | **8.2.33** |
+| argon2id | **available** — this is what is used; bcrypt is not needed |
+| One hash costs | **80 ms** — the deliberate expense that makes an offline attack slow |
+| `mbstring`, `dom` | both present |
+| `random_bytes`, sessions | both present |
+| `mail()` | available; `sendmail_path` is `/usr/sbin/sendmail -t -i` |
 
-Run the probe, then record the answers here.
+Mail was proven end to end: the contact form delivers to `info@tech4time.bd` with JavaScript on
+and off.
+
+> **The probe itself is gone, and must stay gone.** `tools/host-probe.php` is upload-run-delete.
+> It was left on the host after the first run and was reachable at `/host-probe.php` — token-gated,
+> but it sends mail on every request and reports the PHP build, the paths and the store location.
+> `verify_live.py` now asserts `/tools/host-probe.php` answers 403 on every deploy.
+>
+> One trap worth knowing, because it cost an hour: **the probe's output caches in the browser.**
+> Re-running the same URL after creating the admin account reported `Account set up: no` from cache
+> while `admins.json` sat on disk. Re-request with a changed query string, or use another browser.
 
 ---
 

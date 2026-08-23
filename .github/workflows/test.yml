@@ -8,11 +8,17 @@
 name: test
 
 on:
+  # dev only. A push to main is a release, and deploy.yml calls this workflow
+  # itself — listing main here too would run every check twice for one merge
+  # and report the answer in two places.
   push:
-    branches: [dev, main]
+    branches: [dev]
   pull_request:
     branches: [main]
   workflow_dispatch:
+  # Called by deploy.yml, so a release runs the same checks a merge does
+  # rather than a second list that can drift from this one.
+  workflow_call:
 
 permissions:
   contents: read

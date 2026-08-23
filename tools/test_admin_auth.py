@@ -804,6 +804,18 @@ def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
         r.check("the key file was created on demand",
                 (private / "setup-token.txt").exists())
 
+        # The other half of the same branch, on the same server: from this
+        # machine there is no key to produce, because reading the file and
+        # reading the disk are the same act.
+        #
+        # Asked here, while no account exists. Once one does, setup.php
+        # redirects everyone to login.php and a 200 is no longer the right
+        # answer for anybody — which would make this a check of the redirect
+        # rather than of the loopback branch it is written to cover.
+        status, _, home = here.get("/admin/setup.php")
+        r.check("and no key is demanded from the machine itself",
+                status == 200 and 'name="token"' not in home)
+
         fields = {
             "do": "details", "user": USER, "name": "Test Admin",
             "email": EMAIL, "password": PASSWORD, "password2": PASSWORD,
@@ -838,12 +850,39 @@ def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
         r.check("the right key moves on to the authenticator", status == 302,
                 f"status {status}" if token else "no key file to read")
 
-        # The other half of the same branch, on the same server: from this
-        # machine there is no key to produce, because reading the file and
-        # reading the disk are the same act.
-        status, _, page = here.get("/admin/setup.php")
-        r.check("and no key is demanded from the machine itself",
-                status == 200 and 'name="token"' not in page)
+        # Carried to the end, and this is the part that matters.
+        #
+        # test_setup() already asserts the key file is gone once the account
+        # exists — and it asserts it from 127.0.0.1, where auth_is_loopback()
+        # is true, no key is ever demanded and no file is ever written. The
+        # check passed because there was nothing there to begin with, which is
+        # the most comfortable kind of green tick and worth nothing at all.
+        #
+        # Only this branch creates the file, so only this branch can prove it
+        # is removed. It was not: auth_setup_done() unlinked it, and the very
+        # next render — the recovery-codes screen, which survives the "setup is
+        # over" redirect on purpose — called auth_setup_token() again and put
+        # it straight back. Seen on the live host before it was seen here.
+        status, _, page = away.get("/admin/setup.php")
+        secret = setup_key_of(page)
+        r.check("the authenticator secret is shown to a remote setup",
+                len(secret) >= 16, secret)
+
+        status, _, page = away.post("/admin/setup.php", {
+            "csrf": csrf_of(page), "do": "enrol", "code": totp(secret),
+        })
+        r.check("the right code creates the account remotely", status == 302)
+
+        r.check("and the setup key file is gone the moment it does",
+                not key.exists(),
+                "auth_setup_done() removed it, then something re-created it")
+
+        status, _, page = away.get("/admin/setup.php")
+        r.check("ten recovery codes are shown", len(recovery_codes_of(page)) == 10)
+        r.check("and rendering that screen does not re-mint the key",
+                not key.exists(),
+                "the codes stage skips the 'setup is over' redirect, so it must "
+                "not fall through to auth_setup_token()")
     finally:
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         proc.wait(timeout=5)

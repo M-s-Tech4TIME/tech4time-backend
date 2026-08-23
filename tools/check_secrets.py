@@ -24,8 +24,10 @@ the call to it is deleted.
 
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -164,6 +166,84 @@ def check_store_refuses_web_root() -> None:
     else:
         bad("the admin stops when the store is not sound",
             "admin_start_session() no longer calls auth_problem() then admin_refuse()")
+
+
+def check_setup_window_closes() -> None:
+    """A setup token and an account must never exist at the same time.
+
+    admin/setup.php promises the window "is shut by the code rather than by a
+    step somebody has to remember". It was not: the recovery-codes screen
+    survives the "setup is over" redirect on purpose, and it re-created the
+    token auth_setup_done() had just deleted. Found on the live host, where
+    setup-token.txt sat in the private store beside a working account.
+
+    Driven through the real functions in a throwaway store, because the
+    interesting question is what the code does, not what it says. A grep for
+    the guard passes the moment somebody keeps the guard and adds a second way
+    in beside it.
+    """
+    print("\nthe setup window shuts behind itself")
+
+    work = Path(tempfile.mkdtemp(prefix="t4t-setupwin-"))
+    private = work / "private"
+    env = dict(os.environ, T4T_PRIVATE=str(private))
+
+    def php(code: str) -> str:
+        done = subprocess.run(
+            ["php", "-r", "require 'lib/auth.php';" + code],
+            cwd=str(ROOT), capture_output=True, text=True, env=env, timeout=60,
+        )
+        return (done.stdout + done.stderr).strip()
+
+    try:
+        # Before any account: minting one is the whole point, and must work.
+        php("auth_setup_token();")
+        token_file = private / "setup-token.txt"
+
+        if token_file.exists():
+            ok("a fresh store still hands out a setup key")
+        else:
+            bad("a fresh store still hands out a setup key",
+                "auth_setup_token() wrote nothing — setup would be impossible")
+
+        minted = token_file.read_text().strip() if token_file.exists() else ""
+
+        php("var_export(auth_put(auth_defaults(["
+            "'user' => 'someone', 'hash' => 'x', 'totp' => 'y'])));")
+
+        if not (private / "admins.json").exists():
+            bad("the setup window shuts once an account exists",
+                "could not create a test account, so nothing below was proved")
+            return
+
+        # The token is deleted the way setup.php deletes it, then everything
+        # that could bring it back is asked to.
+        php("auth_setup_done();")
+
+        if token_file.exists():
+            bad("auth_setup_done() removes the key file",
+                "it is still there")
+        else:
+            ok("auth_setup_done() removes the key file")
+
+        php("auth_setup_token();")
+
+        if token_file.exists():
+            bad("and nothing re-creates it once an account exists",
+                "auth_setup_token() minted a new one — this is the live defect")
+        else:
+            ok("and nothing re-creates it once an account exists")
+
+        # The empty-token trap: with no file to read, a comparison against an
+        # empty submission must not agree with itself.
+        for given, label in ((minted, "the real key"), ("", "an empty key")):
+            said = php(f"var_export(auth_setup_token_check({given!r}));")
+            if said == "false":
+                ok(f"and {label} no longer opens setup")
+            else:
+                bad(f"and {label} no longer opens setup", f"php said {said!r}")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
 
 
 # ------------------------------------------------------------- no way around it
@@ -312,6 +392,7 @@ def main() -> None:
     check_nothing_committed()
     check_store_refuses_web_root()
     check_no_bypass()
+    check_setup_window_closes()
     check_nothing_leaks()
     check_unindexed()
 

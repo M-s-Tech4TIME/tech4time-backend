@@ -27,38 +27,36 @@
     Header always set Cross-Origin-Opener-Policy "same-origin"
     Header always set X-Permitted-Cross-Domain-Policies "none"
 
-    # HSTS — READY TO ENABLE, ONE STEP LEFT.
-    #
-    # Delete the "# " from the Header line below. Do it AFTER the site is live
-    # and you have loaded a few pages over https://tech4time.bd on the real
-    # server. Not before: until the redirect is proven on the host, the plain
-    # http fallback is worth more than this header.
+    # HSTS — ON. Enabled once the site was live on the host and pages had been
+    # loaded over https://tech4time.bd, which was the one precondition.
     #
     # WHAT IT DOES
-    # Today a browser asks for http://tech4time.bd first and is redirected to
-    # https. That first request travels in the open. This tells the browser to
-    # remember, for a year, never to ask over plain http again — so after one
-    # visit that unencrypted request stops happening. It matters here because
-    # /admin is behind HTTP Basic auth, which sends its password
-    # base64-encoded: encoding, not encryption.
+    # Without it a browser asks for http://tech4time.bd first and is redirected
+    # to https, and that first request travels in the open. This tells the
+    # browser to remember, for a year, never to ask over plain http again — so
+    # after one visit that unencrypted request stops happening. It matters here
+    # because a sign-in lives at /admin: a password and an authenticator code
+    # go over that connection, and a redirect protects neither on the hop
+    # before it.
     #
     # THE ONE COST
     # A browser keeps obeying it even if https later breaks, and there is no
     # way to clear it remotely. cPanel AutoSSL renews certificates on its own,
     # which is what makes that unlikely enough to be worth it.
     #
-    # NO includeSubDomains, DELIBERATELY
+    # NO includeSubDomains, DELIBERATELY — and this now has a date on it.
     # It would cover subdomains that do not exist yet. AutoSSL issues a
     # certificate on its next scheduled run after a subdomain is created, not
     # instantly — and in that window this header would make the new subdomain
-    # unreachable rather than merely insecure. /admin is on the main domain,
-    # so leaving it off costs nothing that matters here.
+    # unreachable rather than merely insecure. admin.tech4time.bd is exactly
+    # that subdomain, and it is created by the repository split. Leave this off
+    # until AutoSSL has issued for it; turning it on before would lock the
+    # admin out of its own host.
     #
     # Do NOT add "preload". That submits the domain to a list compiled into
     # Chrome and Firefox, takes months to reverse, and only protects the very
     # first visit a browser ever makes.
-    #
-    # Header always set Strict-Transport-Security "max-age=31536000"
+    Header always set Strict-Transport-Security "max-age=31536000"
 
     # Do not advertise the stack.
     Header unset X-Powered-By
@@ -189,14 +187,33 @@ Options -Indexes
 # 8. Block access to non-public files
 # The repo ships tooling and docs alongside the site; if the whole tree is ever
 # uploaded, these must not be readable over HTTP.
+#
+# That has happened. The whole repository was unpacked into the document root
+# on the first deploy, and this section did not keep the promise above: the
+# FilesMatch below matches a FILENAME, so /.git/HEAD — file "HEAD", no leading
+# dot, no blocked extension — was never covered by it, and neither was the
+# 63 MB tech4time-website.zip sitting beside index.html with every commit in it.
+# The host answered 403 for .git by a rule of its own. That rule is not ours
+# and will not exist on a server we run, so it is not a defence, only luck.
 # --------------------------------------------------------------------------
+
+# Kept, but it is not the fix — see the rewrite block below, which is what
+# actually covers a directory whose name begins with a dot.
 <FilesMatch "^\.">
     Require all denied
 </FilesMatch>
 
-<FilesMatch "\.(md|py|sh|json|lock|yml|yaml)$">
+# Archives, dumps and logs join the list for the same reason the zip did: the
+# protection should not depend on nobody ever leaving one here.
+<FilesMatch "\.(md|py|sh|json|lock|yml|yaml|zip|tar|gz|tgz|bz2|rar|7z|sql|bak|log|env|ini)$">
     Require all denied
 </FilesMatch>
+
+# Written by the server into whatever directory the error happened in, and it
+# names paths and line numbers. No extension, so the rule above cannot see it.
+<Files "error_log">
+    Require all denied
+</Files>
 
 # site.webmanifest is JSON but must stay public.
 <Files "site.webmanifest">
@@ -206,6 +223,23 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteRule ^tools/ - [F,L]
+
+    # references/ is working material — demos and notes kept beside the site.
+    # It is .html, which nothing above blocks, and it was readable on the host
+    # for as long as the unpacked repository sat there.
+    RewriteRule ^references/ - [F,L]
+
+    # Any path segment beginning with a dot, at any depth: .git/, .svn/, .env,
+    # .claude/, editor droppings. This is the rule that closes the hole
+    # described in section 8 — <FilesMatch "^\."> only ever saw the last
+    # component of the path, so /.git/HEAD was the file "HEAD" to it and passed
+    # straight through. (^|/) makes the dot's position the test instead.
+    #
+    # .well-known is the one exception and must stay reachable: AutoSSL answers
+    # ACME challenges from there, and blocking it breaks certificate renewal
+    # — which fails silently, months later, as an expired certificate.
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+    RewriteRule "(^|/)\." - [F,L]
 
     # lib/ holds PHP that pages include; content/ holds the data the editors
     # write — job posts and the contact page. Both are read from disk by PHP

@@ -721,6 +721,16 @@ function auth_setup_token(): string
         return trim($raw);
     }
 
+    /* Setup is over; nothing may mint a new one. The guard lives here, at the
+       only place that can create the file, rather than at the call site that
+       happened to be wrong — admin/setup.php called this on its recovery-codes
+       render, seconds after auth_setup_done() had deleted the token, and put it
+       straight back. A condition on one caller fixes that caller. A condition
+       here means the file cannot come back whoever asks. */
+    if (auth_has_accounts()) {
+        return '';
+    }
+
     $hex   = strtoupper(bin2hex(random_bytes(AUTH_SETUP_BYTES)));
     $token = substr($hex, 0, 4) . '-' . substr($hex, 4, 4) . '-' . substr($hex, 8);
 
@@ -744,6 +754,15 @@ function auth_setup_token_clean(string $value): string
 
 function auth_setup_token_check(string $given): bool
 {
+    /* Refused outright once an account exists, before any comparison happens.
+       Without this, auth_setup_token() answering '' for a store that is past
+       setup would meet an empty $given in hash_equals() and agree with it —
+       turning "no token" into a valid token. The caller is not supposed to
+       reach here in that state; that is exactly why it must not depend on it. */
+    if (auth_has_accounts()) {
+        return false;
+    }
+
     return hash_equals(
         auth_setup_token_clean(auth_setup_token()),
         auth_setup_token_clean($given)

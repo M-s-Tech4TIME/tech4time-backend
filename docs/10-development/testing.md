@@ -67,6 +67,7 @@ python3 tools/check_focus.py           # tab every page: the ring is visible and
 | `check_docs.py` | every tool, library and admin section is documented; no doc cites a path that does not exist; no internal link is broken; no doc quotes a constant that has changed |
 | `audit_pages.py` | per page: title and meta description, heading order, `alt` text, landmark roles, no repeated `id`, a label on every form control and an accessible name on every link and button, canonical URL, structured data, internal links resolve |
 | `build_deploy_set.py --check` | the upload set holds no `content/`, `tools/`, `docs/` or key, keeps the `.htaccess` that blocks them, and carries a careers seed with no job posts |
+| `verify_live.py <url>` | run **after** a deploy, against the real host: the pages answer 200, `lib/`, `content/`, `tools/` and `/.git/` answer 403, and the security headers are present |
 
 ### The HTTP tests
 

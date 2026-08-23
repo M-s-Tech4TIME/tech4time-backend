@@ -33,6 +33,7 @@ browser tests speak to geckodriver over its wire protocol — there is no Seleni
 | `audit_pages.py` | every page: SEO, accessibility and structural correctness |
 | `inject_icons.py --check` | every page's inlined icon block is current |
 | `build_deploy_set.py --check` | the set of files bound for the server holds nothing it must not, and nothing is missing |
+| `verify_live.py <url>` | a deployed site still returns 403 for `lib/`, `content/` and dotted paths, and still carries its headers |
 
 ## Checks that need a browser
 

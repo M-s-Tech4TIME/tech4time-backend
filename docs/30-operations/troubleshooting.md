@@ -311,6 +311,41 @@ Current behaviour, documented because it is surprising rather than because it is
 
 That one is a fix scheduled with the Phase B hardening.
 
+**Fixed 2026-08-23** — the whole repository, unpacked into the document root. The first deploy was
+an upload of everything, and it left `docs/`, `tools/`, `references/`, `.git/`, `.claude/`, the
+`.md` files and a **63 MB `tech4time-website.zip`** beside `index.html`.
+
+`.htaccess` section 8 exists for exactly this — *"if the whole tree is ever uploaded, these must not
+be readable over HTTP"* — and did not deliver it. `<FilesMatch "^\.">` matches the **filename**, so
+`/.git/HEAD` was the file `HEAD` to it: no leading dot, no blocked extension, straight through. And
+nothing covered `.zip` at all, so the entire source and its commit history were downloadable by
+anyone who guessed the filename. The host answered 403 for `.git` by a rule of its own — not ours,
+and not present on a server we run.
+
+Now: a rewrite rule blocks any path segment beginning with a dot (exempting `.well-known/`, which
+AutoSSL needs), archives and dumps join the extension rule, `references/` is blocked, and
+`verify_live.py` asserts all of it against the running site after every deploy. The deploy set is
+built from an allow list, so none of it can be uploaded again.
+
+**Fixed 2026-08-23** — the setup token outlived setup. `admin/setup.php` promises the bootstrap
+window is *"shut by the code rather than by a step somebody has to remember"*, and on the live host
+`setup-token.txt` sat in the private store beside a working account.
+
+`auth_setup_done()` had deleted it correctly. The recovery-codes screen — which skips the "setup is
+over" redirect on purpose, so it can show the codes — then fell through to `auth_setup_token()` and
+re-minted it, seconds later. The token was inert, because a stranger with no `codes` stage in
+session is redirected to `login.php` before it is ever compared, but the guarantee was false.
+
+The guard now lives in `auth_setup_token()` itself rather than at the call site, so the file cannot
+come back whoever asks; `auth_setup_token_check()` refuses outright once an account exists, so an
+empty token can never meet an empty stored value in `hash_equals()` and agree with it. Both halves
+are asserted by `check_secrets.py`.
+
+The test that should have caught it *existed and passed vacuously*: it ran from 127.0.0.1, where
+`auth_is_loopback()` is true, no key is ever demanded and no file is ever written — so "the setup
+key file is gone" was true because nothing had created it. `test_admin_auth.py` now carries the
+remote setup flow through to the codes screen, which is the only branch that can prove it.
+
 **Fixed 2026-08-23** — tabbing on a phone put the focus ring underneath the dock. The browser
 scrolls a focused element into view and was happy to land it exactly where the fixed bar covers it,
 on footer links, phone numbers and the end of the contact form — twelve stops across three pages.

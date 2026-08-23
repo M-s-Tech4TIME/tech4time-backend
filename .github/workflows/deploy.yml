@@ -1,0 +1,161 @@
+# Push to main, and the site changes. Nothing is typed into cPanel.
+#
+# WHAT MAKES THIS SAFE, IN ORDER
+#   1. test.yml has to have passed — the same checks a person runs by hand.
+#   2. The upload set is BUILT by tools/build_deploy_set.py, not described by
+#      flags typed here. An allow list decides what goes; nothing new ships
+#      by accident.
+#   3. rsync runs once with --dry-run and the output is read by a gate before
+#      anything is written. The gate looks for deletions under paths the panel
+#      owns, and fails the job rather than the site.
+#   4. content/ is seeded with --ignore-existing, never synced. A job post on
+#      the host always wins.
+#   5. verify_live.py asks the running site whether the rules that protect it
+#      are still there.
+#
+# Step 3 is the one that matters. The filters in step 4 are what prevent the
+# deletions; the gate is a separate check that they did. Do not remove it on
+# the grounds that the filters make it redundant — that is exactly the
+# reasoning that removes the last thing standing between a deploy and a
+# client's data.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time. Two rsyncs into the same document root interleave
+# their writes, and the loser is whichever finishes second.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build the upload set
+        run: |
+          python3 tools/build_deploy_set.py --check
+          python3 tools/build_deploy_set.py --out _deploy
+
+      # Every secret arrives through env rather than being pasted into the
+      # script by ${{ }}. The values here are trusted, but the habit is not
+      # about these values — a secret interpolated into a shell line is one
+      # rename away from being a command.
+      - name: ssh
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          # Pinned rather than trusted on first use. ssh-keyscan into
+          # known_hosts on every run accepts whatever answers, which is not a
+          # check — it is a formality that would welcome an impostor. This
+          # fails closed if the host key ever changes.
+          printf '%s\n' "$SSH_HOST_KEY" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy -p "$SSH_PORT" \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" 'echo connected as $(whoami), docroot $(ls -d ~/public_html)'
+
+      # Everything the panel owns and the repository does not. None of it is in
+      # _deploy/site, so --delete would remove all of it. 'P' is 'protect':
+      # do not delete this on the receiver. See docs/90-decisions/0016.
+      - name: the protect list
+        run: |
+          cat > /tmp/protect.rules <<'RULES'
+          P /content/
+          P /admin/.htaccess
+          P /.well-known/
+          P /cgi-bin/
+          P /error_log
+          P /.user.ini
+          P /php.ini
+          P /.htpasswd
+          RULES
+          cat /tmp/protect.rules
+
+      - name: dry run
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -euo pipefail
+          rsync -az --delete --itemize-changes --dry-run \
+            --filter='merge /tmp/protect.rules' \
+            -e "ssh -i ~/.ssh/deploy -p $SSH_PORT -o BatchMode=yes" \
+            _deploy/site/ "$SSH_USER@$SSH_HOST:~/public_html/" | tee /tmp/plan.txt
+          echo
+          echo "proposed deletions:"
+          grep '^\*deleting' /tmp/plan.txt || echo "  (none)"
+
+      - name: refuse to delete what the panel owns
+        run: |
+          set -euo pipefail
+          # Read from the plan, not from the filter file. The filters are what
+          # should prevent this; this is the independent check that they did.
+          # The whitespace matters. --itemize-changes pads the flag field, so
+          # the line reads "*deleting   content/careers.json" with three
+          # spaces, and a pattern expecting one silently matches nothing —
+          # a gate that always passes, which is worse than no gate at all.
+          # Caught by running this against a deliberately unprotected plan.
+          if grep -E '^\*deleting[[:space:]]+(content/|admin/\.htaccess|\.well-known/|cgi-bin/|error_log|\.user\.ini|php\.ini|\.htpasswd)' /tmp/plan.txt; then
+            echo "::error::The deploy proposed deleting something the host owns. Refusing."
+            echo "content/ holds live job posts and contact details written through /admin/."
+            echo "Nothing has been written to the server. Fix the protect list and re-run."
+            exit 1
+          fi
+          echo "Nothing protected is proposed for deletion."
+
+      - name: sync the site
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -euo pipefail
+          rsync -az --delete --itemize-changes \
+            --filter='merge /tmp/protect.rules' \
+            -e "ssh -i ~/.ssh/deploy -p $SSH_PORT -o BatchMode=yes" \
+            _deploy/site/ "$SSH_USER@$SSH_HOST:~/public_html/"
+
+      # --ignore-existing is the whole content rule: it creates what is absent
+      # and overwrites nothing. A file already on the host was written by
+      # somebody through /admin/ and wins, permanently, without anyone having
+      # to decide so on the day. No --delete here, ever.
+      - name: seed content, only where there is none
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          set -euo pipefail
+          rsync -az --ignore-existing --itemize-changes \
+            -e "ssh -i ~/.ssh/deploy -p $SSH_PORT -o BatchMode=yes" \
+            _deploy/seed/ "$SSH_USER@$SSH_HOST:~/public_html/content/"
+
+      - name: ask the site whether it is still protected
+        run: python3 tools/verify_live.py https://tech4time.bd
+
+      - name: forget the key
+        if: always()
+        run: rm -f ~/.ssh/deploy ~/.ssh/known_hosts

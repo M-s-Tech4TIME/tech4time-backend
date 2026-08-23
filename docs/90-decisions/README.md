@@ -33,3 +33,4 @@ new record superseding the old one rather than quietly doing the opposite.
 | [0013](0013-damaged-stores-refuse.md) | A damaged store refuses; it never looks empty | accepted |
 | [0014](0014-derived-secrets-name-their-key.md) | A value derived from the master key carries the key's name | accepted |
 | [0015](0015-narrow-widths-need-a-frame.md) | Narrow widths are tested in a frame, not in the window | accepted |
+| [0016](0016-a-deploy-protects-what-the-panel-owns.md) | A deploy protects what the panel owns | accepted |

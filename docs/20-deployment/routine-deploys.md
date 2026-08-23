@@ -157,5 +157,8 @@ rsync -av --ignore-existing _deploy/seed/ user@tech4time.bd:~/public_html/conten
 That second line is the whole of the content rule: `--ignore-existing` creates what is absent and
 overwrites nothing, so a job post on the host always wins.
 
-`.github/workflows/test.yml` runs every check on every push. The deploy half is described in
-[ci-cd.md](ci-cd.md), including the one thing still to decide — how the files reach the host.
+**This is now the fallback, not the procedure.** A push to `main` does all of the above through
+`.github/workflows/deploy.yml`, with a protect list and a gate that reads the dry run before
+anything is written — [ci-cd.md](ci-cd.md). Reach for the commands here when the pipeline is broken
+or unavailable, and note that they carry none of its safeguards: no gate, and the protect list is
+whatever you remember to type.
