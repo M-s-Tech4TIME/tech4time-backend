@@ -19,6 +19,8 @@ emailed code. The codes are generated here in Python from the same secret the
 server stores, which is the only honest way to test a second factor.
 
 WHAT IT PROVES THAT IS EASY TO GET WRONG
+  - a request from off the machine must produce the setup key, and the key
+    the server stores is the key it later accepts
   - a wrong password and an unknown username give the SAME answer
   - being locked out refuses even the RIGHT password
   - the emailed code alone cannot set a new password
@@ -32,6 +34,7 @@ away, so the account you use locally is untouched.
 import base64
 import hashlib
 import hmac
+import http.client
 import json
 import os
 import re
@@ -83,6 +86,7 @@ class Results:
     def __init__(self):
         self.passed = 0
         self.failed = []
+        self.skipped = []
 
     def check(self, case, ok, detail=""):
         if ok:
@@ -91,6 +95,14 @@ class Results:
         else:
             self.failed.append(case)
             print(f"  FAIL  {case}" + (f"\n          {detail}" if detail else ""))
+
+    def skip(self, case, why):
+        """
+        Announced, never silent. A check that quietly vanishes on a machine
+        that cannot run it is a check the suite claims to have and has not.
+        """
+        self.skipped.append(f"{case} — {why}")
+        print(f"  SKIP  {case}\n          {why}")
 
     def section(self, name):
         print(f"\n{name}")
@@ -132,15 +144,40 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         lambda self, req, fp, code, msg, headers: None
 
 
+class FromAddress(urllib.request.HTTPHandler):
+    """
+    Dial from a chosen local address, so REMOTE_ADDR is something we pick.
+
+    The server's bind address does not decide this — the kernel picks a source
+    for the connection, and for a server on 127.0.0.1 it picks 127.0.0.1. The
+    client is the end that chooses, so the choice is made here.
+    """
+
+    def __init__(self, source_ip: str):
+        super().__init__()
+        self.source_ip = source_ip
+
+    def http_open(self, req):
+        return self.do_open(
+            lambda host, **kw: http.client.HTTPConnection(
+                host, source_address=(self.source_ip, 0), **kw
+            ),
+            req,
+        )
+
+
 class Client:
     """One browser: its own cookie jar, so two of these are two browsers."""
 
-    def __init__(self, port):
+    def __init__(self, port, source_ip: str | None = None):
         self.base = f"http://127.0.0.1:{port}"
         self.jar = CookieJar()
-        self.opener = urllib.request.build_opener(
-            urllib.request.HTTPCookieProcessor(self.jar), NoRedirect(),
-        )
+        handlers = [urllib.request.HTTPCookieProcessor(self.jar), NoRedirect()]
+
+        if source_ip is not None:
+            handlers.append(FromAddress(source_ip))
+
+        self.opener = urllib.request.build_opener(*handlers)
 
     def get(self, path):
         req = urllib.request.Request(self.base + path)
@@ -622,6 +659,110 @@ def test_audit(r: Results, private: Path, codes: list[str], secret: str):
     r.check("holds no authenticator secret", secret not in raw)
 
 
+REMOTE = "127.0.0.2"
+
+
+def can_dial_from(ip: str) -> bool:
+    """Whether this machine lets a client socket claim that source address."""
+    try:
+        with socket.socket() as sock:
+            sock.bind((ip, 0))
+        return True
+    except OSError:
+        return False
+
+
+def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
+    """
+    The gate the setup key exists for: a request that did not come from this
+    machine must produce the key before it can create the first account.
+
+    WHY THIS IS SEPARATE FROM test_setup
+    Every other test here dials from 127.0.0.1, where the key is deliberately
+    skipped — so none of them can tell auth_is_loopback() from auth_is_local().
+    Those two sit seventeen lines apart in lib/auth.php, are named almost the
+    same, and only one is safe here: auth_is_local() reads the Host header,
+    which the client chooses, so with it in place anyone sending
+    "Host: localhost" to the live server would be handed the first account.
+    Swapping them changes nothing that the rest of this file observes.
+
+    So this one dials from 127.0.0.2 instead. Still loopback as far as the
+    kernel is concerned — nothing leaves the machine — but not one of the two
+    addresses auth_is_loopback() accepts, which is the whole point: to the
+    application the request looks like it came from somewhere else.
+    """
+    r.section("the setup key, from somewhere that is not this machine")
+
+    if not can_dial_from(REMOTE):
+        r.skip("a remote request must produce the setup key",
+               f"this machine cannot dial from {REMOTE}; the check needs the "
+               "whole 127.0.0.0/8 range on the loopback interface, as Linux has")
+        return
+
+    work = Path(tempfile.mkdtemp(prefix="t4t-setupkey-"))
+    private = work / "private"
+    port = free_port()
+    proc = start_server(port, private, sendmail)
+
+    try:
+        away = Client(port, source_ip=REMOTE)
+        here = Client(port)
+
+        status, _, page = away.get("/admin/setup.php")
+        r.check("setup opens for a remote request", status == 200)
+        r.check("and demands the setup key", 'name="token"' in page)
+        r.check("and says where to read it on the server",
+                "setup-token.txt" in page)
+
+        r.check("the key file was created on demand",
+                (private / "setup-token.txt").exists())
+
+        fields = {
+            "do": "details", "user": USER, "name": "Test Admin",
+            "email": EMAIL, "password": PASSWORD, "password2": PASSWORD,
+        }
+
+        status, _, page = away.post("/admin/setup.php",
+                                    {**fields, "csrf": csrf_of(page), "token": ""})
+        r.check("no key does not create the account",
+                "does not match" in page and not (private / "admins.json").exists())
+
+        status, _, page = away.post(
+            "/admin/setup.php",
+            {**fields, "csrf": csrf_of(page), "token": "AAAA-BBBB-CCCC"},
+        )
+        r.check("a wrong key does not create the account",
+                "does not match" in page and not (private / "admins.json").exists())
+
+        # Read tolerantly: if the gate above has failed, nothing was refused and
+        # there is no log to read. That must arrive as a failed check like any
+        # other, not as a traceback that abandons the rest of the run.
+        log = private / "audit.log"
+        raw = log.read_text() if log.exists() else ""
+        events = [json.loads(l).get("event")
+                  for l in raw.strip().splitlines() if l.strip()]
+        r.check("a refused key is recorded", "setup-token-failed" in events,
+                str(events) if events else "no audit log was written")
+
+        key = private / "setup-token.txt"
+        token = key.read_text().strip() if key.exists() else ""
+        status, _, page = away.post("/admin/setup.php",
+                                    {**fields, "csrf": csrf_of(page), "token": token})
+        r.check("the right key moves on to the authenticator", status == 302,
+                f"status {status}" if token else "no key file to read")
+
+        # The other half of the same branch, on the same server: from this
+        # machine there is no key to produce, because reading the file and
+        # reading the disk are the same act.
+        status, _, page = here.get("/admin/setup.php")
+        r.check("and no key is demanded from the machine itself",
+                status == 200 and 'name="token"' not in page)
+    finally:
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        proc.wait(timeout=5)
+        shutil.rmtree(work, ignore_errors=True)
+
+
 def test_refuses_bad_setup(r: Results, sendmail: Path):
     r.section("refusing to run unsafely")
 
@@ -695,12 +836,18 @@ def main() -> None:
         os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         proc.wait(timeout=5)
 
+    test_setup_key_demanded_remotely(r, sendmail)
     test_refuses_bad_setup(r, sendmail)
 
     shutil.rmtree(work, ignore_errors=True)
 
     total = r.passed + len(r.failed)
     print(f"\n{r.passed}/{total} checks passed")
+
+    if r.skipped:
+        print("\nskipped:")
+        for name in r.skipped:
+            print(f"  - {name}")
 
     if r.failed:
         print("\nfailed:")

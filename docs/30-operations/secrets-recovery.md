@@ -145,7 +145,7 @@ A rebuilt server, a restore that missed the home directory, a deleted folder.
 which **still demands the setup key**, so a stranger cannot walk in during your rebuild.
 
 ```bash
-cat ~/t4t-private/setup-token.txt      # created on demand
+cat ~/t4t-private/setup-token.txt      # load /admin/setup.php first; that writes it
 ```
 
 Then work through [admin-activation.md](../20-deployment/admin-activation.md) again: create the

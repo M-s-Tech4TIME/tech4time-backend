@@ -50,6 +50,16 @@ $need_token = !auth_is_loopback();
 $error      = '';
 $stage      = (string)($state['stage'] ?? 'details');
 
+/* Asking for the key is what creates it. The operator has to read the file
+   before they can type its contents, so it must exist by the time the page
+   that demands it has rendered — not first appear once they have already
+   guessed wrong. Called for that side effect; the value is never shown here,
+   because a page that displays the token proves nothing about who is reading
+   it. */
+if ($need_token) {
+    auth_setup_token();
+}
+
 /* ------------------------------------------------------------------ posted */
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

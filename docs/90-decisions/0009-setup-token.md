@@ -23,11 +23,20 @@ create, and it lives in an `admin/.htaccess` that a careless deploy can remove.
 ## Consequences
 
 **Good.** The window is shut by the code rather than by a step somebody has to remember. The
-protection ships with the repository, survives a new document root, and is asserted by
-`test_admin_auth.py`. Setup requires the access whoever is setting this up already has — SSH,
+protection ships with the repository and survives a new document root. `test_admin_auth.py` asserts
+the gate itself by dialling from `127.0.0.2` — still loopback, so nothing leaves the machine, but
+not an address `auth_is_loopback()` accepts, so the application sees a request from elsewhere and
+must demand the key. Setup requires the access whoever is setting this up already has — SSH,
 Terminal or File Manager — and a stranger does not.
 
 **Costs.** One `cat` command during setup, once in the life of the site.
+
+**Learned the hard way.** Until this was tested, it did not work. The stored key is fourteen
+characters and the guard that read it back demanded sixteen, so every call minted a fresh key and
+the value the operator read was never the value they were checked against — the first account could
+not have been created on the live server at all. Every other test in the suite dials from
+`127.0.0.1`, where the key is deliberately skipped, so none of them could see it. A gate that no
+test has ever passed through is a gate nobody has opened.
 
 **Also true.** The token is regenerated if the whole store is ever lost, so it protects a rebuild as
 well as a first install — [rung 7](../30-operations/secrets-recovery.md#7-the-whole-store-is-gone).

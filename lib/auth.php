@@ -614,6 +614,12 @@ function auth_recent(int $limit = 20, string $user = ''): array
 
 /* ------------------------------------------------------------ first run */
 
+/** Random bytes behind a setup token — six, shown as twelve hex characters. */
+const AUTH_SETUP_BYTES = 6;
+
+/** What those bytes are once written: the length any stored token must have. */
+const AUTH_SETUP_CHARS = AUTH_SETUP_BYTES * 2;
+
 /**
  * The token that lets somebody create the first account.
  *
@@ -626,20 +632,31 @@ function auth_recent(int $limit = 20, string $user = ''): array
  * takes SSH, cPanel's File Manager or the Terminal — which is to say, it takes
  * the access somebody setting up this site has and a stranger does not.
  *
- * Created on demand, so the window is closed by the code rather than by a step
- * somebody has to remember. Deleted the moment an account exists.
+ * Created by the page that asks for it, so the operator can read the file at
+ * the moment the procedure tells them to, and so the window is closed by the
+ * code rather than by a step somebody has to remember. Deleted the moment an
+ * account exists.
+ *
+ * Recognised again by its length, derived from AUTH_SETUP_BYTES rather than
+ * repeated: the two disagreeing is not a visible failure, it is a setup page
+ * that quietly can never be completed.
  */
 function auth_setup_token(): string
 {
     $path = t4t_private_path('setup');
 
+    /* Recognising our own file has to be measured against what we actually
+       write. A guard with its own idea of the length silently rejects every
+       token it ever stored, mints a fresh one on each call, and compares the
+       operator against a value they were never shown — setup that can never
+       succeed, and no error anywhere to say why. */
     $raw = @file_get_contents($path);
-    if (is_string($raw) && strlen(trim($raw)) >= 16) {
+    if (is_string($raw) && strlen(auth_setup_token_clean($raw)) === AUTH_SETUP_CHARS) {
         return trim($raw);
     }
 
-    $token = strtoupper(bin2hex(random_bytes(6)));
-    $token = substr($token, 0, 4) . '-' . substr($token, 4, 4) . '-' . substr($token, 8);
+    $hex   = strtoupper(bin2hex(random_bytes(AUTH_SETUP_BYTES)));
+    $token = substr($hex, 0, 4) . '-' . substr($hex, 4, 4) . '-' . substr($hex, 8);
 
     @file_put_contents($path, $token . "\n", LOCK_EX);
     @chmod($path, 0600);
@@ -647,12 +664,24 @@ function auth_setup_token(): string
     return $token;
 }
 
+/**
+ * A setup token reduced to what is compared: its characters, not the dashes
+ * that make it readable or the newline the file ends with.
+ *
+ * Shared by the writer and the checker so that "is this a usable token?" has
+ * one answer, given in one place, rather than two that can drift apart.
+ */
+function auth_setup_token_clean(string $value): string
+{
+    return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $value) ?? '');
+}
+
 function auth_setup_token_check(string $given): bool
 {
-    $clean = static fn (string $v): string
-        => strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $v) ?? '');
-
-    return hash_equals($clean(auth_setup_token()), $clean($given));
+    return hash_equals(
+        auth_setup_token_clean(auth_setup_token()),
+        auth_setup_token_clean($given)
+    );
 }
 
 /** Setup is over. Remove the token rather than leave a live one lying about. */

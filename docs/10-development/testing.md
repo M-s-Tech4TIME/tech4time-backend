@@ -69,7 +69,7 @@ These start a real PHP server on a spare port and drive it over HTTP.
 
 | Script | Proves |
 |---|---|
-| `test_admin_auth.py` | first-run setup; signing in and out; a code works once; the lockout; the emailed reset cycle; recovery codes; the audit log; the refusal to run unsafely. Includes the RFC 6238 test vectors, so the TOTP implementation is checked against the specification rather than against itself |
+| `test_admin_auth.py` | first-run setup; **the setup key demanded of a request from off the machine**; signing in and out; a code works once; the lockout; the emailed reset cycle; recovery codes; the audit log; the refusal to run unsafely. Includes the RFC 6238 test vectors, so the TOTP implementation is checked against the specification rather than against itself |
 | `test_contact_handler.py` | method check, honeypot, every validation rule, CR/LF injection into each field, the assembled message, non-ASCII round trips, the rate limit, and the no-JavaScript HTML response |
 | `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write |
 | `test_contact_admin.py` | the contact page editor, and the icon rail |

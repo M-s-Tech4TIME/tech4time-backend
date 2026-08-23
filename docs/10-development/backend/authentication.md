@@ -173,9 +173,17 @@ between an upload finishing and somebody getting round to setup can be days.
 server's own disk — `t4t-private/setup-token.txt`. Reading it takes SSH, cPanel's Terminal or its
 File Manager: the access whoever is setting this up has and a stranger does not.
 
-It is created on demand and **destroyed the moment an account exists**, so the window is shut by the
-code rather than by a step somebody has to remember. It is skipped when the request comes from the
-machine itself — by peer address, and never by the `Host` header, which a stranger can set.
+It is created **by the page that asks for it** and **destroyed the moment an account exists**, so
+the window is shut by the code rather than by a step somebody has to remember. Loading `setup.php`
+from anywhere but the server itself writes the file, which is what makes `cat` work as the next step
+of the procedure. It is skipped when the request comes from the machine itself — by peer address,
+and never by the `Host` header, which a stranger can set.
+
+The key is recognised on re-reading by its length, and that length is derived from
+`AUTH_SETUP_BYTES` rather than written out a second time. A guard carrying its own idea of the
+length rejects every key it ever stored, mints a new one on each call, and compares the operator
+against a value they were never shown — which is a setup page that can never be completed and says
+nothing about why.
 
 The account is not written until the authenticator app has been proven to work. An admin enrolled
 but unable to produce a code is an admin locked out on the first sign-in, and setup is the one moment
@@ -223,6 +231,8 @@ breaking it.
 | `RESET_TTL` | `lib/reset.php` | 600 | ten minutes |
 | `RESET_ATTEMPTS` | `lib/reset.php` | 5 | guesses at a reset code |
 | `RESET_PER_ACCOUNT` / `_PER_IP` / `_GLOBAL` | `lib/reset.php` | 3 / 5 / 20 | resets per hour |
+| `AUTH_SETUP_BYTES` | `lib/auth.php` | 6 | random bytes behind a setup key |
+| `AUTH_SETUP_CHARS` | `lib/auth.php` | twice that | the length a stored key must have to be recognised |
 | `TOTP_STEP` / `_DIGITS` / `_DRIFT` | `lib/totp.php` | 30 / 6 / 1 | the authenticator |
 
 > **These values are quoted in this documentation.** `tools/check_docs.py` fails if you change one

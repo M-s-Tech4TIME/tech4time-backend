@@ -124,6 +124,12 @@ an invisible character.
 cat ~/t4t-private/setup-token.txt
 ```
 
+**If `cat` shows a different key each time you run it**, the file is not being recognised on
+re-reading and a fresh one is minted on every call — so the key you are shown is never the key you
+are checked against, and no amount of careful typing will work. The length a stored key must have is
+derived from `AUTH_SETUP_BYTES` in `lib/auth.php`; if the format is ever changed, that is where the
+two must stay in step. `test_admin_auth.py` covers this.
+
 ### `setup.php` redirects to `login.php`
 
 An account already exists. If it is not yours, treat it as a compromise:

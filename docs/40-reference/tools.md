@@ -50,7 +50,7 @@ Both skip with a notice and exit 0 when Firefox or geckodriver is missing.
 
 | Script | Exercises |
 |---|---|
-| `test_admin_auth.py` | the admin's whole sign-in cycle, including the RFC 6238 test vectors |
+| `test_admin_auth.py` | the admin's whole sign-in cycle, including the setup key as a remote request sees it and the RFC 6238 test vectors |
 | `test_contact_handler.py` | `contact-handler.php`, including header injection and the captured message |
 | `test_careers_admin.py` | the job post editor |
 | `test_contact_admin.py` | the contact page editor |
