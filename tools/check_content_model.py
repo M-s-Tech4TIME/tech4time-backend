@@ -21,6 +21,13 @@ This is a structural check, not a taste one: it asserts that every field in the
 model is written by the form and read by the page, and that neither of the
 other two reaches for a field the model does not define. It cannot tell you
 whether the band looks right — that is what the screenshots are for.
+
+It also asserts that it is being asked about every editor there is. Comparing
+source text only works while the fields appear in the source as themselves; a
+form or a page that loops over its fields hides them from a regex, and careers
+does exactly that on both sides. Those are proved by round trip instead, and
+named in COVERED_ELSEWHERE — so an editor checked by neither route fails here
+rather than being quietly absent, which is what it was until 2026-08-23.
 """
 
 import re
@@ -46,6 +53,49 @@ SUBJECTS = [
         "form_exempt": {"updated", "footer_synced", "offices.items.id"},
     },
 ]
+
+# Editors this file cannot check this way, and what proves them instead.
+#
+# An admin section with a page to view is an editor over a content model, so
+# every one of them has to be accounted for — here or in SUBJECTS. That is the
+# point of the pairing: "the check covers one of the two editable pages" was
+# true for a long time and nothing said so.
+COVERED_ELSEWHERE = {
+    "careers": (
+        "tools/test_careers_admin.py",
+        "Both sides of the careers page are loops. The editor posts its seven "
+        "body fields as name=\"<?= h($field) ?>\" and the page renders them by "
+        "walking CAREERS_SECTIONS, so the regexes below read the loop variable "
+        "and find 'h' and 'field' rather than 'about' and 'offers'. Adding it "
+        "to SUBJECTS would mean exempting exactly the seven fields most likely "
+        "to drift, and then reporting that all is well. It is proved by round "
+        "trip instead: a marker through every field the model declares, editor "
+        "to visitor, over HTTP.",
+    ),
+}
+
+
+def editors() -> list[str]:
+    """The admin sections that edit a page of the website.
+
+    ADMIN_PAGE_SECTIONS already means exactly this, so it is asked rather than
+    re-derived: a second definition of "an editor" is a second thing to keep
+    true, and this one would be wrong the moment a section gained a page to
+    view without gaining a content model.
+    """
+    if not shutil.which("php"):
+        return []
+
+    out = subprocess.run(
+        ["php", "-r", "require 'lib/admin.php'; echo json_encode(ADMIN_PAGE_SECTIONS);"],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    if out.returncode != 0 or not out.stdout.strip():
+        return []
+
+    import json
+    return json.loads(out.stdout)
+
 
 # ---------------------------------------------------------------- the model
 
@@ -199,6 +249,29 @@ def main() -> None:
     else:
         print("fingerprint  —  PHP and Python agree")
 
+
+    accounted = {s["name"] for s in SUBJECTS} | set(COVERED_ELSEWHERE)
+    for name in editors():
+        if name not in accounted:
+            problems.append(
+                f"'{name}' is an editor in lib/admin.php that nothing here "
+                f"checks — add it to SUBJECTS, or to COVERED_ELSEWHERE naming "
+                f"the test that proves its fields reach the page instead"
+            )
+    for name, (where, _) in sorted(COVERED_ELSEWHERE.items()):
+        # A pointer at a test is only worth what the test is worth, and a
+        # pointer at a test that no longer exists reads exactly like coverage.
+        if not (ROOT / where).is_file():
+            # The reason travels with the problem, because the first instinct
+            # on reading this will be to add a SUBJECTS entry instead, and
+            # that is the thing that does not work.
+            problems.append(
+                f"'{name}' is said to be covered by {where}, which does not "
+                f"exist — the field check for that editor is gone. It is not "
+                f"checked here because: {COVERED_ELSEWHERE[name][1]}"
+            )
+        else:
+            print(f"{name}  —  checked by {where}, not here")
 
     for subject in SUBJECTS:
         for key in ("model", "form", "page"):

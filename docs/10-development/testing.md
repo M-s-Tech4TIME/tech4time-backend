@@ -59,7 +59,7 @@ python3 tools/check_dark_mode.py       # every page as the browser actually pain
 | `check_contrast.py` | every text/background pair in `theme.css` meets WCAG AA, in both modes, including the 3:1 bar for component boundaries |
 | `inject_icons.py --check` | each page inlines exactly the icon symbols it references — no missing symbol, no dead weight |
 | `check_shared_markup.py` | every page's header, footer and script block is byte-identical to `tools/templates/` |
-| `check_content_model.py` | the model, the editor form and the page renderer describe the same fields — **in both directions**, so a field dropped from the page but left in the form is caught |
+| `check_content_model.py` | the model, the editor form and the page renderer describe the same fields — **in both directions**, so a field dropped from the page but left in the form is caught; and that every editor in `ADMIN_PAGE_SECTIONS` is checked either here or by a named test that exists |
 | `check_secrets.py` | no secret is committed; the private store still refuses the web root; no auth bypass constant has returned; cookie flags intact; no password reachable by the audit log; every admin page shape noindexed |
 | `check_docs.py` | every tool, library and admin section is documented; no doc cites a path that does not exist; no internal link is broken; no doc quotes a constant that has changed |
 | `audit_pages.py` | per page: title and meta description, heading order, `alt` text, landmark roles, canonical URL, structured data, internal links resolve |
@@ -72,7 +72,7 @@ These start a real PHP server on a spare port and drive it over HTTP.
 |---|---|
 | `test_admin_auth.py` | first-run setup; **the setup key demanded of a request from off the machine**; signing in and out; a code works once; the lockout; the emailed reset cycle; recovery codes; the audit log; the refusal to run unsafely. Includes the RFC 6238 test vectors, so the TOTP implementation is checked against the specification rather than against itself |
 | `test_contact_handler.py` | method check, honeypot, every validation rule, CR/LF injection into each field, the assembled message, non-ASCII round trips, the rate limit, and the no-JavaScript HTML response |
-| `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write |
+| `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write — and that **every field `lib/careers.php` declares reaches the visitor**, by posting a marker through each one and reading it back off the public page |
 | `test_contact_admin.py` | the contact page editor, and the icon rail |
 | `test_store.py` | `lib/store.php`: telling apart missing, unreadable and corrupt; the atomic write; and the rule that a damaged file is never copied over a good `.bak`, because the backup is what damage is recovered from |
 

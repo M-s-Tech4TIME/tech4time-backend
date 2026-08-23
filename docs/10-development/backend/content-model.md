@@ -133,17 +133,43 @@ failure that is telling you something true.
 
 ---
 
-## A known gap
+## Two ways of proving it, and which page gets which
 
-**`check_content_model.py` covers the contact page only.** Its `SUBJECTS` list has one entry.
+`SUBJECTS` has one entry, and that is not an oversight. The careers page is checked by round trip
+instead, and `check_content_model.py` now says so rather than leaving the absence to be noticed.
 
-The careers page has the same three-layer structure — `lib/careers.php`, `admin/sections/careers.php`,
-`pages/careers/index.php` — and is **not** checked. A field added to a job post can drift between
-those three files without anything failing.
+**Why careers cannot be checked statically.** Both of its sides are loops. The editor writes its
+seven body fields as
 
-Adding it is a matter of writing a second `SUBJECTS` entry and whatever field-extraction the job
-post shape needs. Worth doing before the careers shape changes again; until then, change those three
-files with more care than the check would demand.
+```php
+name="<?= h($field) ?>"
+```
+
+and the page renders them by walking `CAREERS_SECTIONS`. The regexes above read the loop variable:
+they find `h` and `field`, not `about` and `offers`. Adding a `SUBJECTS` entry would report fourteen
+failures for fields that work perfectly, and the only way to quiet them would be to exempt the seven
+body fields — the ones most likely to drift — after which the check would announce that all is well.
+
+**What is done instead.** `tools/test_careers_admin.py` asks PHP for the model, posts a distinct
+marker into every field it declares, saves through the real editor, then loads the public page and
+requires every marker to come out. A field added to `lib/careers.php` is covered the moment it
+exists, and covered strictly: the default is that it must come back verbatim, and a field that
+cannot carry a marker — a date, a URL, the generated `id` — has to be written into `SHAPED_FIELDS`
+with the reason and what to look for instead.
+
+**Neither may be skipped silently.** `check_content_model.py` reads `ADMIN_PAGE_SECTIONS` and
+requires every editor in it to appear in `SUBJECTS` or in `COVERED_ELSEWHERE`, and requires the test
+named there to exist. A third editor fails the check until somebody decides how it is proved.
+
+| | contact | careers |
+|---|---|---|
+| Checked by | `check_content_model.py` | `test_careers_admin.py` |
+| How | reads the three files, compares field sets | posts a marker through each field, reads the page |
+| Costs | nothing — no server | a PHP server on a spare port |
+| Catches a new field | yes, when `SUBJECTS` names the model | yes, automatically |
+
+Static comparison is the cheaper of the two and stays the default. Reach for the round trip when the
+fields are consumed in a loop, which is what makes them invisible to a regex.
 
 ---
 

@@ -22,6 +22,7 @@ here is the editor's behaviour once past it. The sign-in is the subject of
 tools/test_admin_auth.py.
 """
 
+import json
 import os
 import re
 import shutil
@@ -148,12 +149,10 @@ def csrf_of(html: str) -> str:
 
 
 def job_ids() -> list:
-    import json
     return [j.get("id") for j in json.loads(DATA.read_text())["jobs"]]
 
 
 def statuses() -> dict:
-    import json
     return {j["id"]: j.get("status") for j in json.loads(DATA.read_text())["jobs"]}
 
 
@@ -221,6 +220,174 @@ def check_sanitiser(r: Results):
     for label, payload, expected in KEEP_CASES:
         out = clean(payload)
         r.check(f"{label} is kept", out == expected, f"got: {out}")
+
+
+# ------------------------------------------------- every field, end to end
+
+# The NEW literal above names every field there is today, and it will go on
+# passing on the day somebody adds an eighteenth. That is the gap: a field
+# nothing posts is a field no test renders, and a field no test renders is one
+# the page can quietly stop reading — the editor keeps a box for it, somebody
+# types into the box, and nothing they typed ever appears anywhere.
+#
+# check_content_model.py closes exactly this for the contact page, and cannot
+# close it here. Both sides of careers are loops: the editor writes its seven
+# body fields as name="<?= h($field) ?>", and the page renders them by walking
+# CAREERS_SECTIONS. A regex over the source finds "h" and "field", not "about"
+# and "offers" — so a static check would have to exempt the seven fields most
+# likely to drift, and would then announce that all is well.
+#
+# So this asks PHP what the model holds and puts a distinct marker through
+# every field of it, editor to visitor, over HTTP. A field added to
+# lib/careers.php is covered the moment it exists, and covered strictly: the
+# default is that it must come back verbatim, and a field that cannot carry a
+# marker has to be written into SHAPED_FIELDS with the reason.
+
+MARK = "Z7QF"
+
+
+def marker(field: str) -> str:
+    """A value that can only have come from this field, on this run."""
+    return f"{MARK}-{field}"
+
+
+# field -> (what to post, what must then appear on the page, why not a marker)
+#
+# Only for fields whose shape is not free text. Everything else in the model
+# gets marker() and is expected back unchanged, which is the strict default —
+# a new field nothing renders fails here rather than passing unnoticed.
+SHAPED_FIELDS = {
+    "id": (
+        "",
+        f'id="{MARK.lower()}-title"',
+        "Never typed. careers_slug() derives it from the title, so what proves "
+        "it arrived is the anchor the page hangs the post on.",
+    ),
+    "status": (
+        "open",
+        None,
+        "A control, not content: nothing renders it. What it does is decide "
+        "whether the post renders at all, which every check below depends on.",
+    ),
+    "posted": (
+        "2026-08-21",
+        '"datePosted": "2026-08-21"',
+        "careers_validate() requires YYYY-MM-DD. It reaches the visitor only "
+        "through the JobPosting, which is what puts the role into Google Jobs.",
+    ),
+    "closes": (
+        "2026-12-31",
+        'datetime="2026-12-31"',
+        "YYYY-MM-DD again. The page prints it as '31 December 2026' and keeps "
+        "the machine-readable form in the <time> attribute.",
+    ),
+    "apply_url": (
+        f"https://example.com/apply-{MARK}",
+        f'href="https://example.com/apply-{MARK}"',
+        "careers_validate() requires a full URL, so the marker rides in its "
+        "path instead.",
+    ),
+    "cv_form_url": (
+        f"https://example.com/cv-{MARK}",
+        f'href="https://example.com/cv-{MARK}"',
+        "A site-wide setting, saved by a different form than the post editor.",
+    ),
+}
+
+
+def escaped(value: str) -> str:
+    """A label as h() will have written it.
+
+    Python's html.escape() is close but not the same: it spells an apostrophe
+    &#x27; where PHP's ENT_QUOTES spells it &#039;. Close enough to pass today
+    and fail the day a heading gains one, which is the worst kind of helper.
+    """
+    for raw, entity in (("&", "&amp;"), ("<", "&lt;"), (">", "&gt;"),
+                        ('"', "&quot;"), ("'", "&#039;")):
+        value = value.replace(raw, entity)
+    return value
+
+
+def careers_model() -> dict:
+    """The fields lib/careers.php defines — asked of PHP, not parsed out of it.
+
+    Parsing is what check_content_model.py does, and for a file whose fields
+    are consumed in loops it reads the loop variable rather than the fields.
+    PHP already knows; the settings are whatever careers_load() returns at the
+    top level that is not a job or the bookkeeping beside it.
+    """
+    out = subprocess.run(
+        ["php", "-r",
+         "require 'lib/careers.php';"
+         "echo json_encode(["
+         "'text' => CAREERS_TEXT_FIELDS,"
+         "'rich' => CAREERS_RICH_FIELDS,"
+         "'sections' => CAREERS_SECTIONS,"
+         "'settings' => array_values(array_diff("
+         "    array_keys(careers_load()), ['jobs', 'updated'])),"
+         "]);"],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    if out.returncode != 0 or not out.stdout.strip():
+        raise SystemExit("could not read the careers model from PHP:\n"
+                         + (out.stderr or out.stdout)[:400])
+    return json.loads(out.stdout)
+
+
+def check_every_field_reaches_the_page(client: Client, r: Results, token: str):
+    model = careers_model()
+    known = set(model["text"]) | set(model["rich"]) | set(model["settings"])
+
+    # Two statements of the same thing, and the page renders bodies by walking
+    # the second. If they part, either a stored field is never shown or a
+    # heading appears with nothing under it.
+    r.check("every body field has a section heading",
+            sorted(model["rich"]) == sorted(model["sections"]),
+            f"rich={model['rich']} sections={sorted(model['sections'])}")
+
+    stale = sorted(set(SHAPED_FIELDS) - known)
+    r.check("nothing here describes a field the model has dropped", not stale,
+            f"{stale} — drop from SHAPED_FIELDS in this file")
+
+    post: dict = {}
+    needles: dict = {}
+    for field in model["text"] + model["rich"]:
+        if field in SHAPED_FIELDS:
+            value, needle, _ = SHAPED_FIELDS[field]
+        elif field in model["rich"]:
+            # Wrapped, because a body field is stored as sanitised HTML and
+            # what the page prints is the markup, not the words alone.
+            value = needle = f"<p>{marker(field)}</p>"
+        else:
+            value = needle = marker(field)
+        post[field] = value
+        if needle is not None:
+            needles[field] = needle
+
+    status, _, html = client.post(ADMIN, dict(post, action="save", csrf=token, id=""))
+    r.check("a post carrying every field in the model saves",
+            status == 302, f"{status} — {re.sub(r'<[^>]+>', ' ', html)[:200].strip()}")
+
+    for field in model["settings"]:
+        value, needle, _ = SHAPED_FIELDS.get(field, (marker(field), marker(field), ""))
+        client.post(ADMIN, {"action": "settings", "csrf": token, field: value})
+        needles[field] = needle
+
+    _, page = client.get("/pages/careers/")
+
+    r.check("the post reaches the visitor at all",
+            f'id="{MARK.lower()}-title"' in page,
+            "status=open has to publish it; nothing below can pass without this")
+
+    for field in sorted(needles):
+        r.check(f"'{field}' reaches the visitor", needles[field] in page,
+                f"expected {needles[field]!r} on /pages/careers/ — the model "
+                f"defines this field, so either the page must render it or "
+                f"SHAPED_FIELDS must say why it cannot carry a marker")
+
+    absent = sorted(l for l in model["sections"].values()
+                    if f">{escaped(l)}<" not in page)
+    r.check("every section heading renders above its body", not absent, str(absent))
 
 
 def run(client: Client, r: Results):
@@ -348,6 +515,9 @@ def run(client: Client, r: Results):
             "Stay Tuned for Opportunities" in page and "empty-state" in page)
     r.check("and emits no JobPosting", '"JobPosting"' not in page)
     r.check("the CV form link still shows", "forms.gle" in page)
+
+    print("\nevery field, editor to visitor")
+    check_every_field_reaches_the_page(client, r, token)
 
 
 def main() -> None:

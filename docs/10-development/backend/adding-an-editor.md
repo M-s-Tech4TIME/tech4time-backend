@@ -136,6 +136,14 @@ website, and is what anything counting "the pages you can edit" asks.
 ```
 
 The check has to be told what to check — deliberately, so a new editor is never silently unverified.
+It reads `ADMIN_PAGE_SECTIONS` and fails until the new section appears in `SUBJECTS` or in
+`COVERED_ELSEWHERE`, so you cannot get past this step by forgetting it.
+
+**If the form or the page consumes its fields in a loop, take `COVERED_ELSEWHERE` instead.** The
+extraction here is regex over source: a `name="<?= h($field) ?>"` gives it `h` and `field`, not the
+field names, and exempting the difference would leave the loop-driven fields — the ones most likely
+to drift — unchecked while the check reported success. Name the round-trip test instead, and write
+the reason beside it. `test_careers_admin.py` is the worked example.
 
 **`tools/test_<name>_admin.py`** — copy `test_contact_admin.py`. It signs in through
 `tools/admin_session.py`, so you inherit a real sign-in rather than faking one.
@@ -158,7 +166,7 @@ The check has to be told what to check — deliberately, so a new editor is neve
 - [ ] `pages/<name>/index.html` → `index.php`, rendering from the model, everything through `h()`
 - [ ] `admin/sections/<name>.php` with the `T4T_ADMIN` guard and CSRF on POST
 - [ ] `ADMIN_SECTIONS` and `ADMIN_PAGE_SECTIONS` updated; icon in `ADMIN_ICONS`
-- [ ] `check_content_model.py` `SUBJECTS` entry
+- [ ] `check_content_model.py`: a `SUBJECTS` entry, or a `COVERED_ELSEWHERE` one naming the test
 - [ ] `test_<name>_admin.py`
 - [ ] Docs updated
 - [ ] `.gitignore` covers `content/<name>.json.bak`

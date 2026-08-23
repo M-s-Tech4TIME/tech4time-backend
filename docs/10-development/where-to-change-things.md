@@ -104,8 +104,9 @@ off. [javascript.md](frontend/javascript.md) · [motion.md](frontend/motion.md)
 | How JSON is read and written | `lib/store.php` |
 
 > Changing a content shape means changing three files together — the model, the form and the
-> renderer. `check_content_model.py` fails the build if one is left behind.
-> [content-model.md](backend/content-model.md)
+> renderer. Something fails the build if one is left behind: `check_content_model.py` for contact,
+> `test_careers_admin.py` for careers, which posts a marker through every declared field and reads
+> it back off the page. [content-model.md](backend/content-model.md)
 
 ---
 

@@ -160,7 +160,13 @@ step. Add a field and three files must move together: the model, the form and th
 `check_content_model.py` fails the build if one of the three is left behind — in either direction,
 so a field removed from the page but left in the form is caught too.
 
-Full walkthrough: [content-model.md](../10-development/backend/content-model.md).
+The careers page has the same three layers and is proved differently, because both of its sides
+consume their fields in a loop and a regex over the source reads the loop variable rather than the
+fields. `test_careers_admin.py` posts a marker through every field the model declares and requires
+it back off the public page.
+
+Full walkthrough, including which page gets which check and why:
+[content-model.md](../10-development/backend/content-model.md).
 
 ---
 

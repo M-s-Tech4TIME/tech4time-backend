@@ -27,7 +27,7 @@ browser tests speak to geckodriver over its wire protocol — there is no Seleni
 |---|---|
 | `check_contrast.py` | the palette meets WCAG 2.1 AA in both modes |
 | `check_shared_markup.py` | the header, footer and script blocks have not drifted between pages |
-| `check_content_model.py` | the editor, the data and the page still describe the same thing |
+| `check_content_model.py` | the editor, the data and the page still describe the same thing, and no editor is unchecked |
 | `check_secrets.py` | nothing protecting the admin has quietly stopped protecting it |
 | `check_docs.py` | the documentation still describes the code |
 | `audit_pages.py` | every page: SEO, accessibility and structural correctness |
@@ -52,7 +52,7 @@ Both skip with a notice and exit 0 when Firefox or geckodriver is missing.
 |---|---|
 | `test_admin_auth.py` | the admin's whole sign-in cycle, including the setup key as a remote request sees it and the RFC 6238 test vectors |
 | `test_contact_handler.py` | `contact-handler.php`, including header injection and the captured message |
-| `test_careers_admin.py` | the job post editor |
+| `test_careers_admin.py` | the job post editor, and every field of a post reaching the page |
 | `test_contact_admin.py` | the contact page editor |
 | `test_store.py` | `lib/store.php`: reading, writing, and the rule that a damaged file never becomes the backup |
 | `admin_session.py` | *(not run directly)* gives a test an admin account and signs it in |

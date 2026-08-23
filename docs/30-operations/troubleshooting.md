@@ -259,9 +259,14 @@ Current behaviour, documented because it is surprising rather than because it is
 | Trap | Consequence | Until it is fixed |
 |---|---|---|
 | The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly; keep subdomain docroots outside `public_html` |
-| `check_content_model.py` covers the contact page only | a careers field can drift between model, form and renderer unnoticed | change those three files together, deliberately |
 
-The first is a fix scheduled with the Phase B hardening. The second needs a `SUBJECTS` entry.
+That one is a fix scheduled with the Phase B hardening.
+
+**Fixed 2026-08-23** — a careers field drifting between model, form and renderer unnoticed.
+`check_content_model.py` could never have caught it: both sides of that page are loops, so its
+regexes read the loop variable rather than the fields. `tools/test_careers_admin.py` proves it by
+round trip instead — a marker through every field the model declares, editor to visitor — and
+`check_content_model.py` now fails if an editor is in neither `SUBJECTS` nor `COVERED_ELSEWHERE`.
 
 **Fixed 2026-08-23** — recovery codes dying silently with `secret.key`. Stored codes carry the
 fingerprint of the key that made them, so `admin-cli list` prints `10 DEAD` and says what to run
