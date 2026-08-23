@@ -3,7 +3,7 @@
  * Tech4TIME — the admin, from the command line.
  *
  * NOT PART OF THE SITE. Like tools/host-probe.php, this is never deployed with
- * a normal upload. See tools/README.md.
+ * a normal upload. See docs/30-operations/secrets-recovery.md.
  *
  * WHY IT EXISTS
  * Every way back into the admin depends on something: the password on

@@ -470,7 +470,7 @@ def main() -> None:
 
     shutil.rmtree(workdir, ignore_errors=True)
     print("\nMessage construction is sound. Delivery is NOT tested here —")
-    print("that is a check on the cPanel host, see tools/README.md.")
+    print("that is a check on the cPanel host — see docs/40-reference/host-facts.md.")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
  *
  * NOT PART OF THE SITE. This lives in tools/ and is never deployed as part of a
  * normal upload. You upload it by hand, load it once, read the answer, and
- * DELETE IT. See tools/README.md.
+ * DELETE IT. See docs/20-deployment/first-deploy.md.
  *
  * WHY
  * Two things cannot be tested anywhere but the host they will run on, and both
