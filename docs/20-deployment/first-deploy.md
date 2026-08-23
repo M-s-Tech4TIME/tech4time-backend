@@ -33,8 +33,6 @@ Full detail in [cpanel-host-setup.md](cpanel-host-setup.md). The short version:
 
 ## 2. Upload the site
 
-Everything except `tools/`, `docs/`, `references/`, `.git/` and the Markdown files.
-
 ```
 public_html/
 ├── index.html   404.html
@@ -43,14 +41,36 @@ public_html/
 ├── .htaccess    robots.txt   sitemap.xml   site.webmanifest
 ```
 
+Everything else stays here: `tools/`, `docs/`, `references/`, `.git/`, `.claude/`, `.gitignore`,
+`.gitattributes` and every Markdown file.
+
+Rather than pick those out by hand, build the upload set and check it:
+
+```bash
+zip -r /tmp/tech4time-deploy.zip \
+  index.html 404.html contact-handler.php \
+  .htaccess robots.txt sitemap.xml site.webmanifest \
+  pages assets lib admin content \
+  -x '*/.DS_Store' -x '*.bak'
+
+# Nothing on this list may appear. Every line should print 0.
+for bad in tools/ docs/ references/ .git/ .claude/ .md admin/.htaccess .key; do
+  printf '%-18s %s\n' "$bad" "$(unzip -Z1 /tmp/tech4time-deploy.zip | grep -c -- "$bad")"
+done
+```
+
+Upload the zip through cPanel's File Manager and extract it in `public_html`, which also preserves
+the directory structure — every asset path is root-relative, so a flattened upload breaks the site.
+
+> `.htaccess` is a dotfile. Some FTP clients hide it and some zip tools drop it. Confirm it arrived:
+> the checks in step 3 all fail without it.
+
 **`content/` is uploaded this once**, to seed the two JSON files. Never again — from now on the
 host's copy is the real one.
 
 **`.htaccess` must be uploaded.** It carries the real security headers. `X-Frame-Options` and
 `X-Content-Type-Options` are ignored by browsers when set via `<meta>`, so the `.htaccess` copy is
 the one that counts.
-
-Preserve the directory structure exactly — every asset path is root-relative.
 
 ## 3. Check it serves
 
