@@ -21,7 +21,8 @@ Last confirmed: **2026-08-23**, from `tools/host-probe.php` run on the live host
 | Document root | `/home/techtime/public_html` |
 | Private store | `/home/techtime/t4t-private` — 0700, writable, **outside the web root** |
 | HTTPS | on, AutoSSL |
-| SSH | **enabled**, with Terminal and Git Version Control also available |
+| SSH | **enabled** on port 22, with Terminal and Git Version Control also available |
+| SSH host key | `SHA256:bSJs6qWqhlP3gLNzXrKClg5uP0zQoOYypucJH6fOF0U` (ED25519) |
 
 ## PHP
 
@@ -38,6 +39,24 @@ Last confirmed: **2026-08-23**, from `tools/host-probe.php` run on the live host
 
 Mail was proven end to end: the contact form delivers to `info@tech4time.bd` with JavaScript on
 and off.
+
+### If the deploy fails on the host key
+
+`deploy.yml` pins that fingerprint in `known_hosts` rather than accepting whatever answers, so a
+changed key **stops the deploy** instead of trusting it. Shared hosts do move accounts between
+machines, so this can happen for an innocent reason — but it looks identical to the guilty one, and
+the check exists because you cannot tell them apart by looking.
+
+Confirm the new key out of band before updating the `SSH_HOST_KEY` secret: ask the host, or read
+the fingerprint from cPanel's own Terminal, rather than from another `ssh-keyscan` — which would
+ask the same question of the same answerer.
+
+```bash
+ssh-keyscan -p 22 -t ed25519 103.138.189.25 2>/dev/null | ssh-keygen -lf -
+```
+
+`SSH_HOST` must stay the bare IP. The pinned line names the host as `103.138.189.25`, and a
+hostname in that secret would not match it.
 
 > **The probe itself is gone, and must stay gone.** `tools/host-probe.php` is upload-run-delete.
 > It was left on the host after the first run and was reachable at `/host-probe.php` — token-gated,
