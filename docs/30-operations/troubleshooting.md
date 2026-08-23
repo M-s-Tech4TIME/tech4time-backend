@@ -141,14 +141,24 @@ php ~/admin-cli.php log 100
 
 [Rung 8](secrets-recovery.md#8-suspected-compromise).
 
-### `setup.php` offers to create an account on a site that already had one
+### The admin refuses: "The account file is present but cannot be read"
 
-> **Do not go through setup.**
+`admins.json` is corrupted, not missing. The admin stops rather than continue, because from there a
+damaged file is indistinguishable from a site nobody has set up — and going through setup would
+copy the damage over `admins.json.bak`, which may be the only intact copy left.
 
-`admins.json` is corrupted, not missing — `store_read()` returns `null` for both, so they are
-indistinguishable to the admin. A good backup is sitting beside the broken file.
+A good backup is sitting beside the broken file. Restore it:
+
+```bash
+cd ~/t4t-private
+cp admins.json admins.json.broken        # keep the evidence
+cp admins.json.bak admins.json
+```
 
 [Rung 6](secrets-recovery.md#6-adminsjson-corrupted).
+
+> **If you are on a version that offers setup instead of refusing**, do not go through it — restore
+> the `.bak` as above. That was the behaviour before the refusal existed.
 
 ### The authenticator code is always wrong
 
@@ -249,11 +259,15 @@ Current behaviour, documented because it is surprising rather than because it is
 | Trap | Consequence | Until it is fixed |
 |---|---|---|
 | Recovery codes are hashed under a key derived from `secret.key` | losing the key kills all ten silently; `admin-cli list` still reports them | run `codes` after any key loss |
-| `store_read()` returns `null` for both a missing file and a corrupt one | a corrupted `admins.json` presents as a fresh install and offers setup | restore `admins.json.bak`; never re-run setup to "fix" it |
 | The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly; keep subdomain docroots outside `public_html` |
 | `check_content_model.py` covers the contact page only | a careers field can drift between model, form and renderer unnoticed | change those three files together, deliberately |
 
-The first three are fixes scheduled with the Phase B hardening. The fourth needs a `SUBJECTS` entry.
+The first two are fixes scheduled with the Phase B hardening. The third needs a `SUBJECTS` entry.
+
+**Fixed 2026-08-23** — `store_read()` answering `null` for both a missing and a corrupt file. They
+are told apart by `store_state()` now: the admin refuses to start on a damaged account file instead
+of offering setup, and `store_write()` will not let a damaged file become the `.bak`. Covered by
+`tools/test_store.py` and `tools/test_admin_auth.py`.
 
 ---
 

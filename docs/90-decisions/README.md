@@ -30,3 +30,4 @@ new record superseding the old one rather than quietly doing the opposite.
 | [0010](0010-backend-pushes-content.md) | The backend pushes content; the frontend never fetches | accepted, **not built** |
 | [0011](0011-two-repositories.md) | Two repositories, two hosts | accepted, **not built** |
 | [0012](0012-motion-may-not-gate.md) | Motion may decorate, never gate | accepted |
+| [0013](0013-damaged-stores-refuse.md) | A damaged store refuses; it never looks empty | accepted |

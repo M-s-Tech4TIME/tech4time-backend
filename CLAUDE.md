@@ -94,6 +94,8 @@ python3 tools/audit_pages.py
 Touched the admin, auth or the contact handler? Also `test_admin_auth.py`,
 `test_contact_handler.py`, `test_careers_admin.py`, `test_contact_admin.py`.
 
+Touched `lib/store.php`? Also `test_store.py`.
+
 Touched CSS, markup or motion? Also `test_motion.py`, `test_nav.py`, `test_theme.py`,
 `check_hover.py`, `check_dark_mode.py` — these need Firefox and geckodriver, and leave processes
 behind if interrupted (`pkill firefox geckodriver`).

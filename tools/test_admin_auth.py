@@ -763,6 +763,79 @@ def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
         shutil.rmtree(work, ignore_errors=True)
 
 
+def test_refuses_damaged_accounts(r: Results, sendmail: Path):
+    """
+    A damaged account file must not be mistaken for a site nobody has set up.
+
+    WHAT GOES WRONG WITHOUT THIS
+    store_read() answers null for a file that is absent and for one that will
+    not parse, so auth_has_accounts() says "no accounts" to both. The admin
+    then offers setup on a site that already has an administrator — and the
+    first save copies the damaged file over admins.json.bak, which may be the
+    only intact copy left. The screen suggests the one action that destroys
+    what you would have recovered from.
+
+    So the test is not only that it refuses. It is that the .bak is still
+    there afterwards, and that restoring it puts everything back.
+    """
+    r.section("a damaged account file")
+
+    work = Path(tempfile.mkdtemp(prefix="t4t-damaged-"))
+    private = work / "private"
+    port = free_port()
+    proc = start_server(port, private, sendmail)
+
+    try:
+        c = Client(port)
+        c.get("/admin/setup.php")          # the store is created on first use
+
+        accounts = private / "admins.json"
+        backup = Path(str(accounts) + ".bak")
+        good = json.dumps({
+            "updated": "2026-08-23T00:00:00+00:00",
+            "accounts": [{"user": USER, "hash": "x", "totp": "x"}],
+        }, indent=2)
+
+        accounts.write_text(good)
+        backup.write_text(good)
+
+        status, headers, _ = c.get("/admin/")
+        r.check("with a readable account file the admin runs",
+                status == 302 and "login" in headers.get("Location", ""),
+                f"status {status}")
+
+        for name, damaged in [("truncated", good[: len(good) // 2]),
+                              ("empty", ""),
+                              ("not json at all", "<html>404</html>")]:
+            accounts.write_text(damaged)
+
+            status, _, page = c.get("/admin/")
+            r.check(f"{name}: the admin refuses",
+                    status == 503 and "cannot start safely" in page,
+                    f"status {status}")
+
+            status, _, page = c.get("/admin/setup.php")
+            r.check(f"{name}: and does not offer to set up a new account",
+                    status == 503 and "Set up the admin" not in page,
+                    f"status {status}")
+
+            r.check(f"{name}: the backup is left alone",
+                    backup.read_text() == good)
+
+        # The way out that the refusal itself prescribes. A recovery nobody has
+        # walked is a recovery nobody should be told to rely on.
+        accounts.write_text(backup.read_text())
+
+        status, headers, _ = c.get("/admin/")
+        r.check("restoring the .bak brings the admin back",
+                status == 302 and "login" in headers.get("Location", ""),
+                f"status {status}")
+    finally:
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        proc.wait(timeout=5)
+        shutil.rmtree(work, ignore_errors=True)
+
+
 def test_refuses_bad_setup(r: Results, sendmail: Path):
     r.section("refusing to run unsafely")
 
@@ -837,6 +910,7 @@ def main() -> None:
         proc.wait(timeout=5)
 
     test_setup_key_demanded_remotely(r, sendmail)
+    test_refuses_damaged_accounts(r, sendmail)
     test_refuses_bad_setup(r, sendmail)
 
     shutil.rmtree(work, ignore_errors=True)

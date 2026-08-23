@@ -71,9 +71,13 @@ counts.
 > form and wrong for a counter: two failures landing together would each read 3, each write 4, and
 > one would vanish. That is not a rounding error — it is the attacker's best move.
 
-`store_read()` returns `null` for a missing file **and** for malformed JSON. Callers that care about
-the difference must check for themselves; see the known trap in
-[troubleshooting.md](../../30-operations/troubleshooting.md).
+`store_read()` returns `null` for a missing file **and** for malformed JSON — the right shape for
+site copy, where both mean "fall back to defaults" and the page still renders. Callers that must
+tell them apart use **`store_state()`**, which answers `ok`, `missing`, `unreadable` or `corrupt`.
+
+`auth_problem()` uses it to refuse rather than present a damaged account file as a fresh install,
+and `store_write()` uses it to make sure a damaged file never becomes the `.bak` — the copy that
+damage is recovered from. `tools/test_store.py` covers both.
 
 ### `careers.php`
 

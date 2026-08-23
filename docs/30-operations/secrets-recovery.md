@@ -118,14 +118,15 @@ why it is worth backing up — [backups.md](backups.md).
 
 A truncated or malformed file — an interrupted write, a bad restore.
 
-> ### The trap
+> ### What you will see
 >
-> **A corrupted `admins.json` looks exactly like a fresh install.** `store_read()` returns `null`
-> for both "file missing" and "file is not valid JSON", so `auth_has_accounts()` says *no* and the
-> admin offers you `setup.php`.
+> **The admin refuses to start**, saying the account file is present but cannot be read. That is
+> deliberate: a damaged file is otherwise indistinguishable from a site nobody has set up, and the
+> admin would offer you setup — whose first save copies the damage over `admins.json.bak`,
+> destroying the copy this rung recovers from.
 >
-> **Do not go through setup.** A good backup is sitting right beside the broken file, and setting up
-> again would enrol a new authenticator and discard the account you already have.
+> A good backup is sitting right beside the broken file. Restore it rather than setting up again,
+> which would enrol a new authenticator and discard the account you already have.
 
 ```bash
 cd ~/t4t-private

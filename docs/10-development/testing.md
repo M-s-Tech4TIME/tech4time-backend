@@ -30,6 +30,7 @@ python3 tools/test_admin_auth.py       # the whole sign-in cycle, over HTTP
 python3 tools/test_contact_handler.py  # the enquiry form's endpoint
 python3 tools/test_careers_admin.py    # the job post editor
 python3 tools/test_contact_admin.py    # the contact page editor
+python3 tools/test_store.py            # the JSON store itself
 ```
 
 ## When you touched CSS, markup or motion
@@ -73,6 +74,7 @@ These start a real PHP server on a spare port and drive it over HTTP.
 | `test_contact_handler.py` | method check, honeypot, every validation rule, CR/LF injection into each field, the assembled message, non-ASCII round trips, the rate limit, and the no-JavaScript HTML response |
 | `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write |
 | `test_contact_admin.py` | the contact page editor, and the icon rail |
+| `test_store.py` | `lib/store.php`: telling apart missing, unreadable and corrupt; the atomic write; and the rule that a damaged file is never copied over a good `.bak`, because the backup is what damage is recovered from |
 
 `test_contact_handler.py` captures outgoing mail by pointing PHP's `sendmail_path` at a script that
 writes the message to a file, then reads back the exact bytes `mail()` was asked to send. That is

@@ -54,6 +54,7 @@ Both skip with a notice and exit 0 when Firefox or geckodriver is missing.
 | `test_contact_handler.py` | `contact-handler.php`, including header injection and the captured message |
 | `test_careers_admin.py` | the job post editor |
 | `test_contact_admin.py` | the contact page editor |
+| `test_store.py` | `lib/store.php`: reading, writing, and the rule that a damaged file never becomes the backup |
 | `admin_session.py` | *(not run directly)* gives a test an admin account and signs it in |
 
 ### In a real browser

@@ -42,11 +42,13 @@ Run the probe, then record the answers here.
 |---|---|---|
 | `info@tech4time.bd` | **yes** | where the contact form sends enquiries |
 | `no-reply@tech4time.bd` | **yes** | the envelope sender for outgoing mail |
-| `admin@tech4time.bd` | **NO — must be created** | where a password reset code goes |
+| `admin@tech4time.bd` | **yes** — created 2026-08-23 | where a password reset code goes |
 
-> **Outstanding.** `admin@tech4time.bd` must exist as a real mailbox that can be opened. A reset
-> code goes there and nowhere else. Until it does, use `info@tech4time.bd` as the account address —
-> deliberately, not by accident.
+> **Created, not yet proven.** Existing and receiving are different facts, and only the second one
+> matters on the day you cannot sign in. It is proven by
+> [admin-activation.md](../20-deployment/admin-activation.md) step 6 — a real reset code, sent by
+> the live site, read in that mailbox — not by sending a test message to it from elsewhere, which
+> exercises none of the path that matters.
 
 ### DNS — confirmed
 
@@ -94,7 +96,8 @@ application's own sign-in is proven — [admin-activation.md](../20-deployment/a
 
 ## Outstanding on the host
 
-1. **Create `admin@tech4time.bd`** as a mailbox that can be opened
+1. **Prove `admin@tech4time.bd` receives** what the site sends it — the mailbox exists as of
+   2026-08-23; delivery is confirmed at activation step 6
 2. **Run `tools/host-probe.php`** — upload, set the token, load once, read, **delete** — and record
    the PHP version, argon2id availability and hash time here
 3. **Submit the real contact form twice**, once with JavaScript and once without; confirm both

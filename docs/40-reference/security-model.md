@@ -211,9 +211,13 @@ check nobody has watched fail is a check nobody should believe. Keep that going.
 |---|---|---|
 | The containment check compares against the *requesting* document root | a store inside a sibling docroot passes and is web-reachable | set `T4T_PRIVATE`; keep subdomain docroots outside `public_html` — [environments.md](../20-deployment/environments.md) |
 | Recovery codes derive from `secret.key` | losing the key kills them silently | run `codes` after any key loss |
-| `store_read()` cannot distinguish missing from corrupt | a corrupt `admins.json` presents as a fresh install | restore the `.bak`; never re-run setup |
 
-Scheduled with the Phase B hardening.
+Both scheduled with the Phase B hardening.
+
+> **Fixed 2026-08-23.** `store_read()` could not tell a missing file from a corrupt one, so a
+> damaged `admins.json` presented as a fresh install and offered setup — whose first save copied the
+> damage over the `.bak`. `store_state()` now tells them apart: the admin refuses to start, and
+> `store_write()` never lets a damaged file become the backup.
 
 ---
 

@@ -709,6 +709,24 @@ function auth_problem(): string
         return $problem;
     }
 
+    /* A damaged account file must never be allowed to look like a fresh
+       install. auth_has_accounts() would say "no accounts" for both, the admin
+       would offer setup, and the first save would copy the damaged file over
+       its own .bak — destroying what may be the last intact copy in the act of
+       following the screen's own suggestion. Nothing here is recoverable by
+       carrying on, so it stops. */
+    $accounts = t4t_private_path('admins');
+    $state    = store_state($accounts);
+
+    if ($state === 'corrupt' || $state === 'unreadable') {
+        return 'The account file is present but cannot be read: ' . $accounts
+             . ' — it is ' . $state . '. Refusing to continue, because from here '
+             . 'a damaged file is indistinguishable from a site nobody has set '
+             . 'up yet, and going through setup would copy it over '
+             . basename($accounts) . '.bak, which may be the only intact copy '
+             . 'left. Restore that .bak over the file before reloading this page.';
+    }
+
     if (!auth_is_https() && !auth_is_local()) {
         return 'This page is not being served over HTTPS. A password and a session '
              . 'cookie sent over plain http can be read in transit.';
