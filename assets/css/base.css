@@ -140,6 +140,23 @@ html {
   scroll-padding-top: calc(var(--header-height) + var(--space-md));
 }
 
+/* Below 64em the dock is fixed to the bottom of the viewport, and the browser
+   will scroll a focused element to exactly where the dock covers it. Tabbing
+   the footer links or the last of a form on a phone put the focus ring
+   underneath the bar — WCAG 2.2 SC 2.4.11 Focus Not Obscured.
+
+   scroll-padding-top above keeps the sticky header off the top of a scroll;
+   this is the same thing for the bottom. --dock-height is declared on .dock
+   in components.css and is not visible from here, so the fallback is what
+   applies — the same arrangement .page already uses in layout.css. */
+@media (max-width: 63.999em) {
+  html {
+    scroll-padding-bottom: calc(
+      var(--dock-height, 4rem) + var(--space-md) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
 body {
   min-height: 100svh;
   font-family: var(--font-body);
@@ -301,6 +318,24 @@ hr {
 /* Only suppress the default ring where :focus-visible is supported. */
 :focus:not(:focus-visible) {
   outline: none;
+}
+
+/* <summary> will not take an outline in Firefox, and says so only if you
+   look at the pixels: the computed style reports outline-color as the token
+   above — so the rule did match — while outline-style stays `none` and the
+   offset stays -3px, which nothing here sets. An explicit
+   `summary:focus-visible { outline: … }` changes neither.
+
+   Screenshotting a focused summary settles it: zero pixels differ from the
+   unfocused one, against 307 for an ordinary link. So the accordions on the
+   certifications page and the job posts on the careers page had no focus
+   indicator at all — SC 2.4.7 Focus Visible.
+
+   A shadow is drawn where an outline is not. Same colour, same 2px, so it
+   reads as the same ring as everything else. */
+summary:focus-visible {
+  box-shadow: 0 0 0 2px var(--focus-ring);
+  border-radius: var(--radius-sm);
 }
 
 /* --------------------------------------------------------------------------

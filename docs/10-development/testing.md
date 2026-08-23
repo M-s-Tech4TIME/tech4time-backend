@@ -45,6 +45,7 @@ python3 tools/test_editor.py           # the job post editor, in a real browser
 python3 tools/check_hover.py           # a real pointer over every kind of control
 python3 tools/check_dark_mode.py       # every page as the browser actually paints it
 python3 tools/check_responsive.py      # sideways scroll and tap targets, 320px and up
+python3 tools/check_focus.py           # tab every page: the ring is visible and uncovered
 ```
 
 > Interrupted browser runs leave processes behind. `pkill firefox geckodriver` clears them.
@@ -97,6 +98,7 @@ private directory under `/tmp` — so a test run cannot disturb your own local a
 | `check_hover.py` | every interactive element visibly responds to a real pointer |
 | `check_dark_mode.py` | every page in both themes, as painted — catching what a CSS reader cannot, like a token that resolves to the same colour as its background |
 | `check_responsive.py` | every page at 320, 360, 414, 640, 768, 1024 and 1440px: the document does not scroll sideways, no link, button or field is wider than the screen, and no tap target is under 24px. Each width is a frame, not a window — see [0015](../90-decisions/0015-narrow-widths-need-a-frame.md), because Firefox silently clamps a window at about 500px and a check written the obvious way reports widths it never tested |
+| `check_focus.py` | every page tabbed one stop at a time, at desktop and mobile widths: each focused element has a visible ring (SC 2.4.7) and is not entirely covered by the sticky header or the fixed dock (SC 2.4.11). Runs with reduced motion so scrolling is instant, and **refuses to run** if that preference did not take effect — otherwise every position it reads is mid-scroll |
 
 They skip with a notice and exit 0 when Firefox or geckodriver is missing, rather than failing —
 so a machine without a browser can still run everything else.

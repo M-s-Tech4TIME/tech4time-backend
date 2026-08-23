@@ -276,6 +276,24 @@ stops matching the width asked for, stop and read
 Two of the widths are criteria rather than devices: 320px is SC 1.4.10 Reflow, defined at exactly
 that width, and 640px is a 1280px desktop at 200% zoom, which is SC 1.4.4 Resize Text.
 
+### `check_focus.py` fails
+
+**`Reduced motion did not take effect … Refusing to run.`** Not a site failure. The check needs
+`scroll-behavior: auto` so it reads where a focused element came to rest rather than a position it
+is still travelling through. Either the Firefox pref stopped working or the reduced-motion block in
+`assets/css/base.css` moved. Fix that before trusting any focus result.
+
+**`focus is not hidden`** — something covers the focused element entirely (SC 2.4.11). On mobile it
+is almost always the dock, which is `position: fixed` at the bottom. The mitigation is
+`scroll-padding-bottom` on `html`, next to the `scroll-padding-top` that does the same job for the
+sticky header. If a new piece of fixed chrome is added, it needs its own allowance.
+
+**`focus can be seen`** — the element has no visible indicator (SC 2.4.7). Check the computed
+`outline` *and* the pixels: `<summary>` reports the right outline colour while painting nothing, so
+computed style alone will tell you it is fine. Screenshot it focused and unfocused and count the
+differing pixels; zero means no indicator, whatever the stylesheet says. That is why
+`summary:focus-visible` uses a `box-shadow` in `base.css` rather than an outline.
+
 ### `check_docs.py` fails
 
 Code and documentation disagree. Usually a file added and not documented, or a constant changed that
@@ -292,6 +310,18 @@ Current behaviour, documented because it is surprising rather than because it is
 | The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly; keep subdomain docroots outside `public_html` |
 
 That one is a fix scheduled with the Phase B hardening.
+
+**Fixed 2026-08-23** — tabbing on a phone put the focus ring underneath the dock. The browser
+scrolls a focused element into view and was happy to land it exactly where the fixed bar covers it,
+on footer links, phone numbers and the end of the contact form — twelve stops across three pages.
+`html` now carries a `scroll-padding-bottom` below 64em, the mirror of the `scroll-padding-top` that
+already kept the sticky header clear.
+
+**Fixed 2026-08-23** — the certification accordions and the job posts had no focus indicator at all.
+`<summary>` will not take an outline in Firefox: the computed style reports the right colour while
+`outline-style` stays `none`, and an explicit `summary:focus-visible { outline: … }` changes
+nothing. A screenshot settled it — zero pixels differ when a summary is focused, against 307 for an
+ordinary link. It is drawn with a `box-shadow` now.
 
 **Fixed 2026-08-23** — the contact form's consent checkbox was a 23px tap target at the widths where
 its label fits on one line, one pixel under WCAG 2.2 SC 2.5.8. The box is now `1.5rem`, which is 24

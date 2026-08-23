@@ -40,6 +40,7 @@ browser tests speak to geckodriver over its wire protocol — there is no Seleni
 | `check_dark_mode.py` | every page as the browser actually paints it, in both themes |
 | `check_hover.py` | every kind of interactive element visibly responds to a real pointer |
 | `check_responsive.py` | no page scrolls sideways, no control is wider than the screen, and no tap target is under 24px, at seven widths from 320px up |
+| `check_focus.py` | tabbing every page: the focus ring can be seen, and nothing covers it |
 
 Both skip with a notice and exit 0 when Firefox or geckodriver is missing.
 

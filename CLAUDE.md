@@ -97,7 +97,8 @@ Touched the admin, auth or the contact handler? Also `test_admin_auth.py`,
 Touched `lib/store.php`? Also `test_store.py`.
 
 Touched CSS, markup or motion? Also `test_motion.py`, `test_nav.py`, `test_theme.py`,
-`check_hover.py`, `check_dark_mode.py`, `check_responsive.py` — these need Firefox and geckodriver,
+`check_hover.py`, `check_dark_mode.py`, `check_responsive.py`, `check_focus.py` — these need
+Firefox and geckodriver,
 and leave processes behind if interrupted (`pkill firefox geckodriver`).
 
 [docs/10-development/testing.md](docs/10-development/testing.md)
