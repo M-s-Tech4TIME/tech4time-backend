@@ -44,6 +44,7 @@ python3 tools/test_theme.py            # the theme switch, with a real OS prefer
 python3 tools/test_editor.py           # the job post editor, in a real browser
 python3 tools/check_hover.py           # a real pointer over every kind of control
 python3 tools/check_dark_mode.py       # every page as the browser actually paints it
+python3 tools/check_responsive.py      # no page scrolls sideways, 320px and up
 ```
 
 > Interrupted browser runs leave processes behind. `pkill firefox geckodriver` clears them.
@@ -62,7 +63,7 @@ python3 tools/check_dark_mode.py       # every page as the browser actually pain
 | `check_content_model.py` | the model, the editor form and the page renderer describe the same fields — **in both directions**, so a field dropped from the page but left in the form is caught; and that every editor in `ADMIN_PAGE_SECTIONS` is checked either here or by a named test that exists |
 | `check_secrets.py` | no secret is committed; the private store still refuses the web root; no auth bypass constant has returned; cookie flags intact; no password reachable by the audit log; every admin page shape noindexed |
 | `check_docs.py` | every tool, library and admin section is documented; no doc cites a path that does not exist; no internal link is broken; no doc quotes a constant that has changed |
-| `audit_pages.py` | per page: title and meta description, heading order, `alt` text, landmark roles, canonical URL, structured data, internal links resolve |
+| `audit_pages.py` | per page: title and meta description, heading order, `alt` text, landmark roles, no repeated `id`, a label on every form control and an accessible name on every link and button, canonical URL, structured data, internal links resolve |
 
 ### The HTTP tests
 
@@ -95,6 +96,7 @@ private directory under `/tmp` — so a test run cannot disturb your own local a
 | `test_editor.py` | the job post editor driven as a person drives it, including a real sign-in |
 | `check_hover.py` | every interactive element visibly responds to a real pointer |
 | `check_dark_mode.py` | every page in both themes, as painted — catching what a CSS reader cannot, like a token that resolves to the same colour as its background |
+| `check_responsive.py` | every page at 320, 360, 414, 768, 1024 and 1440px: the document does not scroll sideways, and no link, button or field is wider than the screen. Each width is a frame, not a window — see [0015](../90-decisions/0015-narrow-widths-need-a-frame.md), because Firefox silently clamps a window at about 488px and a check written the obvious way reports widths it never tested |
 
 They skip with a notice and exit 0 when Firefox or geckodriver is missing, rather than failing —
 so a machine without a browser can still run everything else.

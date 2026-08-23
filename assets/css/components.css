@@ -70,7 +70,14 @@
   line-height: 1.2;
   text-align: center;
   text-decoration: none;
-  white-space: nowrap;
+  /* nowrap here used to be unconditional, which made a long label wider than
+     the screen. Because .btn clips its own overflow — it has to, for the
+     shine sweep in animations.css — and the CTA band clips again, the far end
+     of the label was simply cut off with nothing to show it had been. A
+     label that fits still sits on one line; only one that cannot fit wraps,
+     and balance keeps the result from going ragged. */
+  max-width: 100%;
+  text-wrap: balance;
   border: var(--border-width) solid transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -1082,6 +1089,12 @@ textarea.field__control {
   justify-content: center;
   gap: var(--space-2xs);
   margin-block-start: var(--space-md);
+  /* Every control here is a 44px tap target, and a slider with six slides
+     needs eight of them. Centred and unwrapped that row is wider than a
+     320px screen, and being centred it hangs off BOTH edges — the right-hand
+     overhang is enough to make the whole page scroll sideways. Wrapping
+     costs a second line on the narrowest phones and nothing anywhere else. */
+  flex-wrap: wrap;
 }
 
 .slider__arrow,

@@ -10,6 +10,9 @@ Checks, per page:
   - a <title> and a meta description, both present and unique across the site
   - a canonical link
   - exactly one <h1>, and no skipped heading levels
+  - no id is used twice
+  - exactly one <main>, plus a <header> and a <footer>; multiple <nav>s named
+  - every form control has a label, and every link and button an accessible name
   - every <img> carries an alt attribute (alt="" is valid for decoration)
   - every <img> carries width and height, or CSS aspect-ratio, to avoid CLS
   - every JSON-LD block parses as valid JSON
@@ -55,6 +58,14 @@ class PageParser(HTMLParser):
         # reporting them as missing icons would be wrong.
         self.element_ids = set()
         self.use_refs = set()
+        # A list, not a set: two elements sharing an id is the thing being
+        # looked for, and a set is exactly the shape that hides it.
+        self.all_ids = []
+        self.landmarks = []
+        self.controls = []
+        self.labelled_ids = set()
+        self.named = []          # (tag, attrs, text, wraps_an_image)
+        self._naming = []
         self._in_title = False
         self._in_jsonld = False
         self._in_heading = None
@@ -65,6 +76,22 @@ class PageParser(HTMLParser):
 
         if a.get("id"):
             self.element_ids.add(a["id"])
+            # <symbol> ids come from the shared sprite, which is inlined into
+            # every page: they are not the page's own markup and repeat by
+            # design, so they are not candidates for a duplicate.
+            if tag != "symbol":
+                self.all_ids.append(a["id"])
+
+        if tag in ("main", "header", "footer", "nav", "aside"):
+            self.landmarks.append((tag, a))
+        if tag in ("input", "select", "textarea"):
+            self.controls.append((tag, a))
+        if tag == "label" and a.get("for"):
+            self.labelled_ids.add(a["for"])
+        if tag in ("a", "button"):
+            self._naming.append([tag, a, [], False])
+        if tag in ("img", "svg") and self._naming:
+            self._naming[-1][3] = True
 
         if tag == "html":
             self.lang = a.get("lang")
@@ -98,6 +125,13 @@ class PageParser(HTMLParser):
                 self.use_refs.add(href[1:])
 
     def handle_endtag(self, tag):
+        if tag in ("a", "button") and self._naming:
+            for i in range(len(self._naming) - 1, -1, -1):
+                if self._naming[i][0] == tag:
+                    t, attrs, chunks, has_image = self._naming.pop(i)
+                    self.named.append((t, attrs, "".join(chunks).strip(), has_image))
+                    break
+
         text = "".join(self._buffer).strip()
         if tag == "title" and self._in_title:
             self.title = text
@@ -113,6 +147,8 @@ class PageParser(HTMLParser):
     def handle_data(self, data):
         if self._in_title or self._in_jsonld or self._in_heading:
             self._buffer.append(data)
+        for frame in self._naming:
+            frame[2].append(data)
 
 
 def pages() -> list[Path]:
@@ -218,6 +254,56 @@ def audit_page(path: Path, seen_titles: dict, seen_descriptions: dict) -> list[s
         if previous and level > previous + 1:
             fail(f"heading jumps h{previous} -> h{level} at {text[:40]!r}")
         previous = level
+
+    # --- identity --------------------------------------------------------
+    # A repeated id makes getElementById, every label's `for`, and every
+    # in-page anchor pick the first one and ignore the rest. Nothing reports
+    # it; the second control simply stops being reachable by its own label.
+    seen = set()
+    for value in parser.all_ids:
+        if value in seen:
+            fail(f"duplicate id={value!r} — only the first is addressable")
+        seen.add(value)
+
+    # --- landmarks -------------------------------------------------------
+    # What a screen reader offers as "jump to". Without <main> there is no
+    # target for the skip link, and the page has no way past the header.
+    kinds = [tag for tag, _ in parser.landmarks]
+    if kinds.count("main") != 1:
+        fail(f"expected exactly one <main>, found {kinds.count('main')}")
+    for required in ("header", "footer"):
+        if required not in kinds:
+            fail(f"no <{required}> landmark")
+
+    navs = [a for tag, a in parser.landmarks if tag == "nav"]
+    if len(navs) > 1:
+        unnamed = [a for a in navs
+                   if not (a.get("aria-label") or a.get("aria-labelledby"))]
+        if unnamed:
+            fail(f"{len(navs)} <nav> landmarks and {len(unnamed)} unnamed — "
+                 f"they are indistinguishable in a landmark list")
+
+    # --- controls and names ----------------------------------------------
+    for tag, a in parser.controls:
+        if a.get("type") in ("hidden", "submit", "button", "reset", "image"):
+            continue
+        if a.get("id") in parser.labelled_ids:
+            continue
+        if a.get("aria-label") or a.get("aria-labelledby") or a.get("title"):
+            continue
+        fail(f"<{tag} name={a.get('name')!r}> has no label — nothing says what "
+             f"it is for once the placeholder is typed over")
+
+    for tag, a, text, has_image in parser.named:
+        if tag == "a" and not a.get("href"):
+            continue          # an anchor target, not a link
+        if a.get("aria-hidden") == "true":
+            continue
+        if text or a.get("aria-label") or a.get("aria-labelledby") or a.get("title"):
+            continue
+        what = a.get("href") if tag == "a" else (a.get("class") or "(no class)")
+        fail(f"<{tag}> has no accessible name: {what}"
+             + ("  — it is an icon, so it needs aria-label" if has_image else ""))
 
     # --- images ----------------------------------------------------------
     for img in parser.images:

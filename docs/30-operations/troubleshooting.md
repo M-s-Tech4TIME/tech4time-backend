@@ -245,6 +245,23 @@ missing layer. [content-model.md](../10-development/backend/content-model.md)
 Read the message before "fixing" it. It only fails for things that would silently weaken the admin,
 and every one of its checks was verified against a deliberate breakage.
 
+### `check_responsive.py` fails
+
+A page scrolls sideways, or a control is wider than the screen, at one of six widths.
+
+The message names the page, the width and the element. Two things to know before chasing it:
+
+- **The overflow may not be where it looks.** An element clipped by an ancestor cannot extend the
+  page, so the check already skips those; what it names is the element that can. A carousel's
+  off-screen slides are never the answer.
+- **`… has no control wider than the screen` is a separate failure from `… does not scroll
+  sideways`,** and the page can look perfect while failing it. `.btn` clips its own overflow for the
+  shine sweep, so an over-long label is cut off in silence rather than pushing the layout.
+
+Each width is measured in a frame, and the run prints the viewport it actually got. If that number
+stops matching the width asked for, stop and read
+[0015](../90-decisions/0015-narrow-widths-need-a-frame.md) — nothing in the run can be believed.
+
 ### `check_docs.py` fails
 
 Code and documentation disagree. Usually a file added and not documented, or a constant changed that
@@ -261,6 +278,13 @@ Current behaviour, documented because it is surprising rather than because it is
 | The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly; keep subdomain docroots outside `public_html` |
 
 That one is a fix scheduled with the Phase B hardening.
+
+**Fixed 2026-08-23** — the About page scrolled sideways on a 320px screen, and its call to action
+was cut off. The specialities slider's control row is eight 44px tap targets, centred, which is
+wider than the screen and overhangs both edges; and `.btn` had an unconditional `white-space:
+nowrap`, so a 34-character label became a 351px button that `.cta-band` clipped. Neither was
+visible to any check, because Firefox will not size a window below about 488px and nothing here had
+ever measured a narrower one. `tools/check_responsive.py` now does, in a frame.
 
 **Fixed 2026-08-23** — a careers field drifting between model, form and renderer unnoticed.
 `check_content_model.py` could never have caught it: both sides of that page are loops, so its
