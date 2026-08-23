@@ -90,8 +90,16 @@ app will also accept typed in, and `img-src 'self' data:` would allow it if that
 
 **Ten recovery codes** (`AUTH_RECOVERY`), shown once at enrolment and stored hashed. Each signs you
 in once in place of the app. They are hashed under `t4t_key('recovery')` — a key derived from
-`secret.key` — which has a consequence worth knowing:
-[losing the master key silently kills them](../../30-operations/secrets-recovery.md).
+`secret.key` — so [losing the master key kills all ten](../../30-operations/secrets-recovery.md).
+
+A stored code is `fingerprint:digest`, where the fingerprint names the key it was made under
+(`t4t_key_fingerprint()`). That is what lets a dead code be recognised as dead rather than merely
+failing to match, so `admin-cli list` can report `10 DEAD` instead of counting entries.
+
+The marker lives on the value rather than on the account because seven places write a secret, and a
+stamp applied at each of them is a stamp somebody forgets at the eighth. Anything that produces a
+stored code produces the marker with it. Codes written before the marker existed are still accepted
+on their digest alone — a different key would not have produced that digest either.
 
 ---
 

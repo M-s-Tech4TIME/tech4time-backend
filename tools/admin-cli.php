@@ -148,15 +148,46 @@ function cmd_list(): void
     say(sprintf('  %-16s %-28s %-8s %-7s %s',
         'USER', 'EMAIL', '2FA', 'CODES', 'LAST SIGN-IN'));
 
+    $anyDead = false;
+
     foreach ($accounts as $row) {
-        $a = auth_defaults($row);
-        say(sprintf('  %-16s %-28s %-8s %-7d %s',
+        $a     = auth_defaults($row);
+        $codes = auth_recovery_state($a);
+
+        /* Not a count of what is stored. Recovery codes are hashed under a key
+           derived from secret.key, so if that file was lost and remade, all ten
+           are permanently unverifiable — and a count of the entries reports ten
+           of them right up until somebody tries one. */
+        if ($codes['dead'] > 0) {
+            $anyDead = true;
+            $shown = sprintf('%d DEAD', $codes['dead']);
+        } elseif ($codes['unmarked'] > 0) {
+            $shown = sprintf('%d ?', $codes['unmarked'] + $codes['live']);
+        } else {
+            $shown = (string)$codes['live'];
+        }
+
+        say(sprintf('  %-16s %-28s %-8s %-7s %s',
             $a['user'],
             $a['email'],
             $a['totp'] !== '' ? 'paired' : 'NONE',
-            count((array)$a['recovery']),
+            $shown,
             $a['last_login'] !== '' ? $a['last_login'] : 'never'
         ) . ($a['disabled'] ? '  [disabled]' : ''));
+    }
+
+    if ($anyDead) {
+        say('');
+        say('  Codes marked DEAD were made under a different secret.key and can');
+        say('  never be verified again. The password cannot be either, for the');
+        say('  same reason.');
+        say('');
+        say('  Restore the original ~/t4t-private/secret.key from backup if you');
+        say('  still have it. If it is gone for good, set a new password and');
+        say('  issue new codes, both of which are made under the key you have now:');
+        say('');
+        say('      php ~/admin-cli.php passwd');
+        say('      php ~/admin-cli.php codes');
     }
 }
 

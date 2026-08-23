@@ -210,10 +210,13 @@ check nobody has watched fail is a check nobody should believe. Keep that going.
 | | Consequence | Mitigation |
 |---|---|---|
 | The containment check compares against the *requesting* document root | a store inside a sibling docroot passes and is web-reachable | set `T4T_PRIVATE`; keep subdomain docroots outside `public_html` — [environments.md](../20-deployment/environments.md) |
-| Recovery codes derive from `secret.key` | losing the key kills them silently | run `codes` after any key loss |
 
-Both scheduled with the Phase B hardening.
+Scheduled with the Phase B hardening.
 
+> **Fixed 2026-08-23.** Recovery codes derived from `secret.key` died silently when it was lost —
+> `admin-cli list` counted stored entries and reported ten. Each code now carries the fingerprint of
+> the key that made it, so the CLI reports `10 DEAD` and says what to do.
+>
 > **Fixed 2026-08-23.** `store_read()` could not tell a missing file from a corrupt one, so a
 > damaged `admins.json` presented as a fresh install and offered setup — whose first save copied the
 > damage over the `.bak`. `store_state()` now tells them apart: the admin refuses to start, and

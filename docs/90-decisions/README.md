@@ -31,3 +31,4 @@ new record superseding the old one rather than quietly doing the opposite.
 | [0011](0011-two-repositories.md) | Two repositories, two hosts | accepted, **not built** |
 | [0012](0012-motion-may-not-gate.md) | Motion may decorate, never gate | accepted |
 | [0013](0013-damaged-stores-refuse.md) | A damaged store refuses; it never looks empty | accepted |
+| [0014](0014-derived-secrets-name-their-key.md) | A value derived from the master key carries the key's name | accepted |

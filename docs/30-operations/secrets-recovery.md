@@ -90,7 +90,7 @@ Sign in, pair a new authenticator, save the new codes.
 | The account still lists | yes |
 | The **correct** password verifies | **no** |
 | The authenticator still works | yes — the TOTP secret is not peppered |
-| Recovery codes | **silently dead** — see the trap below |
+| Recovery codes | **dead, and reported as dead** — `admin-cli list` shows `10 DEAD` |
 
 Every password was hashed with a pepper derived from that file. Without it, nothing verifies.
 A new key is generated automatically, so the site keeps running and simply rejects everybody.
@@ -102,14 +102,21 @@ php ~/admin-cli.php passwd        # sets a new password under the new key
 php ~/admin-cli.php codes         # REQUIRED — see below
 ```
 
-> ### The trap
+> ### Why `codes` is not optional
 >
 > Recovery codes are hashed under `t4t_key('recovery')`, which derives from `secret.key`. When that
-> file is lost, **every recovery code stops working and nothing says so** — `admin-cli list` still
-> reports `CODES 10`, and all ten will fail.
+> file is lost, **every recovery code stops working.**
 >
-> **Always run `codes` after a key loss.** You would otherwise discover this on the day you needed
-> one, which is the worst possible day.
+> Each stored code carries the fingerprint of the key that made it, so `admin-cli list` says so
+> rather than counting entries:
+>
+> ```
+>   USER             EMAIL           2FA      CODES     LAST SIGN-IN
+>   admin            admin@…         paired   10 DEAD   never
+> ```
+>
+> It used to print `10`, and all ten would fail — which you would have discovered on the day you
+> needed one, the worst possible day. Run `codes` and the new ones are live again.
 
 Losing the key is survivable. It costs everyone a password reset and a new set of codes. That is
 why it is worth backing up — [backups.md](backups.md).

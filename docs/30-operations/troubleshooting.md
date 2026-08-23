@@ -258,11 +258,14 @@ Current behaviour, documented because it is surprising rather than because it is
 
 | Trap | Consequence | Until it is fixed |
 |---|---|---|
-| Recovery codes are hashed under a key derived from `secret.key` | losing the key kills all ten silently; `admin-cli list` still reports them | run `codes` after any key loss |
 | The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly; keep subdomain docroots outside `public_html` |
 | `check_content_model.py` covers the contact page only | a careers field can drift between model, form and renderer unnoticed | change those three files together, deliberately |
 
-The first two are fixes scheduled with the Phase B hardening. The third needs a `SUBJECTS` entry.
+The first is a fix scheduled with the Phase B hardening. The second needs a `SUBJECTS` entry.
+
+**Fixed 2026-08-23** — recovery codes dying silently with `secret.key`. Stored codes carry the
+fingerprint of the key that made them, so `admin-cli list` prints `10 DEAD` and says what to run
+instead of counting entries. Covered by `tools/test_admin_auth.py`.
 
 **Fixed 2026-08-23** — `store_read()` answering `null` for both a missing and a corrupt file. They
 are told apart by `store_state()` now: the admin refuses to start on a damaged account file instead

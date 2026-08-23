@@ -52,6 +52,10 @@ import urllib.request
 from http.cookiejar import CookieJar
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import admin_session  # noqa: E402  -- needs the path line above
+
 ROOT = Path(__file__).resolve().parent.parent
 ROUTER = ROOT / "tools" / "dev-router.php"
 
@@ -672,6 +676,89 @@ def can_dial_from(ip: str) -> bool:
         return False
 
 
+def test_codes_die_with_the_key(r: Results):
+    """
+    Losing secret.key kills every recovery code, and that has to be visible.
+
+    Recovery codes are hashed under a key derived from secret.key. Lose that
+    file and all ten become permanently unverifiable — but the account still
+    holds ten entries, and counting entries is what the CLI did. The one place
+    a person checks whether they still have a way in reported that they did,
+    right up until they tried one.
+
+    Stored codes now carry the fingerprint of the key that made them, so a dead
+    code is recognisable as dead rather than merely failing to match. This
+    checks both halves: that it is reported, and that it is actually refused.
+
+    No HTTP server here — the CLI is the surface this shows up on, and it is
+    also the surface somebody reaches for once they cannot sign in.
+    """
+    r.section("recovery codes after the key is lost")
+
+    work = Path(tempfile.mkdtemp(prefix="t4t-keyloss-"))
+    private = work / "private"
+    env = dict(os.environ, T4T_PRIVATE=str(private))
+
+    def cli(*args) -> str:
+        done = subprocess.run(
+            ["php", str(ROOT / "tools" / "admin-cli.php"), *args],
+            capture_output=True, text=True, timeout=60, cwd=str(ROOT), env=env,
+        )
+        return done.stdout + done.stderr
+
+    def accepts(code: str) -> str:
+        """Whether auth_recovery_use() would spend this code. 'true'/'false'."""
+        done = subprocess.run(
+            ["php", "-r",
+             "require 'lib/auth.php'; $a = auth_find($argv[1]); "
+             "var_export(auth_recovery_use($a, $argv[2]));",
+             "--", USER, code],
+            capture_output=True, text=True, timeout=60, cwd=str(ROOT), env=env,
+        )
+        return (done.stdout + done.stderr).strip()
+
+    try:
+        admin_session.make_account(private, user=USER, password=PASSWORD)
+        issued = cli("codes", USER)
+        codes = re.findall(r"\b[0-9A-F]{5}-[0-9A-F]{5}\b", issued)
+
+        r.check("ten codes are issued", len(codes) == 10, str(len(codes)))
+
+        stored = json.loads((private / "admins.json").read_text())["accounts"][0]["recovery"]
+        r.check("each is stored with the key that made it",
+                len(stored) == 10 and all(":" in h for h in stored), str(stored[:1]))
+
+        out = cli("list")
+        r.check("the cli counts ten while the key is intact",
+                re.search(r"\s10\s", out) is not None and "DEAD" not in out, out)
+        r.check("and a code is accepted", accepts(codes[0]) == "true")
+
+        # Lose the key. The next call mints a fresh one, which is the moment
+        # every derived secret quietly stops being verifiable.
+        (private / "secret.key").unlink()
+
+        out = cli("list")
+        r.check("with the key gone the cli reports them dead", "10 DEAD" in out, out)
+        r.check("and never shows a usable count beside it",
+                re.search(r"\s10\s+(?!DEAD)", out) is None, out)
+        r.check("and says the password went with them",
+                "password cannot be either" in out, out)
+        r.check("and says what to do instead",
+                "admin-cli.php passwd" in out and "admin-cli.php codes" in out, out)
+
+        r.check("and a dead code is refused, not merely reported",
+                accepts(codes[1]) == "false")
+
+        # Issuing new ones under the key we now have puts it right.
+        cli("codes", USER)
+        fresh = re.findall(r"\b[0-9A-F]{5}-[0-9A-F]{5}\b", cli("codes", USER))
+        out = cli("list")
+        r.check("new codes are live again", "DEAD" not in out and "10" in out, out)
+        r.check("and one of them works", accepts(fresh[0]) == "true")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
 def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
     """
     The gate the setup key exists for: a request that did not come from this
@@ -910,6 +997,7 @@ def main() -> None:
         proc.wait(timeout=5)
 
     test_setup_key_demanded_remotely(r, sendmail)
+    test_codes_die_with_the_key(r)
     test_refuses_damaged_accounts(r, sendmail)
     test_refuses_bad_setup(r, sendmail)
 

@@ -266,3 +266,21 @@ function t4t_key(string $purpose): string
 {
     return hash_hmac('sha256', $purpose, t4t_master_key(), true);
 }
+
+/**
+ * A short name for the master key, which identifies it without revealing it.
+ *
+ * Stored alongside anything derived from the key, so that a value made under a
+ * key that is now gone can be recognised as such rather than merely failing to
+ * match. The difference matters: "wrong code" sends somebody hunting for the
+ * right one, and "these were made under a key this server no longer has" sends
+ * them to their backups.
+ *
+ * An HMAC of a fixed label under the key, truncated. Reversing it is the same
+ * problem as reversing the key, and sixteen hex characters is far more than
+ * enough to tell two random 32-byte keys apart.
+ */
+function t4t_key_fingerprint(): string
+{
+    return substr(bin2hex(t4t_key('key-fingerprint')), 0, 16);
+}

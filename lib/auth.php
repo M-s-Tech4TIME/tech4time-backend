@@ -266,11 +266,78 @@ function auth_recovery_make(int $count = AUTH_RECOVERY): array
     return [$plain, $hash];
 }
 
+/** A recovery code reduced to what is compared. */
+function auth_recovery_clean(string $code): string
+{
+    return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code) ?? '');
+}
+
+/**
+ * A stored recovery code: the key it was made under, then the digest.
+ *
+ * The fingerprint is carried on the value itself rather than recorded once per
+ * account, because there are seven places that write a secret and a stamp
+ * applied at each of them is a stamp somebody will forget at the eighth. Here
+ * it cannot be forgotten — anything that produces a stored code produces the
+ * marker with it, and anything that reads one can see which key it belongs to.
+ *
+ * This is what makes a dead code recognisable. Recovery codes are hashed under
+ * a key derived from secret.key, so losing that file makes all ten permanently
+ * unverifiable — while the account still lists ten of them and every count of
+ * them still said ten.
+ */
 function auth_recovery_hash(string $code): string
 {
-    $clean = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code) ?? '');
+    return t4t_key_fingerprint() . ':'
+         . hash_hmac('sha256', auth_recovery_clean($code), t4t_key('recovery'));
+}
 
-    return hash_hmac('sha256', $clean, t4t_key('recovery'));
+/** Whether one stored value is this code, under a key we still have. */
+function auth_recovery_matches(string $stored, string $code): bool
+{
+    $digest = hash_hmac('sha256', auth_recovery_clean($code), t4t_key('recovery'));
+
+    /* Written before codes carried their key. It can only have been made under
+       the key we hold, because any other one would not produce this digest
+       either — so comparing the digest alone is exactly as safe as it was. */
+    if (!str_contains($stored, ':')) {
+        return hash_equals($stored, $digest);
+    }
+
+    return hash_equals($stored, t4t_key_fingerprint() . ':' . $digest);
+}
+
+/**
+ * How many of an account's codes stand a chance, and how many cannot.
+ *
+ * Counting the entries says ten whatever has happened to the key. This says
+ * what a person actually wants to know.
+ *
+ * @return array{live:int, dead:int, unmarked:int}
+ */
+function auth_recovery_state(array $account): array
+{
+    $mark  = t4t_key_fingerprint() . ':';
+    $state = ['live' => 0, 'dead' => 0, 'unmarked' => 0];
+
+    foreach ((array)($account['recovery'] ?? []) as $stored) {
+        if (!is_string($stored) || $stored === '') {
+            continue;
+        }
+
+        if (!str_contains($stored, ':')) {
+            /* Predates the marker. Nothing here can tell whether it still
+               verifies, and guessing either way would be a claim we cannot
+               support — so it is reported as its own thing. */
+            $state['unmarked']++;
+        } elseif (str_starts_with($stored, $mark)) {
+            $state['live']++;
+        } else {
+            $state['dead']++;
+        }
+    }
+
+    return $state;
 }
 
 /**
@@ -279,12 +346,11 @@ function auth_recovery_hash(string $code): string
  */
 function auth_recovery_use(array &$account, string $code): bool
 {
-    $want = auth_recovery_hash($code);
     $left = [];
     $used = false;
 
     foreach ((array)($account['recovery'] ?? []) as $stored) {
-        if (!$used && is_string($stored) && hash_equals($stored, $want)) {
+        if (!$used && is_string($stored) && auth_recovery_matches($stored, $code)) {
             $used = true;
             continue;
         }
