@@ -46,6 +46,7 @@ to change things, how to deploy it, and what to do when something breaks.
 | Setting up the cPanel host | [20-deployment/cpanel-host-setup.md](20-deployment/cpanel-host-setup.md) |
 | Turning on the admin sign-in | [20-deployment/admin-activation.md](20-deployment/admin-activation.md) |
 | Pushing an update to a live site | [20-deployment/routine-deploys.md](20-deployment/routine-deploys.md) |
+| Automating the checks and the deploy | [20-deployment/ci-cd.md](20-deployment/ci-cd.md) |
 | Where the private store goes | [20-deployment/environments.md](20-deployment/environments.md) |
 
 ### Something is wrong

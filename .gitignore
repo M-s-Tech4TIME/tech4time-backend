@@ -42,3 +42,6 @@ t4t-private/
 .dev-private/
 *.key
 setup-token.txt
+
+# The upload set, assembled by tools/build_deploy_set.py on demand.
+_deploy/

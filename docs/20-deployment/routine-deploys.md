@@ -141,10 +141,21 @@ There is no deploy history — the server holds one copy of the site.
 
 ---
 
-## When CI/CD arrives
+## Doing it automatically instead
 
-The planned GitHub Actions workflow is `test` on pull request, `test` then `deploy` on push to
-`main`, deploying by rsync over SSH with a deploy key.
+The exclude list above is now also a program — `tools/build_deploy_set.py` — which builds the
+upload set from an allow list and asserts what is in it. **Losing live content has stopped
+depending on anyone remembering a flag.**
 
-The exclude list above becomes a `.deployignore`, which is an improvement worth naming: **losing
-live content stops depending on anyone remembering an exclude flag.** Not built yet.
+```bash
+python3 tools/build_deploy_set.py --check     # what would go, and what must not
+python3 tools/build_deploy_set.py --out _deploy
+rsync -avz --delete _deploy/site/ user@tech4time.bd:~/public_html/
+rsync -av --ignore-existing _deploy/seed/ user@tech4time.bd:~/public_html/content/
+```
+
+That second line is the whole of the content rule: `--ignore-existing` creates what is absent and
+overwrites nothing, so a job post on the host always wins.
+
+`.github/workflows/test.yml` runs every check on every push. The deploy half is described in
+[ci-cd.md](ci-cd.md), including the one thing still to decide — how the files reach the host.

@@ -21,6 +21,7 @@ python3 tools/check_content_model.py   # model, form and renderer still agree
 python3 tools/check_secrets.py         # nothing secret committed; no protection removed
 python3 tools/check_docs.py            # the docs still describe the code
 python3 tools/audit_pages.py           # SEO, accessibility, structure, internal links
+python3 tools/build_deploy_set.py --check   # nothing secret or local is bound for the server
 ```
 
 ## When you touched the admin, the auth, or the contact handler
@@ -65,6 +66,7 @@ python3 tools/check_focus.py           # tab every page: the ring is visible and
 | `check_secrets.py` | no secret is committed; the private store still refuses the web root; no auth bypass constant has returned; cookie flags intact; no password reachable by the audit log; every admin page shape noindexed |
 | `check_docs.py` | every tool, library and admin section is documented; no doc cites a path that does not exist; no internal link is broken; no doc quotes a constant that has changed |
 | `audit_pages.py` | per page: title and meta description, heading order, `alt` text, landmark roles, no repeated `id`, a label on every form control and an accessible name on every link and button, canonical URL, structured data, internal links resolve |
+| `build_deploy_set.py --check` | the upload set holds no `content/`, `tools/`, `docs/` or key, keeps the `.htaccess` that blocks them, and carries a careers seed with no job posts |
 
 ### The HTTP tests
 

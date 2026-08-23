@@ -1,0 +1,120 @@
+# Every check this repository has, run on the machine rather than on a promise.
+#
+# The pre-commit list in docs/10-development/testing.md is what a person is
+# asked to run. This is the same list run by something that cannot forget, and
+# deploy.yml requires it: what gates a merge and what gates a release are the
+# same set of checks, deliberately, so that "it passed on my machine" and "it
+# is safe to put on the server" stop being two different claims.
+name: test
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A second push to the same branch makes the first run's answer irrelevant.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # Printed, not asserted. The host runs PHP 8.2.33 and the runner will
+      # drift ahead of it; that is worth seeing in the log rather than
+      # discovering when something passes here and fails there.
+      - name: versions
+        run: |
+          python3 -V
+          php -v | head -1
+
+      - run: python3 tools/check_contrast.py
+      - run: python3 tools/check_shared_markup.py
+      - run: python3 tools/check_content_model.py
+      - run: python3 tools/check_secrets.py
+      - run: python3 tools/check_docs.py
+      - run: python3 tools/audit_pages.py
+      - run: python3 tools/inject_icons.py --check
+      - run: python3 tools/build_deploy_set.py --check
+
+  server:
+    name: php
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # These drive a real PHP server and a real sign-in, and the private
+      # store lands beside the checkout the same way it lands beside the
+      # document root on the host.
+      - run: php -v | head -1
+      - run: python3 tools/test_store.py
+      - run: python3 tools/test_admin_auth.py
+      - run: python3 tools/test_contact_handler.py
+      - run: python3 tools/test_careers_admin.py
+      - run: python3 tools/test_contact_admin.py
+
+  browser:
+    name: firefox
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # From Mozilla's tarball rather than apt. On Ubuntu 24.04 `apt install
+      # firefox` is a transitional package that pulls the snap, which does not
+      # run headless in a runner; and firefox-esr installs a binary called
+      # firefox-esr, which every suite below would fail to find and skip over.
+      - name: install firefox and geckodriver
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libdbus-glib-1-2 libgtk-3-0t64 libasound2t64
+          curl -sSfL -o /tmp/firefox.tar.xz \
+            "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US"
+          sudo tar -xJf /tmp/firefox.tar.xz -C /opt
+          sudo ln -sf /opt/firefox/firefox /usr/local/bin/firefox
+          GD=0.35.0
+          curl -sSfL -o /tmp/gd.tar.gz \
+            "https://github.com/mozilla/geckodriver/releases/download/v${GD}/geckodriver-v${GD}-linux64.tar.gz"
+          sudo tar -xzf /tmp/gd.tar.gz -C /usr/local/bin geckodriver
+          sudo chmod +x /usr/local/bin/geckodriver
+
+      - name: pillow
+        run: pip install --quiet Pillow
+
+      # Every browser suite calls shutil.which("firefox") — that exact name —
+      # and exits 0 with a notice when it is missing. That is right on a laptop
+      # and wrong here, where a failed install would turn eight suites into
+      # eight silent passes. So the three names they look for are required to
+      # be present before any of them runs.
+      - name: the browser is really here
+        run: |
+          set -euo pipefail
+          for n in php firefox geckodriver; do
+            command -v "$n" || { echo "::error::$n is not on PATH — the browser suites would have skipped"; exit 1; }
+          done
+          firefox --version
+          geckodriver --version | head -1
+
+      - run: python3 tools/test_nav.py
+      - run: python3 tools/test_theme.py
+      - run: python3 tools/test_motion.py
+      - run: python3 tools/test_editor.py
+      - run: python3 tools/check_hover.py
+      - run: python3 tools/check_dark_mode.py
+      - run: python3 tools/check_responsive.py
+      - run: python3 tools/check_focus.py
+
+      # These leave processes behind when a step is cancelled, and a runner
+      # that hangs on to Firefox never finishes.
+      - name: clean up
+        if: always()
+        run: pkill -f geckodriver || true; pkill -f firefox || true
