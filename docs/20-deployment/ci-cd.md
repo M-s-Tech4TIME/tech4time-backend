@@ -85,12 +85,23 @@ parallel:
 |---|---|---|
 | `checks` | the seven static checks, plus `build_deploy_set.py --check` | python, php |
 | `php` | the five suites that drive a real PHP server and a real sign-in | php |
-| `firefox` | the eight browser suites | firefox, geckodriver, Pillow |
+| `firefox` | the eight browser suites, all of them, then a verdict | firefox, geckodriver, Pillow |
 
 It is deliberately the **same list** as the pre-commit set in
 [testing.md](../10-development/testing.md). What gates a merge and what gates a release are one set
 of checks, so that "it passed on my machine" and "it is safe to put on the server" stop being two
 different claims.
+
+### All eight suites run before the job reports
+
+The `firefox` job runs the browser suites in **one step**, collects the failures and reports at the
+end, rather than giving each suite a step of its own.
+
+A step per suite stops at the first failure, and that hid more than it looked like it would:
+`test_motion.py` failed on its third check, so `test_editor.py`, `check_hover.py`,
+`check_dark_mode.py`, `check_responsive.py` and `check_focus.py` — five suites, most of the
+coverage — had **never executed in CI at all**. Fixing them would have meant one three-minute round
+trip per suite to discover the next problem.
 
 ### The silent-pass trap, and the guard against it
 

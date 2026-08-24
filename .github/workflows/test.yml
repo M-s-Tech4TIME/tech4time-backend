@@ -110,14 +110,34 @@ jobs:
           firefox --version
           geckodriver --version | head -1
 
-      - run: python3 tools/test_nav.py
-      - run: python3 tools/test_theme.py
-      - run: python3 tools/test_motion.py
-      - run: python3 tools/test_editor.py
-      - run: python3 tools/check_hover.py
-      - run: python3 tools/check_dark_mode.py
-      - run: python3 tools/check_responsive.py
-      - run: python3 tools/check_focus.py
+      # All eight, then a verdict — not eight steps that stop at the first
+      # failure. A step-per-suite hides everything behind the earliest
+      # problem: test_motion failed on its third check and the five suites
+      # after it had never run in CI at all, so each fix would have revealed
+      # the next one a three-minute round trip at a time.
+      #
+      # Grouped so the log is still readable, and the failing names are
+      # repeated at the end where nobody has to scroll for them.
+      - name: browser suites
+        run: |
+          set -uo pipefail
+          failed=""
+          for s in test_nav test_theme test_motion test_editor \
+                   check_hover check_dark_mode check_responsive check_focus; do
+            echo "::group::$s"
+            if python3 "tools/$s.py"; then
+              echo "-- $s passed"
+            else
+              echo "-- $s FAILED"
+              failed="$failed $s"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::failing suites:$failed"
+            exit 1
+          fi
+          echo "all eight browser suites passed"
 
       # These leave processes behind when a step is cancelled, and a runner
       # that hangs on to Firefox never finishes.
