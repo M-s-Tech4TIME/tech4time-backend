@@ -25,6 +25,7 @@ Each rung below was tested against a deliberately broken store, not reasoned abo
 | `admins.json` corrupted | — | [6](#6-adminsjson-corrupted) |
 | The entire store | — | [7](#7-the-whole-store-is-gone) |
 | Nothing — but it may have been stolen | everything | [8](#8-suspected-compromise) |
+| `secret.key` was **seen**, `admins.json` was not | everything | [9](#9-the-master-key-was-exposed-and-nothing-else-was) |
 
 Every rung has one below it. **The bottom rung is the ability to run a command on the server**, which
 cannot be forgotten, expire, or be thrown away with an old phone.
@@ -196,6 +197,97 @@ Look for successful sign-ins you do not recognise, and for `setup-token-failed`.
 
 Finally: `rm ~/secret.key.old`, and change the cPanel password too — anyone who read that file had
 filesystem access, which is a bigger problem than the admin account.
+
+---
+
+## 9. The master key was exposed, and nothing else was
+
+`secret.key` was displayed, pasted, screenshotted, mailed or otherwise seen — but `admins.json` was
+not. This happens more often than rung 8 does, usually by `cat`-ing a file to check it exists, and it
+is a **much less alarming situation** that the procedure above would badly over-treat.
+
+### What it actually means
+
+The master key grants nothing on its own. It is not a password and no login accepts it. Its job is to
+be a *pepper*: mixed into password hashing so that stealing `admins.json` is not enough to attack the
+password offline. `lib/auth.php` puts it plainly —
+
+> The pepper is the part a stolen file does not include.
+
+That is precisely what it has stopped being, and that is the whole of the damage.
+
+| | Exposed? | Consequence |
+|---|---|---|
+| Password hash | no — it is in `admins.json` | nothing to attack yet |
+| Authenticator secret | no — also in `admins.json` | **your app keeps working; do not re-pair** |
+| Recovery codes | no | still valid until you rotate |
+| The pepper | **yes** | offline attack becomes feasible *if* `admins.json` ever leaks too |
+
+So there is no immediate exposure, and no reason to panic. The reason to act is that the two halves
+were only ever safe because they were separate, and one of them is now somewhere it cannot be
+recalled from — a terminal scrollback, a chat log, a screenshot in someone's photos.
+
+**Do not follow rung 8 for this.** It tells you to clear the authenticator and pair a new one, which
+is right when `admins.json` was read and pointless when it was not. Re-pairing costs you a working
+second factor for no gain.
+
+### Rotate
+
+`admin-cli.php` is never deployed. Upload `tools/admin-cli.php` to the **home directory**, above
+`public_html`, and delete it afterwards.
+
+```bash
+# 1. retire the exposed key. The next PHP run mints a new one automatically.
+mv ~/t4t-private/secret.key ~/secret.key.old
+
+# 2. a new password hash under the new key. Ends every session.
+php ~/admin-cli.php passwd
+
+# 3. new recovery codes. The old ten were hashed under the old key and are
+#    already dead — this is not optional, it is how you get ten back.
+php ~/admin-cli.php codes
+
+# 4. read the log while you are here
+php ~/admin-cli.php log 50
+```
+
+`passwd` does not ask for the old password, and cannot: the old hash was made under a key the server
+no longer has, so it can no longer be verified. That is the point of the command.
+
+**Step 3 is not optional.** After step 1 your recovery codes are gone whether you reissue them or
+not, and [ADR 0014](../90-decisions/0014-derived-secrets-name-their-key.md) means they will at least
+tell you so rather than merely failing to match. Skipping it leaves you one lost phone away from
+rung 4.
+
+Then clean up both upload-run-delete files:
+
+```bash
+rm ~/secret.key.old ~/admin-cli.php
+```
+
+### What you do **not** need to do
+
+- **Re-pair the authenticator.** The TOTP secret lives in `admins.json`, which was not exposed. It is
+  stored as-is and always has been — the server has to compute the same code your phone does, so it
+  cannot be hashed. The master key never protected it, and its exposure does not touch it.
+- **Change the cPanel password.** Rung 8 says to, because reading `admins.json` implies filesystem
+  access by someone else. Showing yourself your own key implies nothing of the sort.
+- **Redeploy anything.** No file in `public_html/` is involved.
+
+### Checking a key without reading it
+
+The reason this rung exists is that somebody wanted to confirm a key was present or matched a backup,
+and reached for `cat`. `ls -la ~/t4t-private/` answers "is it there". For "is it the same one",
+compare fingerprints — `t4t_key_fingerprint()` in `lib/private.php` exists for exactly this, and is
+an HMAC of a fixed label under the key, truncated:
+
+```bash
+cd ~/public_html && php -r "require 'lib/private.php'; echo t4t_key_fingerprint(), \"\n\";"
+```
+
+Sixteen hex characters, safe to paste anywhere, and reversing it is the same problem as reversing the
+key. Anything derived from the key already stores this beside itself, which is how a dead recovery
+code can say *"made under a key this server no longer has"* instead of just *"wrong code"*.
 
 ---
 
