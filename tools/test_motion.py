@@ -867,6 +867,7 @@ var frames = [], last = performance.now(), started = last;
   done({
     frames: frames.length,
     median: +(sorted[Math.floor(sorted.length / 2)] || 0).toFixed(1),
+    p95: +(sorted[Math.floor(sorted.length * 0.95)] || 0).toFixed(1),
     worst: +(sorted[sorted.length - 1] || 0).toFixed(1)
   });
 })();
@@ -905,6 +906,7 @@ var frames = [], last = performance.now(), n = 0;
   done({
     frames: frames.length,
     median: +(sorted[Math.floor(sorted.length / 2)] || 0).toFixed(1),
+    p95: +(sorted[Math.floor(sorted.length * 0.95)] || 0).toFixed(1),
     worst: +(sorted[sorted.length - 1] || 0).toFixed(1),
     before: before,
     after: document.querySelector('.tech-sphere__list')
@@ -949,9 +951,10 @@ def sphere_smoothness(b: Browser, origin: str, r: Results) -> None:
     drag = b.js_async(DRAG_SAMPLER)
 
     print(f"    a page with no sphere: {base['median']}ms median, "
-          f"{base['worst']}ms worst")
+          f"{base['p95']}ms p95, {base['worst']}ms worst")
     for name, d in (("drifting", idle), ("steered", hover), ("dragged", drag)):
-        print(f"    {name:>22}: {d['median']}ms median, {d['worst']}ms worst")
+        print(f"    {name:>22}: {d['median']}ms median, {d['p95']}ms p95, "
+              f"{d['worst']}ms worst")
 
     # Turning fifty logos in 3D is not free, but it should not be halving the
     # frame rate either.
@@ -977,6 +980,8 @@ def sphere_smoothness(b: Browser, origin: str, r: Results) -> None:
         renderer = b.js(RENDERER) or "unknown"
     except SystemExit:
         renderer = "unknown (the probe itself failed)"
+    if renderer in ("none", "unknown"):
+        renderer = f"{renderer} (WebGL could not say)"
     print(f"    drawn by {renderer} — software everywhere, so these are CPU "
           f"numbers on any machine")
     print(f"    gate {gate:.0f}ms a frame (about 30fps); watching for "
@@ -1001,11 +1006,33 @@ def sphere_smoothness(b: Browser, origin: str, r: Results) -> None:
             drag["before"] != drag["after"],
             f"--rot-y stayed at {drag['after']!r} throughout")
 
+    # THE MAXIMUM IS THE WRONG STATISTIC, AND THIS COST A DEPLOY TO LEARN
+    # This asserted the single worst frame against max(baseline x2, 50ms). Two
+    # runs of identical code on the same runner measured 44ms and 55ms — one
+    # passed, one failed the merge. A maximum over a hundred samples is the
+    # most outlier-sensitive number available, and on a shared runner a single
+    # stretched frame is as likely to be the hypervisor as the page.
+    #
+    # It is the same fault as the median budget above, which was fixed one
+    # commit earlier while this was left alone: a threshold with less margin
+    # than the noise. Fixed properly here as two separate claims, because
+    # "janky" and "frozen" are different failures and deserve different
+    # numbers.
+    p95 = max(idle["p95"], hover["p95"], drag["p95"])
+    r.check("frames are steady, not merely fast on average",
+            p95 <= max(base["p95"] * 2, 50),
+            f"95th percentile frame was {p95}ms, against {base['p95']}ms "
+            f"without the sphere — one slow frame is noise, one frame in "
+            f"twenty is jank")
+
+    # And a ceiling no amount of scheduling noise explains. A quarter of a
+    # second is a visible freeze; nothing short of a genuinely blocked main
+    # thread reaches it.
     worst = max(idle["worst"], hover["worst"], drag["worst"])
-    r.check("and no single frame stalls",
-            worst <= max(base["worst"] * 2, 50),
+    r.check("and nothing ever freezes",
+            worst <= 250,
             f"worst frame was {worst}ms, against {base['worst']}ms without "
-            "the sphere")
+            "the sphere — that is long enough for a person to see")
 
 
 def printing(b: Browser, origin: str, r: Results) -> None:

@@ -142,3 +142,27 @@ build step, and a dependency is a thing that has to be resurrected before a typo
 If your change makes a protection that could be removed without anything failing, add the check to
 `check_secrets.py` — and **prove the check works by deliberately breaking the thing it guards**
 before you trust it.
+
+### If you are measuring time
+
+The performance checks in `test_motion.py` cost two failed CI runs and one failed merge before they
+were written correctly. The rules that came out of it:
+
+**A threshold needs more margin than the machine has noise.** The frame budget was `baseline + 3ms`
+and passed locally by 1ms. On a slower CPU the same code measured 7ms over, and failed. A threshold
+that passes by 1ms is not a threshold; it is a coincidence waiting to be reported as a regression.
+
+**Never assert on a maximum.** The stall check compared the single worst frame of about a hundred
+against 50ms. Two runs of identical code on the same runner measured 44ms and 55ms — one passed,
+one failed. A maximum is the most outlier-sensitive number available, and on a shared runner one
+stretched frame is as likely to be the hypervisor as the page. Use a percentile for "is it steady",
+and keep the maximum only for a ceiling so high that nothing but a real freeze reaches it.
+
+**Say what drew the page.** Headless Firefox software-rasterises everywhere, including on a
+workstation with a good graphics card — it reports `llvmpipe` on a developer laptop and a CI runner
+alike. A whole afternoon went into a fix premised on one having a GPU and the other not. These
+numbers are CPU-bound on every machine that will ever run them, and say nothing about what a visitor
+with hardware compositing sees.
+
+**Two claims, not one.** "Janky" and "frozen" are different failures. They deserve different
+statistics and different numbers.
