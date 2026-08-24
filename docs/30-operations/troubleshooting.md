@@ -185,6 +185,31 @@ The lockout. Five failures are free, then each attempt waits longer, up to an ho
 php ~/admin-cli.php unlock
 ```
 
+### `login-failed` in the audit log — what it does and does not tell you
+
+**It means "that combination did not work". It never means "that user does not exist."**
+
+`auth_attempt()` returns `null` for a wrong password and for an unknown username alike, and
+`admin/login.php` logs one `login-failed` event for both, carrying only what was typed. The sign-in
+answers the browser identically too — *"That username and password do not match"* — which is the
+point: an error that distinguished the two would let anyone with the login page enumerate which
+accounts exist, one guess at a time. `test_admin_auth.py` proves the two answers stay identical.
+
+So a run of `login-failed` against an address you do not recognise is **not** evidence that somebody
+tried an account you do not have. It is equally consistent with you mistyping your own password.
+
+Two things that look alarming and are not:
+
+- **The sign-in accepts a username *or* the account's email address.** `login-failed who=you@example.com`
+  may well be your own account, found correctly, with the password fumbled.
+- **Every password fails immediately after `secret.key` is rotated.** The stored hash was made under
+  a key the server no longer has, so it cannot be verified and the attempt is refused — correctly, and
+  indistinguishably from a wrong password. Expect exactly one of these per person who had not yet been
+  told. [secrets-recovery.md rung 9](secrets-recovery.md#9-the-master-key-was-exposed-and-nothing-else-was)
+
+What the log *can* tell you is the address it came from. A failure from an IP you do not recognise is
+worth attention; the same failure from your own is worth none.
+
 ### Signed out constantly
 
 `AUTH_IDLE` is one hour, `AUTH_ABSOLUTE` twelve. If it is faster than that, the session directory is
