@@ -27,6 +27,11 @@ refusals as well as the acceptance — so an attempt IS the question.
 An attempt that is refused as 'not-newer' has changed nothing, which is what
 makes it safe to use as a probe.
 
+    never published     this host's document carries no revision, because it
+                        was put here by hand rather than saved. The save
+                        functions mint one and send it — that IS a first
+                        publish, and it is the case this tool exists for on a
+                        newly built host.
     accepted            the live site was behind. It is not any more.
     not-newer, equal    the two are in step. Nothing to do.
     not-newer, higher   the LIVE SITE is ahead of this one. Do not force it;
@@ -45,15 +50,37 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 PROBE = """
-require 'lib/publish_client.php';
-require 'lib/careers.php';
-require 'lib/contact.php';
+require_once 'lib/publish_client.php';
+require_once 'lib/careers.php';
+require_once 'lib/contact.php';
 
 $document = $argv[1];
 $data = $document === 'careers' ? careers_load() : contact_load();
 
+/* A document that has never been saved carries revision 0, and the receiving
+   side refuses anything below 1 — so a host whose content/ was put in place by
+   hand could never publish it, which is exactly the case this tool exists for.
+
+   Minting a revision is careers_save()'s and contact_save()'s job and nobody
+   else's, so this asks THEM rather than doing it here. They write the record
+   and publish it in one step, which is what a first publish is. */
+if ((int)($data['revision'] ?? 0) < 1) {
+    $ok = $document === 'careers' ? careers_save($data) : contact_save($data);
+    $after = $document === 'careers' ? careers_load() : contact_load();
+
+    echo json_encode([
+        'mine'    => (int)($after['revision'] ?? 0),
+        'first'   => true,
+        'result'  => $ok ? (publish_note() ?? ['ok' => false, 'code' => 'no-attempt'])
+                         : ['ok' => false, 'code' => 'write-failed',
+                            'error' => 'Could not write ' . $document . '.json here.'],
+    ]);
+    exit;
+}
+
 echo json_encode([
     'mine'   => (int)($data['revision'] ?? 0),
+    'first'  => false,
     'result' => publish_push($document, $data),
 ]);
 """
@@ -94,6 +121,11 @@ def reconcile(document: str) -> bool:
 
     mine = answer["mine"]
     result = answer["result"]
+
+    if result.get("ok") and answer.get("first"):
+        print(f"  sent  {document}: never published before — minted revision {mine} "
+              f"and sent it")
+        return True
 
     if result.get("ok"):
         print(f"  sent  {document}: the live site was behind, and now holds {mine}")

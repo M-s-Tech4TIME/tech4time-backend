@@ -213,7 +213,16 @@ function publish_post_stream(string $url, array $headers, string $body): array
 
     if ($answer === false) {
         $last = error_get_last();
-        return [0, '', trim((string)($last['message'] ?? 'the request failed'))];
+        $why  = trim((string)($last['message'] ?? 'the request failed'));
+
+        /* PHP prefixes the message with the function that produced it and the
+           whole URL, which puts "file_get_contents(https://…): Failed to open
+           stream:" in front of the only part that means anything. The person
+           reading this is looking at an editor, not a stack trace. */
+        $why = preg_replace('/^file_get_contents\([^)]*\):\s*/', '', $why) ?? $why;
+        $why = preg_replace('/^Failed to open stream:\s*/', '', $why) ?? $why;
+
+        return [0, '', $why !== '' ? $why : 'the request failed'];
     }
 
     $status = 0;
