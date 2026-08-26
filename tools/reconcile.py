@@ -9,6 +9,13 @@ Belongs to the BACKEND.
     python3 ~/reconcile.py ~/admin.tech4time.bd    # uploaded, on the host
     python3 tools/reconcile.py careers             # one document
 
+IT MUST RUN ON PYTHON 3.9
+That is what the cPanel host has, and this is the only tool here that runs
+there rather than on a development machine. Nothing in it may use syntax newer
+than 3.9 — no match statements, and annotations only under the __future__
+import below. A tool that cannot start is worse than no tool, and the day it
+would be discovered is the day content has gone missing.
+
 UPLOADED AND RUN, LIKE admin-cli.php
 tools/ is never deployed, so this is not on the host — and the host is the only
 place it is useful, because it reads THAT machine's content/ and THAT machine's
@@ -51,6 +58,12 @@ makes it safe to use as a probe.
                         has to decide which copy is right.
     anything else       the failure, in the words the editor would use.
 """
+
+# The host runs Python 3.9, which reads annotations at definition time and does
+# not know "str | None". This is the one tool here that runs on the host rather
+# than on a development machine, so it is the one that has to say so. Without
+# it, the failure is a TypeError on import, on the day content is missing.
+from __future__ import annotations
 
 import argparse
 import json
