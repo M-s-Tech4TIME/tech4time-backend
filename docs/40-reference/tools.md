@@ -33,7 +33,8 @@ browser tests speak to geckodriver over its wire protocol — there is no Seleni
 | `audit_pages.py` | every page: SEO, accessibility and structural correctness |
 | `inject_icons.py --check` | every page's inlined icon block is current |
 | `build_deploy_set.py --check` | the set of files bound for the server holds nothing it must not, and nothing is missing |
-| `verify_live.py <url>` | a deployed site still returns 403 for `lib/`, `content/` and dotted paths, and still carries its headers |
+| `verify_live.py <url>` | a deployed site still returns 403 for `lib/`, `content/` and dotted paths, still carries its headers, and still answers on `/api/publish.php` |
+| `check_shared_lib.py` | the three files both repositories hold identically have not been edited here |
 
 ## Checks that need a browser
 
@@ -59,6 +60,7 @@ Both skip with a notice and exit 0 when Firefox or geckodriver is missing.
 | `test_careers_admin.py` | the job post editor, and every field of a post reaching the page |
 | `test_contact_admin.py` | the contact page editor |
 | `test_store.py` | `lib/store.php`: reading, writing, and the rule that a damaged file never becomes the backup |
+| `test_publish.py` | `api/publish.php` and `publish_push()` over real HTTP: the happy path, and every way past it that does not involve holding the key |
 | `admin_session.py` | *(not run directly)* gives a test an admin account and signs it in |
 
 ### In a real browser
@@ -80,7 +82,7 @@ Both skip with a notice and exit 0 when Firefox or geckodriver is missing.
 | `propagate_shared.py` | Push a change in `tools/templates/` out to every page |
 | `inject_icons.py` | Inline each page's icon subset from the master sprite |
 | `apply_reveals.py` | Mark up the scroll-reveal targets on every page, from one structural rule |
-| `sync_site_contact.py` | Push the contact details out of `content/contact.json` into every page's footer |
+| `sync_site_contact.py` | Push the contact details out of `content/contact.json` into every page's footer, and record the fingerprint in `lib/footer-fingerprint.php` |
 | `htmltree.py` | *(a library)* a minimal HTML tree with source offsets, for tools that edit markup structurally |
 
 ---
@@ -108,6 +110,25 @@ Sources live in `tools/masters/`.
 | Script | Does |
 |---|---|
 | `shoot_pages.py` | Photograph pages in headless Firefox, into `tools/shots/` (gitignored) |
+
+---
+
+## Publishing
+
+The two halves and the one route between them — [the publish API](../10-development/backend/publish-api.md).
+
+| Script | Does |
+|---|---|
+| `make_publish_key.py` | Create the key both halves sign content with. Run **once**, then copy the printed value into the other half's private store by hand |
+| `reconcile.py` | *(backend)* Send anything the live site is behind on, and say plainly when the live site is **ahead** |
+| `check_shared_lib.py` | Assert the three shared files against a committed digest. `--update` re-records after a deliberate change |
+
+`make_publish_key.py` is deliberately not automatic. Every other secret here creates itself on first
+use; this one must not, because a key that appears by itself appears **differently** on each host and
+the failure reads as "signature rejected" until somebody thinks of it.
+
+`reconcile.py` needs no status endpoint: every answer from `api/publish.php` carries the revision that
+host holds, so an attempt is the question, and an attempt refused as `not-newer` has changed nothing.
 
 ---
 

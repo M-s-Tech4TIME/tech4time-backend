@@ -13,10 +13,14 @@ store they read from is outside the document root entirely.
 
 | File | Owns | Depends on |
 |---|---|---|
-| [`html.php`](#htmlphp) | escaping, and the rich-text sanitiser | — |
+| [`html.php`](#htmlphp) **shared** | escaping, and the rich-text sanitiser | — |
 | [`store.php`](#storephp) | reading and writing JSON atomically | — |
-| [`careers.php`](#careersphp) | the shape of a job post | `html`, `store` |
-| [`contact.php`](#contactphp) | the shape of the contact page | `html`, `store` |
+| [`contract.php`](#contractphp) **shared** | the shape of every editable document | `html` |
+| [`careers.php`](#careersphp) | what this side does with a job post | `contract`, `store` |
+| [`contact.php`](#contactphp) | what this side does with the contact page | `contract`, `store` |
+| [`publish.php`](#publishphp) **shared** | how a document is signed and checked on the wire | `private`, `contract` |
+| [`publish_client.php`](#publish_clientphp) *(backend)* | sending one | `publish` |
+| [`footer-fingerprint.php`](#footer-fingerprintphp) *(frontend, generated)* | what this site's footers currently say | — |
 | [`private.php`](#privatephp) | where the secrets are, and key derivation | — |
 | [`totp.php`](#totpphp) | RFC 6238 authenticator codes | — |
 | [`throttle.php`](#throttlephp) | counting attempts | `private`, `store` |
@@ -79,28 +83,123 @@ tell them apart use **`store_state()`**, which answers `ok`, `missing`, `unreada
 and `store_write()` uses it to make sure a damaged file never becomes the `.bak` — the copy that
 damage is recovered from. `tools/test_store.py` covers both.
 
-### `careers.php`
+### `contract.php`
 
-`careers_load()` · `careers_save()` · `careers_validate()` · `careers_slug()` · `careers_job_posting()` · …
+**Shared — byte-identical in `tech4time-frontend` and `tech4time-backend`.**
 
-The shape of a job post, its validation, its slug, and the `JobPosting` structured data the careers
-page emits. `careers_sanitise_html()` and `careers_safe_href()` are one-line aliases kept from before
-that code moved to `html.php`, so the move changed no caller.
+`CONTRACT_VERSION` · `CONTRACT_DOCUMENTS` · `CONTRACT_BOOKKEEPING` · `careers_normalise()` ·
+`contact_normalise()` · `contact_defaults()` · `contact_fingerprint()` · `contract_sanitise()` ·
+`contract_next_revision()` · …
 
-### `contact.php`
+**The shape of a document, and nothing else.** Field lists, the defaults a missing key falls back
+to, the normalising that turns whatever arrived into that shape, and the queries that read it. Both
+halves must agree on all of it or they are not describing the same job post.
 
-`contact_defaults()` · `contact_load()` · `contact_save()` · `contact_validate()` · `contact_page_schema()` · `contact_footer_in_step()` · …
+What is deliberately *not* here:
 
-The shape of the contact page: offices, reach methods, the form's copy, and the `ContactPage`
-schema.
+| | goes to | because |
+|---|---|---|
+| validation with readable messages, the form model, the flag picker | backend | the frontend has no form to validate |
+| `JobPosting` / `ContactPage` schema, flag `<picture>`, `tel:` hrefs | frontend | the backend does not render the public page |
+
+The line is: **if the two sides disagreeing about it would corrupt a document, it is here.** If
+disagreeing would only make one side's own page look wrong, it is not.
 
 `contact_defaults()` and `contact_office_defaults()` are **the definition of the shape** —
 `check_content_model.py` reads the field list out of those functions rather than out of
 `content/contact.json`, because the file is one instance of the shape and an optional field that
 happens to be absent from it is still a field.
 
-`contact_footer_in_step()` is what powers the drift banner: it fingerprints the contact details in
-the JSON and compares them with what the pages' footers actually say.
+`CONTRACT_BOOKKEEPING` names the fields a document keeps about *itself* — `updated`, `revision`,
+`footer_synced`. Nothing edits them and nothing renders them, so both directions of
+`check_content_model.py` and the round trip in `test_careers_admin.py` exempt them, and all three
+read the one list. They did not, once: `revision` was added, the careers test treated it as a
+site-wide setting, posted it on its own, and blanked `cv_form_url` doing so.
+
+`contract_sanitise()` runs every rich field back through `html.php`, driven off
+`CAREERS_RICH_FIELDS` / `CONTACT_RICH_FIELDS` rather than a list of its own — so a rich field added
+to the contract is sanitised on receipt *by having been added*.
+
+**Bump `CONTRACT_VERSION`** when a change would make a document written by one version render
+wrongly under the other: a field renamed, a field's meaning changed, a list that becomes a scalar.
+Not for a new optional field older code simply ignores.
+
+### `careers.php`
+
+`careers_load()` · `careers_save()` · `careers_validate()` *(backend)* · `careers_job_posting()` *(frontend)* · …
+
+What **this side** does with the shape `contract.php` defines. `careers_sanitise_html()` and
+`careers_safe_href()` are one-line aliases kept from before that code moved to `html.php`, so the
+move changed no caller.
+
+`careers_save()` mints the next `revision` itself rather than trusting a caller to. On the backend it
+also publishes — a save that wrote the record and forgot to send it is a save nobody would
+investigate.
+
+### `contact.php`
+
+`contact_load()` · `contact_save()` · `contact_validate()` · `contact_flags()` *(backend)* ·
+`contact_page_schema()` · `contact_flag_picture()` · `contact_reach_href()` *(frontend)* · …
+
+The same division for the contact page.
+
+The footer-drift banner is powered by `contact_footer_in_step()` in `contract.php`, comparing the
+details now held against `footer_synced` — which after the split is **what the frontend reported in
+the last publish response**, not something this side computed. See
+[`footer-fingerprint.php`](#footer-fingerprintphp).
+
+### `publish.php`
+
+**Shared — byte-identical in both repositories.**
+
+`publish_problem()` · `publish_fingerprint()` · `publish_envelope()` · `publish_body()` ·
+`publish_sign()` · `publish_verify()` · `publish_check_envelope()` · `publish_reason()`
+
+The format content travels in, and only the format — sending is
+[`publish_client.php`](#publish_clientphp), receiving is the frontend's `api/publish.php`. Full
+description: [the publish API](publish-api.md).
+
+The four checks are not interchangeable, and it is worth knowing which does what:
+
+| check | answers |
+|---|---|
+| the signature | this came from something holding the key — **not** that it is safe |
+| the timestamp | it was sent in the last five minutes |
+| the revision | it is newer than what is here — this is what makes a replay a no-op |
+| `contract_version` | this side implements the shape it is written in |
+
+The key is `publish.key` in the private store: 32 random bytes, **the same bytes on both hosts**,
+never derived from `secret.key` (the two stores have different master keys, so anything derived
+would differ by construction). It is never created on demand — see
+[`make_publish_key.py`](../../40-reference/tools.md).
+
+### `publish_client.php`
+
+**Backend only.** `publish_push()` · `publish_endpoint()`
+
+Sends one document and returns what the editor should show. Never throws for a network problem: an
+unreachable site is a thing to report in the editor, not a stack trace over a form somebody has just
+filled in.
+
+The certificate is verified and there is no option to turn that off; redirects are not followed,
+because a redirect on this route would post a signed document wherever it pointed.
+
+`$T4T_PUBLISH_URL` overrides the endpoint — how `test_publish.py` points it at a local server.
+
+### `footer-fingerprint.php`
+
+**Frontend only, and generated** by `tools/sync_site_contact.py`. One constant,
+`FOOTER_FINGERPRINT`.
+
+The footer's contact details are literal markup in all sixteen pages, because the project forbids
+runtime partials. So the moment somebody edits an address in the admin, the contact page is right
+and the footers are behind — until the pages are rebuilt and deployed.
+
+This records the fingerprint the footers were last rebuilt **for**. It used to be stamped into
+`contact.json`, which stopped being possible when the backend took ownership of that file: the
+frontend's copy is a replica, and the next publish overwrites anything written into it. So the
+frontend keeps its own record, reports it in every publish response, and the backend compares. The
+side that knows what its own footers say is the side that answers.
 
 ---
 

@@ -2,58 +2,29 @@
 /**
  * Tech4TIME — careers data access.
  *
- * Shared by the public page (pages/careers/index.php) and the admin editor
- * (admin/index.php). Not reachable over HTTP: .htaccess forbids /lib/.
- *
  * Reading and writing the file is lib/store.php; escaping and rich-text
- * sanitising is lib/html.php. What is left here is the shape of a job post.
+ * sanitising is lib/html.php; the SHAPE of a job post is lib/contract.php,
+ * which the frontend and the backend hold byte-identical. What is left here is
+ * this side's own business with that shape.
+ *
+ *   backend    validation, and the save that publishes
+ *   frontend   the JobPosting structured data the public page emits
  *
  * WHAT THE SHAPE IS
  *   {
  *     "cv_form_url": "https://forms.gle/…",   speculative applications
  *     "updated":     "2026-08-21T…",          set on every save
- *     "jobs": [ { …see FIELDS below… } ]
+ *     "revision":    12,                      monotonic; see contract.php
+ *     "jobs": [ { …see CAREERS_TEXT_FIELDS and CAREERS_RICH_FIELDS… } ]
  *   }
  */
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/html.php';
+require_once __DIR__ . '/contract.php';
 require_once __DIR__ . '/store.php';
 
 const CAREERS_FILE = __DIR__ . '/../content/careers.json';
-
-/* Free-text single-line fields. */
-const CAREERS_TEXT_FIELDS = [
-    'id', 'title', 'employment_type', 'work_arrangement',
-    'location', 'salary', 'posted', 'closes', 'status', 'apply_url',
-];
-
-/* Body fields, each stored as one sanitised HTML string. They were arrays of
-   plain text until the editor gained formatting; careers_migrate() below still
-   understands the old shape, so an older backup loads without ceremony. */
-const CAREERS_RICH_FIELDS = [
-    'about', 'responsibilities', 'requirements',
-    'must_have', 'nice_to_have', 'certifications', 'offers',
-];
-
-/* Which of the old fields were bullets rather than paragraphs. Only used when
-   migrating; nothing writes this shape any more. */
-const CAREERS_LEGACY_LIST_FIELDS = [
-    'responsibilities', 'requirements', 'must_have', 'nice_to_have', 'offers',
-];
-
-/* Section heading -> field, in the order a job renders. Changing a label here
-   changes it on the page; changing a key would orphan existing data. */
-const CAREERS_SECTIONS = [
-    'about'            => 'About the Role',
-    'responsibilities' => 'Key Responsibilities',
-    'requirements'     => 'Required Skills & Experience',
-    'must_have'        => 'Must Have',
-    'nice_to_have'     => 'Nice to Have',
-    'certifications'   => 'Certifications',
-    'offers'           => 'What We Offer',
-];
 
 /* ------------------------------------------------------------------- read */
 
@@ -66,45 +37,24 @@ const CAREERS_SECTIONS = [
  */
 function careers_load(): array
 {
-    $empty = ['cv_form_url' => '', 'updated' => '', 'jobs' => []];
-
-    $data = store_read(CAREERS_FILE);
-    if ($data === null) {
-        return $empty;
-    }
-
-    $data += $empty;
-    $data['jobs'] = is_array($data['jobs'] ?? null) ? array_values($data['jobs']) : [];
-    $data['jobs'] = array_map('careers_migrate', $data['jobs']);
-
-    return $data;
-}
-
-/** Only the posts a visitor should see. */
-function careers_open_jobs(array $data): array
-{
-    return array_values(array_filter(
-        $data['jobs'],
-        static fn(array $job): bool => ($job['status'] ?? 'open') === 'open'
-    ));
-}
-
-function careers_find(array $data, string $id): ?array
-{
-    foreach ($data['jobs'] as $job) {
-        if (($job['id'] ?? '') === $id) {
-            return $job;
-        }
-    }
-    return null;
+    return careers_normalise(store_read(CAREERS_FILE) ?? []);
 }
 
 /* ------------------------------------------------------------------ write */
 
-/** Stamp the save time and hand the file to store_write(). */
+/**
+ * Stamp the save time, take the next revision, and hand the file to
+ * store_write().
+ *
+ * The revision is minted here rather than by the caller because every write
+ * must have one — a save that forgot to advance it is a save the live site
+ * will refuse as stale, and it would refuse it silently from the operator's
+ * point of view.
+ */
 function careers_save(array $data): bool
 {
-    $data['updated'] = gmdate('c');
+    $data['updated']  = gmdate('c');
+    $data['revision'] = contract_next_revision($data);
 
     return store_write(CAREERS_FILE, $data);
 }
@@ -113,7 +63,8 @@ function careers_save(array $data): bool
 
    Everything the editor produces passes through careers_sanitise_html() before
    it is stored, and what comes out is the only HTML the careers page ever
-   prints unescaped.
+   prints unescaped. The frontend runs it again on receipt: a signature proves
+   a payload's origin, not its safety.
 
    The parser itself lives in lib/html.php, because the contact editor needs
    exactly the same guarantees. These names stay so that every caller here and
@@ -134,52 +85,7 @@ function careers_safe_href(string $href): ?string
     return rt_safe_href($href);
 }
 
-/* ------------------------------------------------------------------ legacy */
-
-/**
- * Bring a job forward from the plain-text schema.
- *
- * Runs on every load rather than as a one-off script, so an older
- * careers.json.bak restored by hand still works. Idempotent: a field that is
- * already a string is left exactly as it is.
- */
-function careers_migrate(array $job): array
-{
-    foreach (CAREERS_RICH_FIELDS as $field) {
-        $value = $job[$field] ?? '';
-
-        if (is_string($value)) {
-            continue;
-        }
-        if (!is_array($value) || !$value) {
-            $job[$field] = '';
-            continue;
-        }
-
-        $items = array_map(static fn($v): string => h((string)$v), $value);
-
-        $job[$field] = in_array($field, CAREERS_LEGACY_LIST_FIELDS, true)
-            ? '<ul><li>' . implode('</li><li>', $items) . '</li></ul>'
-            : '<p>' . implode('</p><p>', $items) . '</p>';
-    }
-
-    return $job;
-}
-
-/** A URL-safe id from a title, unique against the ids already in use. */
-function careers_slug(string $title, array $taken = []): string
-{
-    $slug = strtolower(trim($title));
-    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
-    $slug = trim($slug, '-') ?: 'role';
-
-    $base = $slug;
-    $n = 2;
-    while (in_array($slug, $taken, true)) {
-        $slug = $base . '-' . $n++;
-    }
-    return $slug;
-}
+/* ------------------------------------------------------------- validation */
 
 /**
  * Validate one job. Returns a list of human-readable problems.
@@ -218,16 +124,6 @@ function careers_validate(array $job): array
 }
 
 /* -------------------------------------------------------------- rendering */
-
-/** The one-line summary a listing shows: "Full-Time · On-site · Dhaka". */
-function careers_meta_line(array $job): array
-{
-    return array_values(array_filter([
-        trim((string)($job['employment_type'] ?? '')),
-        trim((string)($job['work_arrangement'] ?? '')),
-        trim((string)($job['location'] ?? '')),
-    ], static fn(string $v): bool => $v !== ''));
-}
 
 /**
  * Google's JobPosting schema for one role.

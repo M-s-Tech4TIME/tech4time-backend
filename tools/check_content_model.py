@@ -8,9 +8,14 @@ Run from the repo root:  python3 tools/check_content_model.py
 WHY THIS EXISTS
 An editable page is three things that have to agree:
 
-    the model      lib/contact.php   — what a field is called and what it holds
+    the model      lib/contract.php  — what a field is called and what it holds
     the form       admin/sections/   — where somebody types it
     the renderer   pages/…/index.php — where it comes out
+
+The model moved to lib/contract.php with the repository split: it is the one
+file the frontend and the backend hold byte-identical, because a field they
+disagree about is a field one of them loses. The helpers that read it stayed
+where they were, so "the renderer" is now the page plus lib/contact.php.
 
 Nothing forces them to. Add a band to the contact page and forget the editor,
 and the band is unmanageable; drop a band from the page and leave the field in
@@ -43,14 +48,18 @@ ROOT = Path(__file__).resolve().parent.parent
 SUBJECTS = [
     {
         "name": "contact",
-        "model": ROOT / "lib" / "contact.php",
+        "model": ROOT / "lib" / "contract.php",
         "form": ROOT / "admin" / "sections" / "contact.php",
         "page": ROOT / "pages" / "contact" / "index.php",
-        # Fields nothing renders, and nothing should: they are the store's
-        # own bookkeeping, and the admin prints them as such.
-        "page_indirect": {"updated", "footer_synced"},
-        # Fields the form does not write, and should not.
-        "form_exempt": {"updated", "footer_synced", "offices.items.id"},
+        # Where a field may be read on the way to the page. The model file is
+        # in here too: contact_shown_offices() and contact_email() read fields
+        # the page then never names itself.
+        "helpers": [ROOT / "lib" / "contact.php", ROOT / "lib" / "contract.php"],
+        # Fields nothing renders and nothing edits beyond the bookkeeping,
+        # which is read from CONTRACT_BOOKKEEPING and added to both sets below
+        # rather than written out twice here.
+        "page_indirect": set(),
+        "form_exempt": {"offices.items.id"},
     },
 ]
 
@@ -73,6 +82,29 @@ COVERED_ELSEWHERE = {
         "to visitor, over HTTP.",
     ),
 }
+
+
+def bookkeeping() -> set[str]:
+    """The fields a document keeps about itself — asked of PHP, not listed here.
+
+    They are neither edited nor rendered, so both directions of the check have
+    to exempt them, and a second copy of the list is a second thing to keep
+    true. lib/contract.php owns it; 'revision' was added there and this file
+    needed no edit.
+    """
+    if not shutil.which("php"):
+        return set()
+
+    out = subprocess.run(
+        ["php", "-r", "require 'lib/contract.php'; echo json_encode(CONTRACT_BOOKKEEPING);"],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    if out.returncode != 0 or not out.stdout.strip():
+        raise SystemExit("could not read CONTRACT_BOOKKEEPING from lib/contract.php:\n"
+                         + (out.stderr or out.stdout)[:400])
+
+    import json
+    return set(json.loads(out.stdout))
 
 
 def editors() -> list[str]:
@@ -180,7 +212,9 @@ def page_reads(php: str) -> set[str]:
 
     Run over the page and over the helpers in lib/, because a field the page
     hands to a helper whole — an office to contact_flag_picture() — is read
-    there rather than in the page.
+    there rather than in the page. Those helpers are named by the subject, so
+    that splitting a helper out of the model file does not silently stop the
+    fields it reads from counting as read.
 
     Any variable subscripted by a string is counted, not a fixed list of
     variable names. That is deliberately generous: contact_addresses() copies
@@ -278,6 +312,7 @@ def main() -> None:
             if not subject[key].is_file():
                 raise SystemExit(f"Missing {subject[key].relative_to(ROOT)}")
 
+        keep = bookkeeping()
         model_php = subject["model"].read_text()
 
         model = model_fields(model_php)
@@ -287,17 +322,22 @@ def main() -> None:
         # contact_flag_picture() reads the flag, contact_reach_href() reads the
         # kind and the value. A field used only inside one of those is still a
         # field the visitor sees, so both files count as the page side.
-        page = page_reads(subject["page"].read_text()) | page_reads(model_php)
+        page = page_reads(subject["page"].read_text())
+        for helper in subject["helpers"]:
+            page |= page_reads(helper.read_text())
 
         print(f"{subject['name']}  —  {len(model)} fields in the model")
 
+        exempt_form = subject["form_exempt"] | keep
+        exempt_page = subject["page_indirect"] | keep
+
         missing_form = sorted(
             f for f in model
-            if f not in subject["form_exempt"] and leaf(f) not in form
+            if f not in exempt_form and leaf(f) not in exempt_form and leaf(f) not in form
         )
         missing_page = sorted(
             f for f in model
-            if f not in subject["page_indirect"] and leaf(f) not in page
+            if f not in exempt_page and leaf(f) not in exempt_page and leaf(f) not in page
         )
 
         for field in missing_form:

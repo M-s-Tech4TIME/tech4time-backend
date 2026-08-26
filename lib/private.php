@@ -45,6 +45,7 @@ const T4T_PRIVATE_FILES = [
     'audit'    => 'audit.log',     // append-only JSONL
     'sessions' => 'sessions',      // session.save_path (a directory)
     'setup'    => 'setup-token.txt', // proves server access during first-run setup
+    'publish'  => 'publish.key',   // shared with the other half; see lib/publish.php
 ];
 
 /* ------------------------------------------------------------------ paths */

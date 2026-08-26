@@ -1,0 +1,318 @@
+<?php
+/**
+ * Tech4TIME — the wire between the two halves.
+ *
+ * SHARED FILE. Byte-identical in tech4time-frontend and tech4time-backend.
+ * tools/check_shared_lib.py compares the two against a committed digest.
+ *
+ * WHAT THIS IS
+ * The backend owns the content. On save it writes its own record and pushes a
+ * signed copy to the public site, which verifies it, re-sanitises it and writes
+ * its replica. The public site never calls the backend during a request —
+ * docs/90-decisions/0010-backend-pushes-content.md for why.
+ *
+ * This file is only the format: how a document is wrapped, signed and checked.
+ * Sending it is the backend's lib/publish_client.php; receiving it is the
+ * frontend's api/publish.php. Both are one-sided, and neither belongs here.
+ *
+ * THE ENVELOPE
+ *   {
+ *     "contract_version": 1,        the shape; see lib/contract.php
+ *     "document":         "careers",
+ *     "revision":         12,       monotonic per document
+ *     "published":        "2026-08-26T09:14:03+00:00",
+ *     "data":             { … }     the document itself
+ *   }
+ *
+ * over HTTP as
+ *   POST /api/publish
+ *   Content-Type:     application/json
+ *   X-T4T-Timestamp:  1756199643
+ *   X-T4T-Signature:  <key fingerprint>:<hex hmac-sha256>
+ *
+ * and the signed string is "<timestamp>.<body>" — the timestamp inside the
+ * signature and not merely beside it, or moving it would cost an attacker
+ * nothing.
+ *
+ * WHAT EACH CHECK IS FOR, BECAUSE THEY ARE NOT INTERCHANGEABLE
+ *
+ *   the signature   proves the payload came from something holding the key.
+ *                   It says nothing about whether the payload is safe, which
+ *                   is why the receiver re-sanitises every rich field through
+ *                   its own lib/html.php afterwards.
+ *
+ *   the timestamp   bounds how long a captured request stays useful. Five
+ *                   minutes, either way, because the two clocks are different
+ *                   machines and a window shorter than their drift is an
+ *                   outage rather than a defence.
+ *
+ *   the revision    is what actually stops a replay from doing damage. Inside
+ *                   the window a captured request is still perfectly signed —
+ *                   but it carries a revision the receiver already holds, and
+ *                   a document must be STRICTLY newer to be written. So the
+ *                   replay is a no-op rather than a rollback of the live site
+ *                   to whatever was published five minutes ago.
+ *
+ *   the version     refuses a shape this side does not implement, rather than
+ *                   writing a document it would then mis-render. This is the
+ *                   real guarantee that the two repositories are in step; the
+ *                   committed digest is only hygiene.
+ *
+ * THE KEY
+ * publish.key in the private store, 32 random bytes as 64 hex characters, and
+ * THE SAME BYTES on both hosts. It is never derived from secret.key: the two
+ * sides have separate stores and separate master keys, so anything derived
+ * would differ by construction and every publish would fail.
+ *
+ * It is never created on demand either, for the same reason a derived one
+ * would not do. A key that appears by itself appears differently on each host,
+ * and the failure would read as "signature rejected" for as long as it took
+ * somebody to think of it. Both sides refuse to start without one and say what
+ * to do — tools/make_publish_key.py.
+ *
+ * Every signature carries the key's fingerprint, per
+ * docs/90-decisions/0014-derived-secrets-name-their-key.md, so a receiver
+ * holding a different key answers "that is not the key I have" instead of
+ * "wrong signature". The two send you to completely different places.
+ */
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/private.php';
+require_once __DIR__ . '/contract.php';
+
+/** How far apart the two clocks may be, in seconds, in either direction. */
+const PUBLISH_SKEW = 300;
+
+/** The largest payload the endpoint will read. The contact page is ~8 KB. */
+const PUBLISH_MAX_BYTES = 1048576;
+
+const PUBLISH_SIGNATURE_HEADER = 'X-T4T-Signature';
+const PUBLISH_TIMESTAMP_HEADER = 'X-T4T-Timestamp';
+
+/**
+ * Why publishing cannot work, or '' when it can.
+ *
+ * Separate from publish_secret() because the admin wants to explain this to a
+ * person and the endpoint wants to answer without dying.
+ */
+function publish_problem(): string
+{
+    $store = t4t_private_problem();
+    if ($store !== '') {
+        return $store;
+    }
+
+    $path = t4t_private_path('publish');
+
+    if (!is_file($path)) {
+        return 'There is no publish key at ' . $path . '. Make one with '
+             . 'tools/make_publish_key.py and put the SAME value in the other '
+             . 'half\'s private store.';
+    }
+
+    $raw = trim((string)@file_get_contents($path));
+
+    if (strlen($raw) < 64 || !ctype_xdigit($raw)) {
+        return 'The publish key at ' . $path . ' is not 64 or more hex '
+             . 'characters. It should be exactly what tools/make_publish_key.py '
+             . 'printed, on both hosts.';
+    }
+
+    return '';
+}
+
+/** The shared secret, as raw bytes. Throws rather than inventing one. */
+function publish_secret(): string
+{
+    static $secret = null;
+
+    if ($secret !== null) {
+        return $secret;
+    }
+
+    $problem = publish_problem();
+    if ($problem !== '') {
+        throw new RuntimeException($problem);
+    }
+
+    return $secret = (string)hex2bin(trim((string)file_get_contents(
+        t4t_private_path('publish')
+    )));
+}
+
+/**
+ * A short name for the publish key, which identifies it without revealing it.
+ *
+ * Sixteen hex characters of an HMAC of a fixed label under the key. Reversing
+ * it is the same problem as reversing the key.
+ */
+function publish_fingerprint(): string
+{
+    return substr(
+        bin2hex(hash_hmac('sha256', 'publish-key-fingerprint', publish_secret(), true)),
+        0,
+        16
+    );
+}
+
+/** Wrap a document for sending. */
+function publish_envelope(string $document, array $data): array
+{
+    return [
+        'contract_version' => CONTRACT_VERSION,
+        'document'         => $document,
+        'revision'         => max(0, (int)($data['revision'] ?? 0)),
+        'published'        => gmdate('c'),
+        'data'             => $data,
+    ];
+}
+
+/**
+ * The body exactly as it goes on the wire.
+ *
+ * The signature is over these bytes, so the sender must transmit what this
+ * returned and the receiver must verify what it actually read — never a
+ * re-encoding of the decoded value. json_encode() is not required to be
+ * stable across versions, and a signature over a second spelling of the same
+ * document is a signature over different bytes.
+ */
+function publish_body(array $envelope): string
+{
+    $json = json_encode($envelope, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+    if ($json === false) {
+        throw new RuntimeException('The document could not be encoded: '
+            . json_last_error_msg());
+    }
+
+    return $json;
+}
+
+/** The X-T4T-Signature value for a body and the timestamp sent with it. */
+function publish_sign(string $body, int $timestamp): string
+{
+    return publish_fingerprint() . ':'
+         . hash_hmac('sha256', $timestamp . '.' . $body, publish_secret());
+}
+
+/**
+ * Check a received body against the headers that came with it.
+ *
+ * Returns '' when the payload is authentic, or a short code naming what was
+ * wrong. Codes rather than sentences because the endpoint answers a machine
+ * and the machine's operator needs the difference between "the other side has
+ * a different key" and "the clocks have drifted" to survive the round trip.
+ *
+ * Ordered cheapest-first, and the order is also the order that leaks least: a
+ * malformed header is answered before any comparison against the secret is
+ * made at all.
+ */
+function publish_verify(string $body, string $signature, string $timestamp): string
+{
+    if (trim($signature) === '' || trim($timestamp) === '') {
+        return 'no-signature';
+    }
+
+    if (!preg_match('/^([0-9a-f]{16}):([0-9a-f]{64})$/', trim($signature), $m)) {
+        return 'bad-signature-format';
+    }
+
+    if (!preg_match('/^\d{1,12}$/', trim($timestamp))) {
+        return 'bad-timestamp-format';
+    }
+
+    /* Named before compared, so a receiver holding the wrong key says so.
+       hash_equals on the fingerprint too: it is derived from the secret, and
+       comparing it with == would leak it a byte at a time to anyone willing to
+       measure. */
+    if (!hash_equals(publish_fingerprint(), $m[1])) {
+        return 'unknown-key';
+    }
+
+    if (abs(time() - (int)$timestamp) > PUBLISH_SKEW) {
+        return 'stale-timestamp';
+    }
+
+    $expected = hash_hmac('sha256', (int)$timestamp . '.' . $body, publish_secret());
+
+    if (!hash_equals($expected, $m[2])) {
+        return 'bad-signature';
+    }
+
+    return '';
+}
+
+/**
+ * Check a verified envelope's shape. Returns '' or a code.
+ *
+ * Runs after publish_verify() and never instead of it: this reads values out
+ * of the payload, and reading anything out of an unauthenticated payload is
+ * how a checked request becomes an unchecked one.
+ */
+function publish_check_envelope(mixed $envelope): string
+{
+    if (!is_array($envelope)) {
+        return 'bad-json';
+    }
+
+    if ((int)($envelope['contract_version'] ?? 0) !== CONTRACT_VERSION) {
+        return 'contract-mismatch';
+    }
+
+    if (!in_array((string)($envelope['document'] ?? ''), CONTRACT_DOCUMENTS, true)) {
+        return 'unknown-document';
+    }
+
+    if (!is_array($envelope['data'] ?? null)) {
+        return 'bad-document';
+    }
+
+    if ((int)($envelope['revision'] ?? 0) < 1) {
+        return 'bad-revision';
+    }
+
+    /* The envelope's revision and the document's own must agree, or the
+       receiver's monotonic check is guarding a number the document does not
+       carry. */
+    if ((int)$envelope['revision'] !== (int)($envelope['data']['revision'] ?? 0)) {
+        return 'revision-mismatch';
+    }
+
+    return '';
+}
+
+/**
+ * What each code means, for a person.
+ *
+ * The endpoint answers the code; the admin shows this. Kept together so that
+ * adding a refusal without a sentence to go with it is visibly incomplete.
+ */
+const PUBLISH_REASONS = [
+    'no-signature'          => 'The request arrived without a signature.',
+    'bad-signature-format'  => 'The signature was not in the expected form.',
+    'bad-timestamp-format'  => 'The timestamp was not in the expected form.',
+    'unknown-key'           => 'The live site holds a different publish key than this one. '
+                             . 'Both private stores must carry the same publish.key.',
+    'stale-timestamp'       => 'The two servers disagree about the time by more than five '
+                             . 'minutes. Check the clock on both.',
+    'bad-signature'         => 'The signature did not match the payload.',
+    'too-large'             => 'The document was larger than the endpoint will accept.',
+    'bad-json'              => 'The payload was not readable as JSON.',
+    'contract-mismatch'     => 'The live site implements a different content shape. Deploy '
+                             . 'both halves — they are out of step.',
+    'unknown-document'      => 'The live site does not publish a document by that name.',
+    'bad-document'          => 'The payload carried no document.',
+    'bad-revision'          => 'The payload carried no usable revision number.',
+    'revision-mismatch'     => 'The envelope and the document disagree about the revision.',
+    'not-newer'             => 'The live site already holds this revision or a later one. '
+                             . 'Nothing was changed there.',
+    'write-failed'          => 'The live site could not write the file. Check that its '
+                             . 'content directory is writable.',
+    'not-configured'        => 'Publishing is not set up on the live site.',
+];
+
+function publish_reason(string $code): string
+{
+    return PUBLISH_REASONS[$code] ?? 'The live site refused the update (' . $code . ').';
+}

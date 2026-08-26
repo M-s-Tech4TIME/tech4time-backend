@@ -314,7 +314,10 @@ def careers_model() -> dict:
     Parsing is what check_content_model.py does, and for a file whose fields
     are consumed in loops it reads the loop variable rather than the fields.
     PHP already knows; the settings are whatever careers_load() returns at the
-    top level that is not a job or the bookkeeping beside it.
+    top level that is not a job or the bookkeeping beside it — and the
+    bookkeeping is asked for by name too, because each setting is posted on its
+    own and a form posting a field the editor does not own blanks the ones it
+    does. 'revision' arrived and cleared cv_form_url exactly that way.
     """
     out = subprocess.run(
         ["php", "-r",
@@ -324,7 +327,7 @@ def careers_model() -> dict:
          "'rich' => CAREERS_RICH_FIELDS,"
          "'sections' => CAREERS_SECTIONS,"
          "'settings' => array_values(array_diff("
-         "    array_keys(careers_load()), ['jobs', 'updated'])),"
+         "    array_keys(careers_load()), ['jobs'], CONTRACT_BOOKKEEPING)),"
          "]);"],
         cwd=ROOT, capture_output=True, text=True,
     )

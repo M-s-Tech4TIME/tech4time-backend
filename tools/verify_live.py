@@ -63,6 +63,12 @@ EXPECT = [
     ("/error_log",                (403, 404),  "the server's own log names paths"),
 
     ("/admin/",                   (200, 302),  "the admin answers, signed in or not"),
+
+    # The one route content takes to this site. A GET must be refused with
+    # 405, which is the endpoint answering — a 404 here means it did not
+    # deploy, and the first anyone would know is a save in the admin that
+    # never appears on the site.
+    ("/api/publish.php",          (405,),      "the publish endpoint is deployed and refusing GET"),
 ]
 
 # (path, header, what must be in its value)
@@ -72,6 +78,7 @@ HEADERS = [
     ("/",        "referrer-policy",           ""),
     ("/",        "strict-transport-security", "max-age="),
     ("/admin/",  "x-robots-tag",              "noindex"),
+    ("/api/publish.php", "x-robots-tag",      "noindex"),
 ]
 
 

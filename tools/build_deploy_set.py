@@ -59,6 +59,7 @@ UPLOAD = [
     "sitemap.xml",
     "site.webmanifest",
     "contact-handler.php",
+    "api/",               # where the admin host pushes content in
     "pages/",
     "assets/",
     "lib/",               # server-side rendering and the whole sign-in
@@ -95,6 +96,7 @@ REQUIRED = [
     "admin/setup.php",
     "pages/careers/index.php",
     "pages/contact/index.php",
+    "api/publish.php",    # the only route content takes to the live site
 ]
 
 # Never in the set, whatever else changes. Stated separately from "not in

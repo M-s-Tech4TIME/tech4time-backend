@@ -278,4 +278,13 @@ Options -Indexes
 <IfModule mod_headers.c>
     Header always set X-Robots-Tag "noindex, nofollow, noarchive" "expr=%{REQUEST_URI} =~ m#^/admin(/|$)#"
     Header always set Cache-Control "no-store, max-age=0" "expr=%{REQUEST_URI} =~ m#^/admin(/|$)#"
+
+    # /api/ is where the admin host pushes content in. api/publish.php sets
+    # both of these itself; these are here for the same reason as everything
+    # else in this section — the application is the lock, and this only keeps
+    # the endpoint out of search results and out of shared caches. An indexed
+    # POST endpoint is not a vulnerability, but it is a URL in a result page
+    # that invites people to find out what it does.
+    Header always set X-Robots-Tag "noindex, nofollow, noarchive" "expr=%{REQUEST_URI} =~ m#^/api(/|$)#"
+    Header always set Cache-Control "no-store, max-age=0" "expr=%{REQUEST_URI} =~ m#^/api(/|$)#"
 </IfModule>
