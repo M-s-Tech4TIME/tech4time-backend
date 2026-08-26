@@ -86,7 +86,16 @@ jobs:
       # directory the panel also writes to. cgi-bin is protected because cPanel
       # recreates it; .well-known because AutoSSL answers ACME challenges from
       # the document root, and a deploy landing mid-issue would delete the
-      # challenge and the certificate would silently fail to renew.
+      # challenge and the certificate would silently fail to renew — months
+      # later, with nothing to connect it to.
+      #
+      # .well-known IS PROTECTED IN BOTH PLACES, and that is not belt and
+      # braces. cPanel created the subdomain with its document root at
+      # ~/admin.tech4time.bd and put .well-known there; the document root then
+      # moved one level in, to public/. Which of the two AutoSSL writes to next
+      # depends on when it last read the subdomain's configuration, and being
+      # wrong about it is a certificate that stops renewing. Both cost nothing
+      # to keep.
       # public/.htaccess is NOT protected: this repository ships it, and if
       # cPanel's Directory Privacy has written its own there, that is a
       # configuration to switch off before deploying rather than a file to
@@ -95,6 +104,7 @@ jobs:
         run: |
           cat > /tmp/protect.rules <<'RULES'
           P /content/
+          P /.well-known/
           P /public/.well-known/
           P /cgi-bin/
           P /error_log
@@ -128,7 +138,7 @@ jobs:
           # spaces, and a pattern expecting one silently matches nothing —
           # a gate that always passes, which is worse than no gate at all.
           # Caught by running this against a deliberately unprotected plan.
-          if grep -E '^\*deleting[[:space:]]+(content/|public/\.well-known/|cgi-bin/|error_log|\.user\.ini|php\.ini)' /tmp/plan.txt; then
+          if grep -E '^\*deleting[[:space:]]+(content/|\.well-known/|public/\.well-known/|cgi-bin/|error_log|\.user\.ini|php\.ini)' /tmp/plan.txt; then
             echo "::error::The deploy proposed deleting something the host owns. Refusing."
             echo "content/ here is the SYSTEM OF RECORD — every job post and contact"
             echo "detail the client has written. The public site holds a replica of it."

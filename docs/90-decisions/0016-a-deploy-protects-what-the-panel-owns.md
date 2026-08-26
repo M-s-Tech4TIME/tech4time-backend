@@ -64,3 +64,30 @@ without anyone deciding so on the day. See [ci-cd.md](../20-deployment/ci-cd.md)
 **This list grows with the host.** A panel feature that writes into the document root — Directory
 Privacy, a hotlink rule, a cron that drops a file — belongs here on the day it is switched on, not
 on the day a deploy removes it.
+
+---
+
+## Amendment — the backend, 2026-08-27
+
+The subdomain's deploy target is `~/admin.tech4time.bd/` and its document root
+is `public/` **inside** it, so `rsync --delete` runs over a directory cPanel
+also writes to. The protect list is therefore the same shape as the frontend's,
+with one difference worth recording.
+
+**`.well-known` is protected in both places** — at the target root and under
+`public/`. cPanel created the subdomain with its document root at
+`~/admin.tech4time.bd` and put `.well-known` there; the document root then
+moved one level in. Which of the two AutoSSL writes to next depends on when it
+last read the subdomain's configuration, and being wrong about it is a
+certificate that quietly stops renewing — discovered months later, with nothing
+to connect it to.
+
+Found by listing the target over SSH before the first deploy rather than
+assuming the layout. The protect list had only `public/.well-known/`, and the
+existing directory would have been deleted on the first run.
+
+`public/.htaccess` is deliberately **not** protected here, unlike the
+frontend's `admin/.htaccess`. This repository ships that file. If cPanel's
+Directory Privacy has written its own there, that is a setting to switch off
+before deploying, not a file to preserve — see the note at the end of
+`public/.htaccess`.
