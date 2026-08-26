@@ -5,7 +5,7 @@
 Where things live on each machine, and the one piece of path arithmetic that can go wrong.
 
 **Two sites now, on two hosts.** `admin.tech4time.bd` from this repository, `tech4time.bd` from
-`tech4time-frontend`. They share a cPanel account today and are meant not to need to — see
+`tech4time-website-frontend`. They share a cPanel account today and are meant not to need to — see
 [0017](../90-decisions/0017-two-private-stores.md) and
 [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md).
 
@@ -19,7 +19,7 @@ Where things live on each machine, and the one piece of path arithmetic that can
 | Document root | `public/` | `/home/USER/admin.tech4time.bd/public` |
 | Deploy target | the repository | `/home/USER/admin.tech4time.bd` |
 | Private store | `../t4t-private-admin` | `/home/USER/t4t-private-admin` |
-| The other half | `../tech4time-frontend`, its own `serve.py` | `tech4time.bd` |
+| The other half | `../tech4time-website-frontend`, its own `serve.py` | `tech4time.bd` |
 | Publishing | `$T4T_PUBLIC_URL` at localhost | `https://tech4time.bd/api/publish.php` |
 | `.htaccess` | **not read** | read — it carries the real headers |
 | `mail()` | unavailable | cPanel's MTA |
@@ -30,14 +30,20 @@ Deliberately the same shape in both places. The private store is a sibling of th
 either way, so nothing about the layout differs between them.
 
 ```
-DEVELOPMENT                          PRODUCTION
-CodeSpace/                           /home/techtime/
-├── tech4time-frontend/   ← docroot  ├── public_html/              ← docroot  (frontend)
-├── tech4time-backend/               ├── backend/                  ← deploy target
-│   └── public/           ← docroot  │   └── public/               ← docroot  (backend)
-├── t4t-private/                     ├── t4t-private/              frontend store
-└── t4t-private-admin/               └── t4t-private-admin/        backend store
+DEVELOPMENT                                PRODUCTION
+CodeSpace/                                 /home/techtime/
+├── tech4time-website-frontend/  ← docroot  ├── public_html/          ← docroot   frontend
+├── tech4time-website-backend/              ├── admin.tech4time.bd/   ← rsync target
+│   └── public/                  ← docroot  │   └── public/           ← docroot   backend
+├── t4t-private/                            ├── t4t-private/          frontend store
+└── t4t-private-admin/                      └── t4t-private-admin/    backend store
 ```
+
+**The backend's rsync target and its document root are not the same directory.** cPanel created
+`admin.tech4time.bd/` for the subdomain; the deploy fills it, and the document root is `public/`
+one level inside. So `--delete` runs over a directory the panel also writes to, which is why the
+protect list guards `cgi-bin/`, `.user.ini`, `php.ini` and `.well-known/` —
+[0016](../90-decisions/0016-a-deploy-protects-what-the-panel-owns.md).
 
 The frontend's document root is its repository root; the backend's is `public/` inside its
 repository, so its `lib/`, `sections/` and `content/` are unreachable by construction rather than by

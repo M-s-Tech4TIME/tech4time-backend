@@ -65,7 +65,7 @@ internal.
 
 **PHP reaches into `public/` for two things.** The icon sprite is read from disk and inlined, and
 the flag images are listed for the editor's picker, so
-`tech4time-backend/lib/admin.php` and `tech4time-backend/lib/contact.php` name `../public/assets/…`. That is one directory of assets, in the place the browser needs it, read by
+`tech4time-website-backend/lib/admin.php` and `tech4time-website-backend/lib/contact.php` name `../public/assets/…`. That is one directory of assets, in the place the browser needs it, read by
 the server rather than copied twice.
 
 **The private store is not inside the deploy target.** `T4T_PRIVATE` is set explicitly to

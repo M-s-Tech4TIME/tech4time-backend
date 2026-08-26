@@ -6,7 +6,7 @@
 one page in this documentation, make it this one.
 
 **This is the backend.** It is the editor at `admin.tech4time.bd`, and it owns the content. The
-public website — its sixteen pages, its CSS, its JavaScript, its markup — is `tech4time-frontend`,
+public website — its sixteen pages, its CSS, its JavaScript, its markup — is `tech4time-website-frontend`,
 which has its own copy of this page for all of that.
 
 **The general rule here:** if it is *content*, it is typed into this admin and you should not touch
@@ -33,7 +33,7 @@ replica. If that push fails the editor says so, in words, with a **Publish again
 
 > **The footer is the exception.** The contact details repeated in every page's footer are *markup*
 > on the public site, not content, so this editor cannot reach them. After changing an address here,
-> run `python3 tools/sync_site_contact.py` **in tech4time-frontend** and deploy it. The banner in
+> run `python3 tools/sync_site_contact.py` **in tech4time-website-frontend** and deploy it. The banner in
 > this editor clears on the next save, when the public site reports its new fingerprint back.
 
 ---
@@ -41,7 +41,7 @@ replica. If that push fails the editor says so, in words, with a **Publish again
 ## The editor's own look and behaviour
 
 The public site's palette, layout, motion, JavaScript modules and page markup are all in
-`tech4time-frontend`. What is here is the editor's own.
+`tech4time-website-frontend`. What is here is the editor's own.
 
 | I want to change | Where |
 |---|---|
@@ -51,7 +51,7 @@ The public site's palette, layout, motion, JavaScript modules and page markup ar
 | The rich-text toolbar | `public/assets/js/editor.js` |
 | The theme switch | `public/assets/js/theme-init.js`, `theme-toggle.js` |
 | An icon the editor offers | `CONTACT_ICONS` in `lib/contract.php` — **and the other repository** |
-| The icon artwork itself | `public/assets/icons/sprite.svg` — **shared; rebuild it in tech4time-frontend and copy it here** |
+| The icon artwork itself | `public/assets/icons/sprite.svg` — **shared; rebuild it in tech4time-website-frontend and copy it here** |
 
 > `theme.css` is the same palette the public site uses, on purpose: the editor should read as the
 > same product. `tools/check_contrast.py` checks it here as well, because the admin is where
@@ -63,11 +63,11 @@ The public site's palette, layout, motion, JavaScript modules and page markup ar
 
 | I want to change | Where |
 |---|---|
-| Who the contact form emails | `MAIL_TO` in `tech4time-frontend/contact-handler.php` |
+| Who the contact form emails | `MAIL_TO` in `tech4time-website-frontend/contact-handler.php` |
 | The envelope sender for the mail THIS half sends | `MAIL_FROM_ADDRESS` in `lib/mailer.php` — reset codes and change notices |
-| Contact form validation | `tech4time-frontend/contact-handler.php` — the server side is the real one |
-| The contact form's rate limit | `tech4time-frontend/contact-handler.php`, using `lib/throttle.php` |
-| **The shape of a document** | `lib/contract.php` — **and the byte-identical copy in tech4time-frontend** |
+| Contact form validation | `tech4time-website-frontend/contact-handler.php` — the server side is the real one |
+| The contact form's rate limit | `tech4time-website-frontend/contact-handler.php`, using `lib/throttle.php` |
+| **The shape of a document** | `lib/contract.php` — **and the byte-identical copy in tech4time-website-frontend** |
 | What this side does with that shape | `lib/careers.php`, `lib/contact.php` — validation and the save |
 | What HTML is allowed in rich text | `lib/html.php` — **shared, both repositories** |
 | How a document is signed | `lib/publish.php` — **shared, both repositories** |
@@ -119,7 +119,7 @@ The public site's palette, layout, motion, JavaScript modules and page markup ar
 | **What is blocked over HTTP** | **Nothing needs to be.** `lib/`, `sections/` and `content/` are outside the document root — [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) |
 | Keeping the WHOLE host out of search results | `public/.htaccess` section 1 — a blanket header, not a path match |
 | Crawl rules | `public/robots.txt` — `Disallow: /`, which is correct here and would not be on the public site |
-| The public site's sitemap and crawl rules | `tech4time-frontend` |
+| The public site's sitemap and crawl rules | `tech4time-website-frontend` |
 
 > `public/.htaccess` is not read by the local dev server. Changes there can only be verified on the
 > host, with `python3 tools/verify_live.py https://admin.tech4time.bd`.

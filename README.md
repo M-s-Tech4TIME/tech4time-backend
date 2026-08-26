@@ -6,7 +6,7 @@ change without a redeploy.
 
 **No framework, bundler or build step.** The files here are the files that run on the server.
 
-**The public site is [`tech4time-frontend`](https://github.com/M-s-Tech4TIME/tech4time-frontend).**
+**The public site is [`tech4time-website-frontend`](https://github.com/M-s-Tech4TIME/tech4time-website-frontend).**
 This half owns the content and pushes a signed copy to it on every save; that half renders from the
 replica it is sent and never calls this one during a request.
 

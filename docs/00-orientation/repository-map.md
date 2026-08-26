@@ -5,14 +5,14 @@
 Every directory: what it holds, who owns it, and what must never happen to it.
 
 **This is the backend.** The public site's sixteen pages, its assets and its renderers are in
-`tech4time-frontend`, which has its own copy of this map.
+`tech4time-website-frontend`, which has its own copy of this map.
 
 ---
 
 ## Top level
 
 ```
-tech4time-backend/
+tech4time-website-backend/
 ├── public/                 ← THE DOCUMENT ROOT. Everything a browser may ask for
 ├── lib/                    ← outside it. Cannot be requested at all
 ├── sections/               ← outside it. Included by public/index.php
@@ -33,7 +33,7 @@ why, and `tools/verify_live.py` asserts it after every deploy by requiring a
 
 The deploy target is `/home/USER/admin.tech4time.bd/`, one level *outside* the document
 root. The public site is a different repository at a different document root —
-`tech4time-frontend`, at `/home/USER/public_html/`.
+`tech4time-website-frontend`, at `/home/USER/public_html/`.
 
 ---
 
@@ -126,7 +126,7 @@ Never reachable over HTTP: it is outside the document root.
 | `mailer.php` | the one place mail leaves this site |
 | `admin.php` | the section registry, the icon rail, the page furniture |
 
-**Shared** means byte-identical with `tech4time-frontend` —
+**Shared** means byte-identical with `tech4time-website-frontend` —
 `tools/check_shared_lib.py` compares four things against a committed digest,
 those three plus the icon sprite. The real guarantee is `CONTRACT_VERSION`,
 checked at run time by the endpoint this half posts to.

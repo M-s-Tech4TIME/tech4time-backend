@@ -19,7 +19,7 @@ two sign to each other with. Everything else, including the master key, is separ
 
 [environments.md](../20-deployment/environments.md) left this open, and said why it was hard: the
 two sites share a host today, sharing is simpler, and the frontend genuinely does touch a store —
-`tech4time-frontend/contact-handler.php` keeps its rate-limit counters there.
+`tech4time-website-frontend/contact-handler.php` keeps its rate-limit counters there.
 
 What settles it is a fact that was not on the table when the question was first written down. The
 split exists because the two halves are meant to end up on **different machines**: the public site
@@ -36,7 +36,7 @@ recovery code. It is not a convention: the frontend's `T4T_PRIVATE_FILES` has **
 `t4t_private_path()` throws on a name it does not know — so there is no path on that host for a
 credential to be written to. `tools/check_secrets.py` asserts it on every run.
 
-The two master keys are unrelated, so rotating one (*secrets-recovery.md*, in tech4time-backend) has no
+The two master keys are unrelated, so rotating one (*secrets-recovery.md*, in tech4time-website-backend) has no
 effect on the other. The frontend's `secret.key` peppers nothing but the throttle's keys, which is
 the only thing it was ever doing there.
 
@@ -52,7 +52,7 @@ long as it took somebody to think of it.
 So both sides refuse to start publishing without one and say what to do, and
 `tools/make_publish_key.py` prints the value once for a person to place on both hosts. Every
 signature carries the key's fingerprint, per
-*0014 — a value derived from the master key carries the key's name* (in tech4time-backend), so a mismatch answers *"the live site holds a
+*0014 — a value derived from the master key carries the key's name* (in tech4time-website-backend), so a mismatch answers *"the live site holds a
 different publish key"* rather than *"wrong signature"*.
 
 **The containment check still compares against the requesting document root.** On a host running

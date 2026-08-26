@@ -23,7 +23,7 @@ The ones that mean something is genuinely wrong:
 | *…disagree about the time by more than five minutes…* | one of the two clocks is wrong |
 | *…implements a different content shape…* | the halves are out of step. Deploy both |
 | *…could not be reached…* | the public site was down, or DNS/TLS failed from this host |
-| *…answered … with something that was not JSON* | `tech4time-frontend/api/publish.php` is not deployed. Run `tech4time-frontend`'s `verify_live.py` |
+| *…answered … with something that was not JSON* | `tech4time-website-frontend/api/publish.php` is not deployed. Run `tech4time-website-frontend`'s `verify_live.py` |
 | *Publishing is not set up…* | there is no `publish.key` in **this** host's store — `tools/make_publish_key.py` |
 
 Full table: [publish-api.md](../10-development/server-side/publish-api.md).
@@ -201,7 +201,7 @@ after editing an address — the footer is markup on that side, not content, and
 reach it.
 
 ```bash
-# in tech4time-frontend, with content/contact.json as the live site now holds it
+# in tech4time-website-frontend, with content/contact.json as the live site now holds it
 python3 tools/sync_site_contact.py     # rewrites the footers and lib/footer-fingerprint.php
 python3 tools/check_shared_markup.py   # proves the sixteen still agree
 git commit && git push                 # the deploy carries it
@@ -271,7 +271,7 @@ The first deploy was an upload of everything, and it left `docs/`, `tools/`, `re
 Worth reading here because it is the argument this repository is shaped around: the rule that was
 supposed to prevent it did not.
 
-`tech4time-frontend`'s `.htaccess` section 8 exists for exactly this — *"if the whole tree is ever uploaded, these must not
+`tech4time-website-frontend`'s `.htaccess` section 8 exists for exactly this — *"if the whole tree is ever uploaded, these must not
 be readable over HTTP"* — and did not deliver it. `<FilesMatch "^\.">` matches the **filename**, so
 `/.git/HEAD` was the file `HEAD` to it: no leading dot, no blocked extension, straight through. And
 nothing covered `.zip` at all, so the entire source and its commit history were downloadable by
@@ -324,7 +324,7 @@ was cut off. The specialities slider's control row is eight 44px tap targets, ce
 wider than the screen and overhangs both edges; and `.btn` had an unconditional `white-space:
 nowrap`, so a 34-character label became a 351px button that `.cta-band` clipped. Neither was
 visible to any check, because Firefox will not size a window below about 488px and nothing here had
-ever measured a narrower one. `tech4time-frontend/tools/check_responsive.py` now does, in a frame.
+ever measured a narrower one. `tech4time-website-frontend/tools/check_responsive.py` now does, in a frame.
 
 **Fixed 2026-08-23** — a careers field drifting between model, form and renderer unnoticed.
 `check_content_model.py` could never have caught it: both sides of that page are loops, so its

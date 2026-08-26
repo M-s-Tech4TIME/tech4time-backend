@@ -62,8 +62,8 @@ firefox --version      # optional
 ## 2. Clone
 
 ```bash
-git clone <repository-url> tech4time-website
-cd tech4time-website
+git clone <repository-url> tech4time-website-backend
+cd tech4time-website-backend
 git checkout dev
 ```
 
@@ -106,8 +106,8 @@ You now have `../t4t-private/` beside your clone, holding your account.
 
 ```
 CodeSpace/
-├── tech4time-backend/       ← your clone
-├── tech4time-frontend/      ← the other half, worth cloning beside it
+├── tech4time-website-backend/       ← your clone
+├── tech4time-website-frontend/      ← the other half, worth cloning beside it
 └── t4t-private-admin/       ← created on first run. NEVER commit it
 └── t4t-private/           ← your local secrets, never committed
 ```

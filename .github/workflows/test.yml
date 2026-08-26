@@ -1,7 +1,7 @@
 # Every check this repository has, run on the machine rather than on a promise.
 #
 # THIS IS THE BACKEND. The public site's pages, its renderers and the browser
-# crawls over them are in tech4time-frontend's workflow of the same name.
+# crawls over them are in tech4time-website-frontend's workflow of the same name.
 # Neither list is the whole suite any more, and neither pretends to be:
 # check_content_model.py and check_docs.py each print which half they ran.
 #
@@ -127,7 +127,7 @@ jobs:
       #
       # check_focus, check_dark_mode, check_responsive and check_hover crawl a
       # list of public pages and never signed in, so they never covered the
-      # editor even before the split -- they went to tech4time-frontend with
+      # editor even before the split -- they went to tech4time-website-frontend with
       # the pages they were written for. Nothing was lost in the move; what is
       # missing is coverage the admin never had, and it is named in
       # docs/10-development/testing.md rather than left to be discovered.

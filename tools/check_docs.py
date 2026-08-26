@@ -128,11 +128,11 @@ def check_tools() -> None:
     elsewhere = {p.name for p in ROOT.rglob("*.p[yh]*") if "/tools/" not in p.as_posix()}
 
     # Nor is a tool that belongs to the OTHER repository, PROVIDED some
-    # document says so in full: `tech4time-backend/tools/admin-cli.php`. The
+    # document says so in full: `tech4time-website-backend/tools/admin-cli.php`. The
     # full path has to appear at least once, which is what stops "it's in the
     # other one" from becoming a way to keep a dead name in the prose forever.
     attributed = set(re.findall(
-        r"tech4time-(?:frontend|backend)/tools/([a-z0-9_-]+\.(?:py|php))",
+        r"tech4time-website-(?:frontend|backend)/tools/([a-z0-9_-]+\.(?:py|php))",
         all_docs_text(),
     ))
 
@@ -178,7 +178,7 @@ def check_admin_sections() -> None:
             fail("sections", "neither an admin nor any pages are here -- "
                              "this is not one of the two repositories")
         else:
-            ok("sections", "no admin here; tech4time-backend documents them")
+            ok("sections", "no admin here; tech4time-website-backend documents them")
         return
 
     admin_php = text(ROOT / "lib" / "admin.php")
@@ -218,7 +218,7 @@ def check_pages() -> None:
         return
 
     if not ROOT.joinpath("pages").is_dir():
-        ok("pages", "no pages here; tech4time-frontend documents them")
+        ok("pages", "no pages here; tech4time-website-frontend documents them")
         return
 
     body = text(MAP_DOC)
@@ -265,7 +265,7 @@ def check_cited_paths() -> None:
     PATH_EXEMPT rather than being guessed at.
 
     A file in the OTHER repository is written with the repository name in
-    front -- `tech4time-backend/lib/auth.php` -- and is not a claim about this
+    front -- `tech4time-website-backend/lib/auth.php` -- and is not a claim about this
     one. That is the whole convention: after the split a bare `lib/auth.php`
     means "here", always, so the two can never be confused in prose.
     """
@@ -347,7 +347,7 @@ def check_constant_table() -> None:
             fail("constants", f"lib/auth.php is here but "
                               f"{AUTH_DOC.relative_to(ROOT)} is not")
         else:
-            ok("constants", "no sign-in here; tech4time-backend documents it")
+            ok("constants", "no sign-in here; tech4time-website-backend documents it")
         return
 
     code = php_constants()
@@ -397,7 +397,7 @@ def check_claims() -> None:
                     f"{name} is described in "
                     + ", ".join(d.relative_to(ROOT).as_posix() for d in where)
                     + " but is not defined in lib/ here -- if it belongs to the "
-                      "other half, name it as tech4time-backend/lib/…"
+                      "other half, name it as tech4time-website-backend/lib/…"
                 )
             continue
 

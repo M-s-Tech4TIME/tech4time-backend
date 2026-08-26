@@ -37,7 +37,7 @@ shape as `/home/USER/t4t-private` on the host, so nothing about the layout diffe
 
 **The header and footer are copied into every page**, not included at runtime. Edit
 `tools/templates/`, then propagate. Never hand-edit one page's header.
-*shared-markup.md* (in tech4time-frontend)
+*shared-markup.md* (in tech4time-website-frontend)
 
 ---
 

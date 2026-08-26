@@ -4,12 +4,17 @@
 
 ## Decision
 
-Split into **`tech4time-frontend`** (`tech4time.bd`) and **`tech4time-backend`**
+Split into **`tech4time-website-frontend`** (`tech4time.bd`) and **`tech4time-website-backend`**
 (`admin.tech4time.bd`), communicating over a signed API.
 
-> **Amended when built.** The names lost their `-website-`. `tech4time-frontend` was renamed from
-> `tech4time-backend`, so it keeps the history, the pipeline and the deploy secrets that were
-> already proven against the live host; only the backend is new.
+> **Note from building it.** The names above are the ones in use, unchanged. They were briefly
+> shortened to `tech4time-frontend` and `tech4time-backend` on 2026-08-27 and put back the same day —
+> recorded because the shorter pair appears in that day's commits and a reader finding them there
+> should not think a decision was reversed.
+>
+> `tech4time-website-frontend` is a **rename of `tech4time-website`**, not a new repository, so it
+> keeps the history, the pipeline and the deploy secrets already proven against the live host. Only
+> the backend is new, and it was cloned rather than created empty so that it keeps the history too.
 
 ## Context
 

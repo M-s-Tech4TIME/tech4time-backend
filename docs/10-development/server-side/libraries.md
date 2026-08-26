@@ -85,7 +85,7 @@ damage is recovered from. `tools/test_store.py` covers both.
 
 ### `contract.php`
 
-**Shared — byte-identical in `tech4time-frontend` and `tech4time-backend`.**
+**Shared — byte-identical in `tech4time-website-frontend` and `tech4time-website-backend`.**
 
 `CONTRACT_VERSION` · `CONTRACT_DOCUMENTS` · `CONTRACT_BOOKKEEPING` · `careers_normalise()` ·
 `contact_normalise()` · `contact_defaults()` · `contact_fingerprint()` · `contract_sanitise()` ·
@@ -156,7 +156,7 @@ the last publish response**, not something this side computed. See
 `publish_sign()` · `publish_verify()` · `publish_check_envelope()` · `publish_reason()`
 
 The format content travels in, and only the format — sending is
-[`publish_client.php`](#publish_clientphp), receiving is the frontend's `tech4time-frontend/api/publish.php`. Full
+[`publish_client.php`](#publish_clientphp), receiving is the frontend's `tech4time-website-frontend/api/publish.php`. Full
 description: [the publish API](publish-api.md).
 
 The four checks are not interchangeable, and it is worth knowing which does what:
@@ -188,7 +188,7 @@ because a redirect on this route would post a signed document wherever it pointe
 
 ### `footer-fingerprint.php`
 
-**Frontend only, and generated** by `tech4time-frontend/tools/sync_site_contact.py`. One constant,
+**Frontend only, and generated** by `tech4time-website-frontend/tools/sync_site_contact.py`. One constant,
 `FOOTER_FINGERPRINT`.
 
 The footer's contact details are literal markup in all sixteen pages, because the project forbids

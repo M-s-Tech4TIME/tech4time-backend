@@ -9,7 +9,7 @@ Self-hosted SVG symbols, inlined per page. Not a webfont, not a CDN, not a share
 ## How it works
 
 `public/assets/icons/sprite.svg` holds the master set — 119 symbols, cut from Font Awesome Free metadata by
-`tech4time-frontend/tools/build_icon_sprite.py`.
+`tech4time-website-frontend/tools/build_icon_sprite.py`.
 
 Pages do **not** link to it. Each page carries the handful of symbols it actually uses, inlined at
 the top of `<body>` between two markers:
@@ -29,7 +29,7 @@ and reference them as same-document fragments:
 <svg class="icon" aria-hidden="true"><use href="#shield-alt"></use></svg>
 ```
 
-`tech4time-frontend/tools/inject_icons.py` keeps the block in sync with what the page references.
+`tech4time-website-frontend/tools/inject_icons.py` keeps the block in sync with what the page references.
 
 ---
 
@@ -71,7 +71,7 @@ and rewrites the block. It also removes symbols no longer referenced, so the blo
 dead weight.
 
 **If the symbol is not in the master sprite**, the script says so. Add it with
-`tech4time-frontend/tools/build_icon_sprite.py`, then inject.
+`tech4time-website-frontend/tools/build_icon_sprite.py`, then inject.
 
 ---
 

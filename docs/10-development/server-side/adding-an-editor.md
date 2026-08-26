@@ -19,7 +19,7 @@ Five pieces:
 |---|---|
 | a **model** | `lib/<name>.php` — the fields, their defaults, their validation |
 | **data** | `content/<name>.json` |
-| a **renderer** | `pages/<name>/index.php` — replaces `tech4time-frontend/index.html` |
+| a **renderer** | `pages/<name>/index.php` — replaces `tech4time-website-frontend/index.html` |
 | a **form** | `admin/sections/<name>.php` |
 | a **registry entry** | a row in `ADMIN_SECTIONS` |
 
@@ -64,7 +64,7 @@ Seed it with the page's current content, so the first render is identical to wha
 
 ## 3. The renderer — `pages/<name>/index.php`
 
-Rename `tech4time-frontend/index.html` to `index.php` and replace the editable copy with values from the model.
+Rename `tech4time-website-frontend/index.html` to `index.php` and replace the editable copy with values from the model.
 
 ```php
 <?php
@@ -181,5 +181,5 @@ the reason beside it. `test_careers_admin.py` is the worked example.
 
 **The footer problem, if the page carries contact details.** Anything repeated in every page's
 footer is markup, not content, and the editor cannot reach it. That is what
-`tech4time-frontend/tools/sync_site_contact.py` exists for, and it needs a deploy to take effect.
-*shared-markup.md* (in tech4time-frontend)
+`tech4time-website-frontend/tools/sync_site_contact.py` exists for, and it needs a deploy to take effect.
+*shared-markup.md* (in tech4time-website-frontend)

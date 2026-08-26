@@ -1,4 +1,4 @@
-# The files tech4time-frontend and tech4time-backend hold identically.
+# The files tech4time-website-frontend and tech4time-website-backend hold identically.
 # Re-record with: python3 tools/check_shared_lib.py --update
 # Then copy the changed file AND this manifest to the other repository.
 #
@@ -7,6 +7,6 @@
 # checked at run time by the side receiving the payload.
 
 56706cb84488f74ae207a746173ce3ec631a798e323ef900a17e2ab92b9c73c2  html.php
-85fd6955df99a14ac0ebf9cbafb33d9b5ac589a8a72c8db19fcf7a0da905e908  contract.php
-94975a4820062c15907fd64c479bc9f62820ded9f9ed659f0e3a7901617d7891  publish.php
+d8f799facf75b17f38c357e1dad5cdcf181fd0f456065d9005378de1a393a2ec  contract.php
+7604180cbf3c81d425dd8b20bb4d2826f03ee4869e2438afe3db3fd40d5111cc  publish.php
 4ba291f49f915bbc88559fbcabf587141a46ddccf89ba5906cece8064e7603ea  sprite.svg
