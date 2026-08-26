@@ -23,6 +23,27 @@ inside the document root after all and something is choosing to block them,
 which is exactly the weaker arrangement this repository is shaped to avoid.
 So they are asserted as 404 alone.
 
+IT LOOKS TWICE BEFORE IT FAILS
+A deploy that has just finished rsyncing is a deploy the web server has not
+finished reading. LiteSpeed re-reads .htaccess and rebuilds the vhost after
+files under it change, and for a few seconds in that window the host answers
+every path with 200 and none of the headers — a cPanel default page, not this
+site. This check runs within a second of the last file landing, so it sees that
+window sometimes.
+
+That happened once, on 2026-08-26: 6 of 22, with /no-such-page-here answering
+200 and every header absent. The deploy was fine; the site was fine a minute
+later; the red X was on a good release.
+
+So a failing check is looked at again after RETRY_AFTER seconds, and only a
+failure that survives the second look is a failure. The distinction is real: a
+server mid-reload recovers in seconds and a broken .htaccess never does.
+
+A check that only passed the second time is reported as such rather than
+quietly counted as a pass — "the site needed N seconds to settle" is worth
+knowing, and a check that started needing two looks every time would be telling
+you something.
+
 WHAT IT DOES NOT DO
 It does not sign in. It answers one question — did the files and the shape that
 protects them reach this host — and gives it back as an exit code CI can act on.
@@ -31,10 +52,14 @@ protects them reach this host — and gives it back as an exit code CI can act o
 import argparse
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 
 TIMEOUT = 20
+
+# How long to give the server to finish reloading before believing a failure.
+RETRY_AFTER = 20
 
 # (path, what it must answer, why it matters)
 EXPECT = [
@@ -91,58 +116,87 @@ def fetch(url: str):
         return None, {"error": str(e)}
 
 
+def check_path(origin, path, allowed):
+    """(passed, description of what was got)."""
+    status, info = fetch(origin + path)
+    if status in allowed:
+        return True, str(status)
+    got = status if status is not None else info.get("error", "no answer")
+    return False, f"wanted {' or '.join(str(a) for a in allowed)}, got {got}"
+
+
+def check_header(origin, path, header, needle):
+    status, info = fetch(origin + path)
+    value = info.get(header, "")
+    if value and needle.lower() in value.lower():
+        return True, value[:60]
+    return False, f"got {value[:80]!r}" if value else "(absent)"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Check a deployed admin over HTTP.")
     ap.add_argument("origin", help="e.g. https://admin.tech4time.bd")
+    ap.add_argument("--no-retry", action="store_true",
+                    help="fail on the first look; do not give the server time to settle")
     args = ap.parse_args()
 
     origin = args.origin.rstrip("/")
     print(f"{origin}\n{len(EXPECT)} paths, {len(HEADERS)} headers\n")
 
-    failed = []
-    passed = 0
+    # (kind, key, run-it) — one list so the retry does not have to know which
+    # sort of check it is looking at again.
+    checks = ([("path", (p, a, why), (lambda p=p, a=a: check_path(origin, p, a)))
+               for p, a, why in EXPECT]
+              + [("header", (p, h, n), (lambda p=p, h=h, n=n: check_header(origin, p, h, n)))
+                 for p, h, n in HEADERS])
 
-    for path, allowed, why in EXPECT:
-        status, info = fetch(origin + path)
+    results = {}
+    for kind, key, run in checks:
+        ok, detail = run()
+        results[key] = (ok, detail)
+        label = key[0] if kind == "path" else f"{key[1]}: {detail}"
+        print(f"  {'ok  ' if ok else 'FAIL'}  {detail + '  ' + key[0] if kind == 'path' else label}")
 
-        if status in allowed:
-            passed += 1
-            print(f"  ok    {status}  {path}")
-        else:
-            failed.append(path)
-            wanted = " or ".join(str(a) for a in allowed)
-            got = status if status is not None else info.get("error", "no answer")
-            extra = ""
-            if status == 403 and allowed == (404,):
-                extra = ("\n          403 means this IS inside the document root and "
-                         "something is blocking it.\n          Point the subdomain at "
-                         "admin.tech4time.bd/public/ — see ADR 0018.")
-            print(f"  FAIL  {path}\n          wanted {wanted}, got {got}\n"
-                  f"          {why}{extra}")
+    failed = [(kind, key, run) for kind, key, run in checks if not results[key][0]]
 
-    print()
+    # A server that has just been rsynced over may still be reloading. Look
+    # again before believing it — see the note at the top of this file.
+    settled = []
+    if failed and not args.no_retry:
+        print(f"\n  {len(failed)} did not pass. The server may still be reloading after the")
+        print(f"  deploy; looking again in {RETRY_AFTER} seconds before calling it a failure.\n")
+        time.sleep(RETRY_AFTER)
 
-    for path, header, needle in HEADERS:
-        status, info = fetch(origin + path)
-        value = info.get(header, "")
+        still = []
+        for kind, key, run in failed:
+            ok, detail = run()
+            results[key] = (ok, detail)
+            if ok:
+                settled.append(key[0])
+                print(f"  ok    {detail}  {key[0]}   (only on the second look)")
+            else:
+                still.append((kind, key))
+                print(f"  FAIL  {key[0]}  {detail}")
+        failed = still
 
-        if needle.lower() in value.lower():
-            passed += 1
-            print(f"  ok    {header}: {value[:60]}")
-        else:
-            failed.append(f"{path} {header}")
-            print(f"  FAIL  {path} is missing {header}"
-                  + (f" containing {needle!r}" if needle else "")
-                  + f"\n          got: {value[:80] or '(absent)'}")
+    passed = sum(1 for ok, _ in results.values() if ok)
+    print(f"\n{passed}/{len(results)} checks passed")
 
-    total = len(EXPECT) + len(HEADERS)
-    print(f"\n{passed}/{total} checks passed")
+    if settled:
+        print(f"\n{len(settled)} needed a second look, {RETRY_AFTER}s apart: "
+              + ", ".join(settled))
+        print("The deploy is fine. If this becomes every run rather than an "
+              "occasional one,\nthe server is taking longer to settle than it "
+              "used to and that is worth knowing.")
 
     if failed:
         print("\nfailed:")
-        for name in failed:
-            print(f"  - {name}")
-        print("\nThe deploy reached the server; what it left there is not right.")
+        for kind, key in failed:
+            print(f"  - {key[0]}" + ("" if kind == "path" else f" {key[1]}"))
+        print("\nThe deploy reached the server; what it left there is not right.\n"
+              "A 404 that became a 403 means lib/, sections/ and content/ are INSIDE\n"
+              "the document root and merely blocked — point the subdomain at\n"
+              "admin.tech4time.bd/public/ and see ADR 0018.")
         sys.exit(1)
 
     print("\nThe admin is served, and nothing beside it is.")
