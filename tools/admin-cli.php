@@ -40,18 +40,18 @@ if (PHP_SAPI !== 'cli') {
  *
  * Three cases, in order: run from tools/ inside the repository; told where to
  * look; or uploaded to the home directory on a cPanel account, where the site
- * is in ~/backend beside it. The admin's own document root is one level
- * further in, at ~/backend/public, and nothing here needs to know that — this
+ * is in ~/admin.tech4time.bd beside it. The admin's own document root is one level
+ * further in, at ~/admin.tech4time.bd/public, and nothing here needs to know that — this
  * reads files, not URLs.
  */
 function locate_lib(array $argv): string
 {
     $tries = [
         dirname(__DIR__),                                  // tools/ in the repo
-        (getenv('HOME') ?: '') . '/backend',                // cPanel, after the split
+        (getenv('HOME') ?: '') . '/admin.tech4time.bd',     // cPanel, after the split
         $argv[1] ?? '',                                    // told explicitly
         (getenv('HOME') ?: '') . '/public_html',           // cPanel, before the split
-        __DIR__ . '/backend',                              // uploaded beside it
+        __DIR__ . '/admin.tech4time.bd',                   // uploaded beside it
     ];
 
     foreach ($tries as $root) {
@@ -63,7 +63,7 @@ function locate_lib(array $argv): string
     fwrite(STDERR,
         "Could not find lib/auth.php.\n\n"
         . "Pass the site root as the first argument:\n"
-        . "  php admin-cli.php ~/backend list\n");
+        . "  php admin-cli.php ~/admin.tech4time.bd list\n");
     exit(1);
 }
 
@@ -366,7 +366,7 @@ try {
             . "\n"
             . "With one account, [user] can be left out.\n"
             . "\n"
-            . "On the host, upload this to your HOME directory — above ~/backend —\n"
+            . "On the host, upload this to your HOME directory — above ~/admin.tech4time.bd —\n"
             . "run it, and delete it.\n"
         ),
     };

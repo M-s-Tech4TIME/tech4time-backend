@@ -140,7 +140,7 @@ request it with its token, read the output, **delete it**.
 ### `admin-cli.php`
 
 The break-glass path when every way into the admin is shut. Upload it to the **home directory**,
-above `~/backend` — never into the document root.
+above `~/admin.tech4time.bd` — never into the document root.
 
 ```bash
 php ~/admin-cli.php list          # what accounts exist

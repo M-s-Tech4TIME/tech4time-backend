@@ -152,4 +152,4 @@ The public site's palette, layout, motion, JavaScript modules and page markup ar
 | The `public/.htaccess` blocking rules | [security-model.md](../40-reference/security-model.md) |
 | `lib/html.php`, `lib/contract.php`, `lib/publish.php` | They are **byte-identical** with the other repository. [publish-api.md](server-side/publish-api.md) |
 | `content/*.json` on a live server | It is the system of record. [routine-deploys.md](../20-deployment/routine-deploys.md) |
-| Where the document root points | It must be `backend/public/`. [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) |
+| Where the document root points | It must be `admin.tech4time.bd/public/`. [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) |

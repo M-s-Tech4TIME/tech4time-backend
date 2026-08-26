@@ -56,7 +56,7 @@ across the repositories, with a CI step in each comparing a SHA-256 against a co
 - HSTS `includeSubDomains` must stay **off** until AutoSSL has issued for the subdomain.
 - **The subdomain's document root must be outside `public_html`** —
   [environments.md](../20-deployment/environments.md). Resolved by
-  [0018](0018-the-backend-serves-from-a-subdirectory.md), which puts it at `backend/public/` and so
+  [0018](0018-the-backend-serves-from-a-subdirectory.md), which puts it at `admin.tech4time.bd/public/` and so
   moves `lib/`, `sections/` and `content/` out of reach by construction rather than by rule.
 
 Two questions this record left open are now settled: the stores are separate

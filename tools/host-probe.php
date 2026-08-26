@@ -29,7 +29,7 @@
  *
  * HOW TO USE
  *   1. Change PROBE_TOKEN to anything unguessable. It will not run until you do.
- *   2. Upload to the DOCUMENT ROOT — ~/backend/public/ — NOT into tools/, which
+ *   2. Upload to the DOCUMENT ROOT — ~/admin.tech4time.bd/public/ — NOT into tools/, which
  *      .htaccess forbids over HTTP. Leaving it there does nothing; it only runs
  *      if you deliberately move it to the web root.
  *   3. Visit https://tech4time.bd/host-probe.php?token=whatever-you-chose

@@ -143,8 +143,8 @@ repository in front: `tech4time-frontend/pages/careers/index.php`. `check_docs.p
 
 Work happens on `dev`; pull requests to `main` need explicit approval.
 
-**A push to `main` deploys it** to `/home/USER/backend/`, with `admin.tech4time.bd` pointed at
-`backend/public/`. Checks run, rsync over SSH, and the host is asked afterwards whether `lib/`,
+**A push to `main` deploys it** to `/home/USER/admin.tech4time.bd/`, with `admin.tech4time.bd` pointed at
+`admin.tech4time.bd/public/`. Checks run, rsync over SSH, and the host is asked afterwards whether `lib/`,
 `sections/` and `content/` still answer **404** — not 403, which would mean the document root is one
 level too high — [ci-cd.md](docs/20-deployment/ci-cd.md). Never sync `content/`.
 

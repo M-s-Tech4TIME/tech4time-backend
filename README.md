@@ -98,7 +98,7 @@ What each proves, and which tests to run when:
 ## Deploying
 
 **A push to `main` deploys it.** `tools/build_deploy_set.py` builds the upload set from an explicit
-allow list, CI rsyncs it over SSH to `/home/USER/backend/`, and the running admin is then asked
+allow list, CI rsyncs it over SSH to `/home/USER/admin.tech4time.bd/`, and the running admin is then asked
 whether `lib/`, `sections/` and `content/` still answer **404** — not 403, which would mean the
 document root is pointed one level too high.
 

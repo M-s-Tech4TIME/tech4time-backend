@@ -255,7 +255,7 @@ Current behaviour, documented because it is surprising rather than because it is
 
 | Trap | Consequence | Until it is fixed |
 |---|---|---|
-| The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly. This host's document root is `backend/public/`, so nothing beside `public_html` is inside it — [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) removes the layout that would exercise the gap rather than the gap itself |
+| The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly. This host's document root is `admin.tech4time.bd/public/`, so nothing beside `public_html` is inside it — [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) removes the layout that would exercise the gap rather than the gap itself |
 | `publish.key` is copied between hosts by hand | a mistake places it somewhere readable, or the two drift apart | the fingerprint on every signature makes a drift say so in one attempt; the file is 0600 in a 0700 directory outside both document roots |
 | A draft job post is published | its text sits on the public server, in `content/`, protected by `.htaccess` alone | the whole document travels so the two revisions stay comparable, and the public site filters on `status` when it renders. Unchanged from before the split, and stated rather than assumed — [publish-api.md](../10-development/server-side/publish-api.md) |
 

@@ -18,8 +18,8 @@ So the set is built here instead, and CI rsyncs a directory rather than
 assembling a rule. What may be uploaded stops being something to remember.
 
 WHAT THE TARGET IS, AND WHY IT IS NOT THE DOCUMENT ROOT
-This half deploys to /home/USER/backend/, and admin.tech4time.bd's document
-root is /home/USER/backend/public/ — one level inside it. So the upload set
+This half deploys to /home/USER/admin.tech4time.bd/, and admin.tech4time.bd's document
+root is /home/USER/admin.tech4time.bd/public/ — one level inside it. So the upload set
 carries lib/ and sections/ as well as public/, and none of them is reachable
 over HTTP because none of them is inside the document root. See ADR 0018.
 

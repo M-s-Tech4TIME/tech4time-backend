@@ -116,7 +116,7 @@ def main() -> None:
             if status == 403 and allowed == (404,):
                 extra = ("\n          403 means this IS inside the document root and "
                          "something is blocking it.\n          Point the subdomain at "
-                         "backend/public/ — see ADR 0018.")
+                         "admin.tech4time.bd/public/ — see ADR 0018.")
             print(f"  FAIL  {path}\n          wanted {wanted}, got {got}\n"
                   f"          {why}{extra}")
 

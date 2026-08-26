@@ -31,7 +31,7 @@ this repository.** `admin.tech4time.bd` points at `public/`, so `lib/`,
 why, and `tools/verify_live.py` asserts it after every deploy by requiring a
 **404** rather than a 403.
 
-The deploy target is `/home/USER/backend/`, one level *outside* the document
+The deploy target is `/home/USER/admin.tech4time.bd/`, one level *outside* the document
 root. The public site is a different repository at a different document root —
 `tech4time-frontend`, at `/home/USER/public_html/`.
 

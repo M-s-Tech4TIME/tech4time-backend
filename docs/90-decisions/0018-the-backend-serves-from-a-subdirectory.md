@@ -8,7 +8,7 @@
 repository root.
 
 ```
-/home/USER/backend/            ← the deploy target
+/home/USER/admin.tech4time.bd/            ← the deploy target
 ├── public/                    ← the document root. Everything the browser may ask for
 │   ├── index.php login.php setup.php logout.php forgot.php reset.php
 │   ├── .htaccess
@@ -71,7 +71,7 @@ the server rather than copied twice.
 **The private store is not inside the deploy target.** `T4T_PRIVATE` is set explicitly to
 `/home/USER/t4t-private-admin`, beside `public_html` rather than inside `backend/` — because
 `rsync --delete` onto `backend/` would otherwise remove it. The default path arithmetic would have
-landed it at `backend/t4t-private-admin`, which is exactly that mistake.
+landed it at `admin.tech4time.bd/t4t-private-admin`, which is exactly that mistake.
 
 **Related.** [0017](0017-two-private-stores.md) for the stores themselves, and
 [environments.md](../20-deployment/environments.md) for the subdomain trap this avoids.

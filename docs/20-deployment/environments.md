@@ -16,8 +16,8 @@ Where things live on each machine, and the one piece of path arithmetic that can
 | | Development | Production |
 |---|---|---|
 | Server | `php -S` via `tools/serve.py` | LiteSpeed on cPanel |
-| Document root | `public/` | `/home/USER/backend/public` |
-| Deploy target | the repository | `/home/USER/backend` |
+| Document root | `public/` | `/home/USER/admin.tech4time.bd/public` |
+| Deploy target | the repository | `/home/USER/admin.tech4time.bd` |
 | Private store | `../t4t-private-admin` | `/home/USER/t4t-private-admin` |
 | The other half | `../tech4time-frontend`, its own `serve.py` | `tech4time.bd` |
 | Publishing | `$T4T_PUBLIC_URL` at localhost | `https://tech4time.bd/api/publish.php` |
@@ -140,7 +140,7 @@ store was placed outside the web root to avoid depending on.
 > too and every publish would be refused.
 >
 > **The backend must set `T4T_PRIVATE` explicitly**, to `/home/USER/t4t-private-admin`. The default
-> arithmetic would put it at `backend/t4t-private-admin`, inside the deploy target, where
+> arithmetic would put it at `admin.tech4time.bd/t4t-private-admin`, inside the deploy target, where
 > `rsync --delete` would remove it.
 
 ---
