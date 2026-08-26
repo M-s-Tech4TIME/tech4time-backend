@@ -23,7 +23,7 @@ editor can put in front of a person.
 THE VERIFIER IS IN PYTHON, DELIBERATELY
 tools/publish_stub.py implements lib/publish.php's checks a second time, from
 the written description. Testing this client against the real endpoint in
-tech4time-frontend would check the two against each other and neither against
+tech4time-website-frontend would check the two against each other and neither against
 the format — a bug they shared would pass. The frontend's test_publish.py is
 the mirror: it signs in Python and posts to the real PHP endpoint.
 

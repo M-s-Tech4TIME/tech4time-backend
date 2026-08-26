@@ -103,7 +103,7 @@ When you change one, either append a version query to the tag:
 <link rel="stylesheet" href="/assets/css/base.css?v=2">
 ```
 
-(via `tech4time-frontend/tools/templates/head.html`, then `propagate_shared.py`) or lower the `max-age` for that file
+(via `tech4time-website-frontend/tools/templates/head.html`, then `propagate_shared.py`) or lower the `max-age` for that file
 type in `public/.htaccess`.
 
 ---
@@ -126,7 +126,7 @@ python3 tools/check_shared_markup.py
 Getting step 1 wrong pushes your stale local details into all sixteen pages.
 
 The admin shows a banner when the JSON and the footers disagree, so the gap is never invisible — but
-closing it is a deploy, not a save. *shared-markup.md* (in tech4time-frontend)
+closing it is a deploy, not a save. *shared-markup.md* (in tech4time-website-frontend)
 
 ---
 

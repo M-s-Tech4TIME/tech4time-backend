@@ -57,7 +57,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "tools" / "shared-lib.sha256"
 
-# Byte-identical in tech4time-frontend and tech4time-backend. Adding a file
+# Byte-identical in tech4time-website-frontend and tech4time-website-backend. Adding a file
 # here means adding it to BOTH repositories and re-recording in both.
 #
 # Recorded by a LOGICAL NAME, with the places it may live listed after it. The
@@ -109,7 +109,7 @@ def recorded() -> dict[str, str]:
 
 def write(now: dict[str, str]) -> None:
     lines = [
-        "# The files tech4time-frontend and tech4time-backend hold identically.",
+        "# The files tech4time-website-frontend and tech4time-website-backend hold identically.",
         "# Re-record with: python3 tools/check_shared_lib.py --update",
         "# Then copy the changed file AND this manifest to the other repository.",
         "#",

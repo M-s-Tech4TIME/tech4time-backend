@@ -148,7 +148,7 @@ Header always set Cache-Control "no-store, max-age=0"          "expr=…"
 `always` matters: without it the header attaches only to 2xx responses, and the login page answers a
 crawler with 200 while every other admin URL answers with a redirect.
 
-> **`/admin` is deliberately not in `tech4time-frontend/robots.txt`.** Listing it there advertises it to anyone who
+> **`/admin` is deliberately not in `tech4time-website-frontend/robots.txt`.** Listing it there advertises it to anyone who
 > reads the file.
 
 ---

@@ -4,8 +4,8 @@ Everything about this project that is not the code itself: how to set it up, how
 to change things, how to deploy it, and what to do when something breaks.
 
 **This is the editor.** The public website — its sixteen pages, its CSS, its JavaScript, its
-markup — is in **`tech4time-frontend`**, which has its own copy of this documentation covering that
-half. Entries that read *(in tech4time-frontend)* are there rather than here: the document exists,
+markup — is in **`tech4time-website-frontend`**, which has its own copy of this documentation covering that
+half. Entries that read *(in tech4time-website-frontend)* are there rather than here: the document exists,
 in the other repository.
 
 **New here?** Read [00-orientation/README.md](00-orientation/README.md), then
@@ -31,12 +31,12 @@ in the other repository.
 | | |
 |---|---|
 | **Where does this live?** — start here | [10-development/where-to-change-things.md](10-development/where-to-change-things.md) |
-| Colours, spacing, typography | *10-development/frontend/css.md* (in tech4time-frontend) |
-| Behaviour in the browser | *10-development/frontend/javascript.md* (in tech4time-frontend) |
-| Animation, sliders, the reveal | *10-development/frontend/motion.md* (in tech4time-frontend) |
+| Colours, spacing, typography | *10-development/frontend/css.md* (in tech4time-website-frontend) |
+| Behaviour in the browser | *10-development/frontend/javascript.md* (in tech4time-website-frontend) |
+| Animation, sliders, the reveal | *10-development/frontend/motion.md* (in tech4time-website-frontend) |
 | Icons | [10-development/server-side/icons.md](10-development/server-side/icons.md) |
-| The header or footer | *10-development/frontend/shared-markup.md* (in tech4time-frontend) |
-| Add a whole new page | *10-development/frontend/adding-a-page.md* (in tech4time-frontend) |
+| The header or footer | *10-development/frontend/shared-markup.md* (in tech4time-website-frontend) |
+| Add a whole new page | *10-development/frontend/adding-a-page.md* (in tech4time-website-frontend) |
 | Server-side code | [10-development/server-side/libraries.md](10-development/server-side/libraries.md) |
 | Make a page editable in `/admin` | [10-development/server-side/adding-an-editor.md](10-development/server-side/adding-an-editor.md) |
 | The sign-in, sessions, passwords | [10-development/server-side/authentication.md](10-development/server-side/authentication.md) |
@@ -128,15 +128,15 @@ half that rots silently.
 
 ## A note on the two repositories
 
-The project is split. **`tech4time-backend`** is this one, serving `admin.tech4time.bd` and owning
-the content; **`tech4time-frontend`** serves `tech4time.bd` and renders a replica it is sent.
+The project is split. **`tech4time-website-backend`** is this one, serving `admin.tech4time.bd` and owning
+the content; **`tech4time-website-frontend`** serves `tech4time.bd` and renders a replica it is sent.
 
 Every document opens with an **Applies to:** line — `frontend`, `backend`, or `both` — which is what
 made the split a move rather than a rewrite. A document marked `both` exists in both repositories
 and describes each half from its own side.
 
 **A path in backticks always means *this* repository.** A file in the other half is written with the
-repository name in front: `tech4time-frontend/pages/careers/index.php`. `tools/check_docs.py`
+repository name in front: `tech4time-website-frontend/pages/careers/index.php`. `tools/check_docs.py`
 enforces it, so the two can never be confused in prose.
 
 The decision records are numbered for the project, not for this repository, so

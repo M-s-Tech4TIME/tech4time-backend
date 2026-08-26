@@ -78,7 +78,7 @@ the one that counts.
 - [ ] `https://tech4time.bd/pages/about/` resolves **without** `.html`
 - [ ] `https://tech4time.bd/pages/careers/` renders job posts
 - [ ] `https://tech4time.bd/pages/contact/` renders offices
-- [ ] A nonsense URL renders `tech4time-frontend/404.html`
+- [ ] A nonsense URL renders `tech4time-website-frontend/404.html`
 - [ ] `https://tech4time.bd/lib/auth.php` is **403**
 - [ ] `https://tech4time.bd/content/careers.json` is **403**
 - [ ] `https://tech4time.bd/tools/` is **403**
@@ -141,9 +141,9 @@ certificate.
 
 ## 8. Search engines
 
-- [ ] Submit `tech4time-frontend/sitemap.xml` in Google Search Console
+- [ ] Submit `tech4time-website-frontend/sitemap.xml` in Google Search Console
 - [ ] Confirm the admin is **not** indexed — it is covered by an `X-Robots-Tag` rule in `public/.htaccess`
-      rather than by `tech4time-frontend/robots.txt`, deliberately: listing it in `tech4time-frontend/robots.txt` advertises it
+      rather than by `tech4time-website-frontend/robots.txt`, deliberately: listing it in `tech4time-website-frontend/robots.txt` advertises it
 
 ## 9. Write down what you did
 

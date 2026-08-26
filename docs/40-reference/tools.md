@@ -23,7 +23,7 @@ It serves **`public/`**, not the repository, because that is what the host serve
 escapes it 404s here exactly as it would there — `tools/dev-router.php` sees to that, and a
 development machine on which `/../lib/auth.php` resolves would teach the wrong lesson.
 
-To watch content actually travel, run `tech4time-frontend` beside it and point this at it:
+To watch content actually travel, run `tech4time-website-frontend` beside it and point this at it:
 
 ```bash
 T4T_PUBLIC_URL=http://localhost:8000 python3 tools/serve.py 8001
@@ -67,10 +67,10 @@ that does the other, rather than quietly checking less than they used to.
 | `admin_session.py` | *(not run directly)* gives a test an admin account and signs it in |
 | `publish_stub.py` | *(not run directly)* the far side, implemented a second time in Python |
 
-**`publish_stub.py` is the point, not a shortcut.** The real endpoint is `tech4time-frontend/api/publish.php`, and testing this half against it would check the two halves against each other
+**`publish_stub.py` is the point, not a shortcut.** The real endpoint is `tech4time-website-frontend/api/publish.php`, and testing this half against it would check the two halves against each other
 rather than against the format they both implement — a bug they shared would pass. So each side is
 checked against an independent implementation written from the description: this stub here, and over
-there `tech4time-frontend/tools/test_publish.py`, which signs in Python and posts to the real PHP endpoint. **Neither side is
+there `tech4time-website-frontend/tools/test_publish.py`, which signs in Python and posts to the real PHP endpoint. **Neither side is
 ever checked against its own counterpart.**
 
 Every test runs against a **copy** of the real data files, restored afterwards whether the run
@@ -82,10 +82,10 @@ passes or fails, and against a private store in a throwaway directory under `/tm
 |---|---|
 | `test_editor.py` | the rich-text editor driven as a person drives it, including a real sign-in: the toolbar, the selection, and that alignment is a class and never an inline style |
 
-**What is not here, and never was.** `tech4time-frontend/tools/check_focus.py`,
-`tech4time-frontend/tools/check_dark_mode.py`, `tech4time-frontend/tools/check_responsive.py` and
-`tech4time-frontend/tools/check_hover.py` crawl a list of public pages and never signed in, so they never covered the
-editor even before the split. They went to `tech4time-frontend` with the pages they were written
+**What is not here, and never was.** `tech4time-website-frontend/tools/check_focus.py`,
+`tech4time-website-frontend/tools/check_dark_mode.py`, `tech4time-website-frontend/tools/check_responsive.py` and
+`tech4time-website-frontend/tools/check_hover.py` crawl a list of public pages and never signed in, so they never covered the
+editor even before the split. They went to `tech4time-website-frontend` with the pages they were written
 for. Adapting them to the admin's signed-in screens is outstanding work, named here rather than
 left to be discovered — see [testing.md](../10-development/testing.md).
 
@@ -188,5 +188,5 @@ and how to run it. Then add a row to this page — `tools/check_docs.py` fails i
 undocumented, or if this page names one that no longer exists.
 
 A tool that belongs to the other half is named with the repository in front —
-`tech4time-frontend/tools/sync_site_contact.py` — and that full path has to appear at least once,
+`tech4time-website-frontend/tools/sync_site_contact.py` — and that full path has to appear at least once,
 which is what stops "it is in the other one" from keeping a dead name in the prose forever.

@@ -63,7 +63,7 @@ The frontend's copy of content it does not own. After the split, the backend is 
 and pushes a copy; the frontend renders from the copy and never asks at render time.
 
 ### reveal
-The scroll animation that fades sections in. Marked by rule via `tech4time-frontend/tools/apply_reveals.py`, and
+The scroll animation that fades sections in. Marked by rule via `tech4time-website-frontend/tools/apply_reveals.py`, and
 carefully designed never to leave anything hidden.
 
 ### salt

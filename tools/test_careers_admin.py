@@ -425,7 +425,7 @@ def run(client: Client, r: Results, site):
             "test-automation-engineer" in ids, str(ids))
 
     # What was published, rather than what a visitor sees: the page that
-    # renders this is in tech4time-frontend, and its half of the journey —
+    # renders this is in tech4time-website-frontend, and its half of the journey —
     # a published document arriving and being rendered — is proved there by
     # test_publish.py. This end asserts that the right document left.
     sent = json.dumps(site.documents.get("careers", {}), ensure_ascii=False)

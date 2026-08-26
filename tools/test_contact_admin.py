@@ -450,7 +450,7 @@ def published(site) -> dict:
 
     This is where the editor's half of the journey ends. What the frontend
     then DOES with the document — the <h1>, the tel: hrefs, the ContactPage
-    graph, the office cards — is proved in tech4time-frontend, by
+    graph, the office cards — is proved in tech4time-website-frontend, by
     test_publish.py, which publishes a document and reads the rendered page.
 
     Splitting it this way is not a loss of coverage so much as an honest

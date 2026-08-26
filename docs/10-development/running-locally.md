@@ -41,8 +41,8 @@ Your account lives in `../t4t-private/`, beside the clone:
 
 ```
 CodeSpace/
-├── tech4time-backend/       ← this repository
-├── tech4time-frontend/      ← the other half
+├── tech4time-website-backend/       ← this repository
+├── tech4time-website-frontend/      ← the other half
 ├── t4t-private-admin/       ← this side
 │   ├── secret.key           peppers the password hashes
 │   ├── admins.json          accounts, TOTP secrets, recovery codes
@@ -88,7 +88,7 @@ Every save publishes. With nothing to publish to, the editor says so on every sa
 correct, and is what it would do on the host.
 
 ```bash
-# terminal 1 — tech4time-frontend
+# terminal 1 — tech4time-website-frontend
 python3 tools/serve.py                                          # :8000
 
 # terminal 2 — here

@@ -4,7 +4,7 @@ The editor at **`admin.tech4time.bd`**: a sign-in of its own, four sections, and
 record for the two pages of the public site that change. No build step, no framework — the files
 here are the files that run on the server.
 
-**The public site is not in this repository.** It is **`tech4time-frontend`**, serving
+**The public site is not in this repository.** It is **`tech4time-website-frontend`**, serving
 `tech4time.bd`. This half owns the content and *pushes* a signed copy to it on every save; that half
 renders from the replica it is sent and never calls this one during a request.
 [publish-api.md](docs/10-development/server-side/publish-api.md)
@@ -31,7 +31,7 @@ its record before acting.
 6. **`content/` is the system of record.** Never overwrite it on a live server; the deploy seeds it
    with `--ignore-existing` and never syncs it.
 7. **`lib/html.php`, `lib/contract.php`, `lib/publish.php` and the icon sprite are byte-identical**
-   with `tech4time-frontend`. Change one and you change both, in the same breath, and bump
+   with `tech4time-website-frontend`. Change one and you change both, in the same breath, and bump
    `CONTRACT_VERSION` if the *shape* of a document changed.
 8. **Every save publishes.** The publish lives inside `careers_save()` and `contact_save()`, not at
    the call sites — the careers editor alone has six of those.
@@ -88,7 +88,7 @@ it 404s here too. The sign-in is real locally: `/setup.php` once, then `/login.p
 To watch content actually travel, run the frontend beside it:
 
 ```bash
-# terminal 1 — tech4time-frontend
+# terminal 1 — tech4time-website-frontend
 python3 tools/serve.py                                          # :8000
 # terminal 2 — here
 T4T_PUBLIC_URL=http://localhost:8000 python3 tools/serve.py 8001
@@ -135,7 +135,7 @@ link, a cited path that no longer exists, or a constant the prose quotes that ha
 read prose; that part is on you.
 
 **A path in backticks always means *this* repository.** A file in the other half is written with the
-repository in front: `tech4time-frontend/pages/careers/index.php`. `check_docs.py` enforces it.
+repository in front: `tech4time-website-frontend/pages/careers/index.php`. `check_docs.py` enforces it.
 
 ---
 

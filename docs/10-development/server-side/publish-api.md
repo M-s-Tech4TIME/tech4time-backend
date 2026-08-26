@@ -115,7 +115,7 @@ deployed).
 
 `unknown-key` is a separate code from `bad-signature` on purpose. Every signature carries the key's
 16-hex-character fingerprint, per
-*0014* (in tech4time-backend), so the live site can say *"that
+*0014* (in tech4time-website-backend), so the live site can say *"that
 is not the key I have"* rather than *"wrong signature"*. The two send you to completely different
 places.
 
@@ -133,7 +133,7 @@ backend    /home/USER/t4t-private-admin/publish.key
 
 **It is never derived from `secret.key`.** The two halves have separate stores and separate master
 keys, so anything derived would differ by construction and every publish would be refused. It would
-also mean *rotating the master key* (in tech4time-backend) silently broke
+also mean *rotating the master key* (in tech4time-website-backend) silently broke
 publishing.
 
 **It is never created on demand either**, which is the one place this differs from every other
@@ -191,8 +191,8 @@ The only thing the frontend tells the backend. The site-wide footers repeat the 
 literal markup in all sixteen pages, so they go stale the moment an address is edited and stay stale
 until the pages are rebuilt and deployed.
 
-`tech4time-frontend/tools/sync_site_contact.py` rebuilds them and records the fingerprint in
-`tech4time-frontend/lib/footer-fingerprint.php`; `tech4time-frontend/api/publish.php` returns it in every response; `contact_save()`
+`tech4time-website-frontend/tools/sync_site_contact.py` rebuilds them and records the fingerprint in
+`tech4time-website-frontend/lib/footer-fingerprint.php`; `tech4time-website-frontend/api/publish.php` returns it in every response; `contact_save()`
 records what it was told; the editor compares. **The side that knows what its own footers say is the
 side that answers** — which is why it is not simply a field in `contact.json` any more.
 

@@ -6,7 +6,7 @@ Development tool. NOT deployed to the web server (see tools/README.md).
 Imported by the tests; not run on its own.
 
 WHY A STUB AND NOT THE REAL ENDPOINT
-The real endpoint is in tech4time-frontend, and this repository does not have
+The real endpoint is in tech4time-website-frontend, and this repository does not have
 it. That is not a limitation to work around — it is the point.
 
 If this repository tested its client against the other repository's endpoint,

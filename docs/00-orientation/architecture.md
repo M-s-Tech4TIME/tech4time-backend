@@ -11,7 +11,7 @@ touching the code, read this one.
 
 ```mermaid
 flowchart TB
-    subgraph FE["tech4time.bd — tech4time-frontend"]
+    subgraph FE["tech4time.bd — tech4time-website-frontend"]
         AP["Apache<br/>.htaccess: headers, clean URLs, blocking"]
         ST["Static HTML<br/>served as-is"]
         PHP["PHP renders<br/>server-side"]
@@ -188,7 +188,7 @@ because nothing asked them to. `tools/reconcile.py` covers the case where nobody
 │   └── content/                       blocked by .htaccess
 │       ├── careers.json               ← a REPLICA. api/publish.php writes it
 │       └── contact.json               ← a REPLICA. api/publish.php writes it
-├── backend/                           tech4time-backend — see that repository
+├── admin.tech4time.bd/                tech4time-website-backend — see that repository
 │   └── public/                        ← DOCUMENT_ROOT   admin.tech4time.bd
 ├── t4t-private/            0700       ← no URL maps here at all
 │   ├── secret.key          0600       32 bytes; the throttle's keys derive from it
@@ -226,7 +226,7 @@ The one invariant that keeps the editor and the page from drifting apart:
 ```mermaid
 flowchart LR
     M["lib/contract.php<br/>THE MODEL<br/>byte-identical in both repos"]
-    M --> F["tech4time-backend<br/>sections/contact.php<br/>the form"]
+    M --> F["tech4time-website-backend<br/>sections/contact.php<br/>the form"]
     M --> R["pages/contact/index.php<br/>the renderer"]
     F -->|"signed publish"| J[("content/contact.json<br/>replica")]
     J -->|read by| R
@@ -285,7 +285,7 @@ attribute would be refused by the browser and silently lost. `test_editor.py` an
 **The four accessibility crawlers never covered the admin.** `check_focus.py`,
 `check_dark_mode.py`, `check_responsive.py` and `check_hover.py` walk a list of public pages and
 never signed in, so they missed these screens before the split as well as after it. They went to
-`tech4time-frontend` with the pages they were written for; adapting them to the admin's signed-in
+`tech4time-website-frontend` with the pages they were written for; adapting them to the admin's signed-in
 screens is outstanding, and named here rather than left to be discovered.
 
 The split itself is done: [0010](../90-decisions/0010-backend-pushes-content.md),

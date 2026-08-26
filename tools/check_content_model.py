@@ -82,8 +82,8 @@ SUBJECTS = [
         "helpers": [ROOT / "lib" / "contact.php", ROOT / "lib" / "contract.php"],
         # Where the other half of this check lives, named so that a run which
         # can only do one direction says who does the other.
-        "other_half": {"frontend": "tech4time-backend",
-                       "backend": "tech4time-frontend"}.get(SIDE, ""),
+        "other_half": {"frontend": "tech4time-website-backend",
+                       "backend": "tech4time-website-frontend"}.get(SIDE, ""),
         # Fields nothing renders and nothing edits beyond the bookkeeping,
         # which is read from CONTRACT_BOOKKEEPING and added to both sets below
         # rather than written out twice here.
@@ -316,7 +316,7 @@ def main() -> None:
         raise SystemExit(
             "This repository holds neither an editor (sections/) nor a renderer\n"
             "(pages/), so there is nothing here to compare the model against.\n"
-            "Run it in tech4time-frontend or tech4time-backend."
+            "Run it in tech4time-website-frontend or tech4time-website-backend."
         )
 
     print({

@@ -30,7 +30,7 @@ not run it on a public interface.
 PUBLISHING NEEDS THE OTHER HALF
 Every save pushes to the public site. With nothing to push to, the editor says
 so on every save — which is correct, and is what it would do on the host. To
-make it work, run tech4time-frontend beside this and point this at it:
+make it work, run tech4time-website-frontend beside this and point this at it:
 
     T4T_PUBLIC_URL=http://localhost:8000 python3 tools/serve.py 8001
 

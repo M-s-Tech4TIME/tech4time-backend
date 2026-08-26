@@ -46,7 +46,7 @@ has already established it can be revealed again.
 
 **Why:** it is the accessibility floor, and it is what makes the site indexable. Animation may
 decorate; it may never be the only route to something.
-*0012-motion-may-not-gate.md* (in tech4time-frontend)
+*0012-motion-may-not-gate.md* (in tech4time-website-frontend)
 
 ### No database
 

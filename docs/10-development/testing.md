@@ -44,7 +44,7 @@ Touched `lib/contract.php`, `lib/publish.php`, `lib/html.php` or the icon sprite
 
 ```bash
 python3 tools/check_shared_lib.py --update    # re-record the digests
-# then copy the changed file AND tools/shared-lib.sha256 into tech4time-frontend,
+# then copy the changed file AND tools/shared-lib.sha256 into tech4time-website-frontend,
 # and bump CONTRACT_VERSION if the SHAPE of a document changed
 ```
 
@@ -59,7 +59,7 @@ python3 tools/test_editor.py           # the toolbar, driven as a person drives 
 **What is not here, and never was.** `check_focus.py`, `check_dark_mode.py`,
 `check_responsive.py` and `check_hover.py` crawl a list of *public* pages and never sign in, so
 they never covered these screens — before the split as well as after it. They went to
-`tech4time-frontend` with the pages they were written for.
+`tech4time-website-frontend` with the pages they were written for.
 
 That is a real gap, and it is named here rather than left to be discovered: **the admin has never
 been checked for focus visibility, tap targets at 320px, or how it paints in dark mode.** Adapting
@@ -99,7 +99,7 @@ These start a real PHP server on a spare port and drive it over HTTP.
 
 **The three that publish do so to a stub, and that is the point.** `tools/publish_stub.py`
 implements the wire format a second time, in Python, from its written description. Pointing them at
-the real endpoint in `tech4time-frontend` would check the two halves against each other rather than
+the real endpoint in `tech4time-website-frontend` would check the two halves against each other rather than
 against the format they both implement — a bug they shared would pass. The frontend has the mirror:
 `test_publish.py` signs in Python and posts to the real PHP endpoint. **Neither side is ever checked
 against its own counterpart.**
@@ -115,7 +115,7 @@ runs against a copy of the real data files, restored afterwards whether the run 
 | `test_editor.py` | the rich-text editor driven as a person drives it, including a real sign-in: the toolbar, the selection, and that alignment is a class and never an inline style |
 | `check_hover.py` | every interactive element visibly responds to a real pointer |
 | `check_dark_mode.py` | every page in both themes, as painted — catching what a CSS reader cannot, like a token that resolves to the same colour as its background |
-| `check_responsive.py` | every page at 320, 360, 414, 640, 768, 1024 and 1440px: the document does not scroll sideways, no link, button or field is wider than the screen, and no tap target is under 24px. Each width is a frame, not a window — see *0015* (in tech4time-frontend), because Firefox silently clamps a window at about 500px and a check written the obvious way reports widths it never tested |
+| `check_responsive.py` | every page at 320, 360, 414, 640, 768, 1024 and 1440px: the document does not scroll sideways, no link, button or field is wider than the screen, and no tap target is under 24px. Each width is a frame, not a window — see *0015* (in tech4time-website-frontend), because Firefox silently clamps a window at about 500px and a check written the obvious way reports widths it never tested |
 | `check_focus.py` | every page tabbed one stop at a time, at desktop and mobile widths: each focused element has a visible ring (SC 2.4.7) and is not entirely covered by the sticky header or the fixed dock (SC 2.4.11). Runs with reduced motion so scrolling is instant, and **refuses to run** if that preference did not take effect — otherwise every position it reads is mid-scroll |
 
 They skip with a notice and exit 0 when Firefox or geckodriver is missing, rather than failing —

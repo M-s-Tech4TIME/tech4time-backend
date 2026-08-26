@@ -74,7 +74,7 @@ structured data from these.
 | Field | |
 |---|---|
 | `updated` | ISO 8601, written on save. Bookkeeping |
-| `footer_synced` | the fingerprint of the contact details as last pushed into the pages' footers. Drives the drift banner — *shared-markup.md* (in tech4time-frontend) |
+| `footer_synced` | the fingerprint of the contact details as last pushed into the pages' footers. Drives the drift banner — *shared-markup.md* (in tech4time-website-frontend) |
 | `meta` | `<title>`, meta description, Open Graph title |
 | `hero` | the page's heading and subheading |
 | `form` | the enquiry form's copy, and `service_types` — the subject options offered |

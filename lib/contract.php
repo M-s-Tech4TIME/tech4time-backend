@@ -2,7 +2,7 @@
 /**
  * Tech4TIME — the contract between the two repositories.
  *
- * SHARED FILE. Byte-identical in tech4time-frontend and tech4time-backend.
+ * SHARED FILE. Byte-identical in tech4time-website-frontend and tech4time-website-backend.
  * Change it in one and you must change it in the other in the same breath;
  * tools/check_shared_lib.py compares the two against a committed digest and
  * fails the build in both when they part.

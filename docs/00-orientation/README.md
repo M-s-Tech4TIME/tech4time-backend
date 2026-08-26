@@ -6,7 +6,7 @@ The editor behind the Tech4TIME website — a Bangladeshi IT company — and the
 the two pages whose content changes without a redeploy.
 
 **The website itself is not here.** Its sixteen pages, its contact form and its job board are
-`tech4time-frontend`, serving `tech4time.bd`. This half serves `admin.tech4time.bd`, owns the
+`tech4time-website-frontend`, serving `tech4time.bd`. This half serves `admin.tech4time.bd`, owns the
 content, and pushes a signed copy to that one on every save.
 
 It is built to a constraint that explains almost every decision you will find odd:
@@ -98,7 +98,7 @@ Honest status, so you do not go looking for things that are not there.
 - **The four accessibility crawlers never covered the admin.** They walk a list of public pages and
   never sign in, so these screens were missed before the split as well as after it. Adapting them is
   outstanding.
-- **The split is done and built.** `tech4time-frontend` and `tech4time-backend`, on `tech4time.bd`
+- **The split is done and built.** `tech4time-website-frontend` and `tech4time-website-backend`, on `tech4time.bd`
   and `admin.tech4time.bd`, talking over a signed publish API.
   [0011](../90-decisions/0011-two-repositories.md) ·
   [0017](../90-decisions/0017-two-private-stores.md) ·

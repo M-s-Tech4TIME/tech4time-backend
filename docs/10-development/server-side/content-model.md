@@ -81,7 +81,7 @@ Add the input. Match the surrounding markup exactly — the editors' fields carr
 
 And read it back where the section handles its POST.
 
-### 3. The renderer — `tech4time-frontend/pages/contact/index.php`
+### 3. The renderer — `tech4time-website-frontend/pages/contact/index.php`
 
 ```php
 <?php if ($office['whatsapp'] !== ''): ?>

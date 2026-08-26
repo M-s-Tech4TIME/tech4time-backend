@@ -2,7 +2,7 @@
 /**
  * Tech4TIME — the wire between the two halves.
  *
- * SHARED FILE. Byte-identical in tech4time-frontend and tech4time-backend.
+ * SHARED FILE. Byte-identical in tech4time-website-frontend and tech4time-website-backend.
  * tools/check_shared_lib.py compares the two against a committed digest.
  *
  * WHAT THIS IS
