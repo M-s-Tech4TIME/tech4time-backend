@@ -173,8 +173,10 @@ failure nobody investigates, because nothing asked them to.
 **Out of band**, for the times nobody was watching:
 
 ```bash
-python3 tools/reconcile.py            # every document
-python3 tools/reconcile.py careers    # one of them
+# uploaded to the host and run there — tools/ is never deployed, and it reads
+# THAT machine's content/ and THAT machine's private store
+python3 ~/reconcile.py ~/admin.tech4time.bd            # every document
+python3 ~/reconcile.py ~/admin.tech4time.bd careers    # one of them
 ```
 
 It reports one of four things per document — sent, in step, **the live site is ahead**, or the

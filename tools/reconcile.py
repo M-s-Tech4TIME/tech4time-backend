@@ -3,10 +3,21 @@
 Make the live site agree with this one, when a publish went missing.
 
 Operations tool. NOT deployed to the web server (see tools/README.md).
-Belongs to the BACKEND. Run from its repository root.
+Belongs to the BACKEND.
 
-    python3 tools/reconcile.py            # every document
-    python3 tools/reconcile.py careers    # one of them
+    python3 tools/reconcile.py                     # from the repository, locally
+    python3 ~/reconcile.py ~/admin.tech4time.bd    # uploaded, on the host
+    python3 tools/reconcile.py careers             # one document
+
+UPLOADED AND RUN, LIKE admin-cli.php
+tools/ is never deployed, so this is not on the host — and the host is the only
+place it is useful, because it reads THAT machine's content/ and THAT machine's
+private store. Running it from a development clone would publish development
+content to whatever it is pointed at.
+
+So it takes the site root as an argument, the same way tools/admin-cli.php
+does, and lives in the HOME directory above the deploy target rather than
+inside it. Upload it, run it, delete it.
 
 WHY THIS EXISTS
 Content reaches the public site by being pushed on save. Most of the time that
@@ -47,7 +58,35 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+
+def locate_root(explicit: str | None) -> Path:
+    """The site root: where lib/ is.
+
+    Named the same way admin-cli.php names it, and found the same way — an
+    explicit argument first, then the places this file might have been put.
+    """
+    tried = []
+
+    for candidate in filter(None, [
+        explicit,
+        str(Path(__file__).resolve().parent.parent),   # tools/, in the repository
+        str(Path.home() / "admin.tech4time.bd"),       # cPanel, after the split
+        str(Path(__file__).resolve().parent / "admin.tech4time.bd"),
+    ]):
+        here = Path(candidate).expanduser()
+        tried.append(str(here))
+        if (here / "lib" / "publish_client.php").is_file():
+            return here
+
+    raise SystemExit(
+        "Could not find lib/publish_client.php.\n\n"
+        "Pass the site root as the first argument:\n"
+        "  python3 reconcile.py ~/admin.tech4time.bd\n\n"
+        "Looked in:\n  " + "\n  ".join(tried)
+    )
+
+
+ROOT = Path(__file__).resolve().parent.parent   # replaced in main()
 
 PROBE = """
 require_once 'lib/publish_client.php';
@@ -155,8 +194,20 @@ def reconcile(document: str) -> bool:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("root", nargs="?",
+                    help="the site root, where lib/ is. Needed when this file has "
+                         "been uploaded rather than run from the repository")
     ap.add_argument("document", nargs="?", help="just this one")
     args = ap.parse_args()
+
+    # "reconcile.py careers" means the document, not a directory. Told apart by
+    # asking whether it names a document rather than by counting arguments,
+    # because guessing would make "reconcile.py contact" try to cd into it.
+    global ROOT
+    if args.root and args.document is None and not Path(args.root).expanduser().is_dir():
+        args.root, args.document = None, args.root
+
+    ROOT = locate_root(args.root)
 
     known = documents()
 

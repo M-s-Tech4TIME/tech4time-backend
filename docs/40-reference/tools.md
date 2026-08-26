@@ -98,7 +98,7 @@ The two halves and the one route between them — [the publish API](../10-develo
 | Script | Does |
 |---|---|
 | `make_publish_key.py` | Create the key both halves sign content with. Run **once**, then copy the printed value into the other half's private store by hand |
-| `reconcile.py` | Send anything the public site is behind on, and say plainly when the public site is **ahead** |
+| `reconcile.py` | *(uploaded and run on the host — see below)* Send anything the public site is behind on, and say plainly when the public site is **ahead** |
 | `check_shared_lib.py` | Assert the four shared files against a committed digest. `--update` re-records after a deliberate change |
 
 `make_publish_key.py` is deliberately not automatic. Every other secret here creates itself on first
@@ -108,6 +108,12 @@ the failure reads as "signature rejected" until somebody thinks of it.
 `reconcile.py` needs no status endpoint: every answer from the public site's endpoint carries the
 revision that host holds — the refusals as well as the acceptance — so an attempt *is* the question,
 and an attempt refused as `not-newer` has changed nothing.
+
+**It is uploaded, run and deleted, like `admin-cli.php`.** `tools/` is never deployed, and the host
+is the only place it is useful — it reads *that* machine's `content/` and *that* machine's private
+store. Run from a development clone it would publish development content to whatever it was pointed
+at. So it takes the site root as an argument and lives in the HOME directory, above the deploy
+target rather than inside it.
 
 `check_shared_lib.py` covers the icon sprite as well as the three PHP files. `CONTACT_ICONS` is in
 the contract, so an icon this editor offers must be one the public page can actually draw; a drifted
@@ -154,6 +160,19 @@ php ~/admin-cli.php where         # which files it is working on
 
 It asks for no password, because anyone who can run it can already read the accounts file. Delete it
 when you are done. [secrets-recovery.md](../30-operations/secrets-recovery.md)
+
+### `reconcile.py`
+
+Uploaded to the **home directory** the same way, and run against the site root:
+
+```bash
+python3 ~/reconcile.py ~/admin.tech4time.bd            # every document
+python3 ~/reconcile.py ~/admin.tech4time.bd careers    # one of them
+```
+
+With no argument it looks for `lib/publish_client.php` beside itself and then at
+`~/admin.tech4time.bd`, and refuses with the list of places it tried rather than guessing. Delete it
+when you are done — the next deploy would not, because it is outside the target.
 
 > Run `where` first, always. It prints the private store it resolved to, and a rescue tool pointed
 > at the wrong directory reports an account file that does not exist while the real one sits

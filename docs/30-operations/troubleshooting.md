@@ -30,9 +30,14 @@ Full table: [publish-api.md](../10-development/server-side/publish-api.md).
 
 ### Nobody saw the message, and the two have disagreed since
 
+`tools/` is not deployed, so this is uploaded to the host's home directory, run, and deleted — the
+same way `admin-cli.php` is. It has to run **there**: it reads that machine's `content/` and that
+machine's private store.
+
 ```bash
-python3 tools/reconcile.py            # sends anything the public site is behind on
-python3 tools/reconcile.py careers    # one document
+scp tools/reconcile.py techtime@HOST:~/
+ssh techtime@HOST 'python3 ~/reconcile.py ~/admin.tech4time.bd'
+ssh techtime@HOST 'rm ~/reconcile.py'
 ```
 
 It reports one of four things per document. **Stop at "the live site is ahead"** — that means the

@@ -1,6 +1,6 @@
 {
     "cv_form_url": "https://forms.gle/undLPJSVYtPSEUG69",
-    "updated": "2026-08-21T03:27:54+00:00",
+    "updated": "2026-08-26T20:06:00+00:00",
     "jobs": [
         {
             "id": "security-engineer",
@@ -38,5 +38,6 @@
             "certifications": "<p>We hold no mandatory certification requirements for this role.</p><p>&quot;A certification only earns its place on your profile the moment you can prove it — not by the letters after your name, but by the depth of skill and judgement you carry because of it. Your certification is only valuable to us if you can showcase its value through your own profound skill.&quot;</p>",
             "offers": "<ul><li>Competitive Salary</li><li>Exponential learning curve of Cybersecurity Industry</li><li>Mentorship and Guidance</li><li>Workplace of ever learning &amp; thriving opportunity</li><li>Deep Research of Cybersecurity Technologies</li><li>Opportunities regarding Innovation and Creativity in the field of Cybersecurity</li></ul>"
         }
-    ]
+    ],
+    "revision": 1
 }

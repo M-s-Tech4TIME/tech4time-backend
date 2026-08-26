@@ -1,5 +1,5 @@
 {
-    "updated": "",
+    "updated": "2026-08-26T20:06:00+00:00",
     "footer_synced": "4d3f0075b40b7fb4e5b594735a8fe790bb36281e7b5be26da3db77c0e7de857f",
     "meta": {
         "title": "Contact Us — Dhaka, Selangor & Brussels | Tech4TIME",
@@ -141,5 +141,6 @@
                 }
             }
         ]
-    }
+    },
+    "revision": 1
 }

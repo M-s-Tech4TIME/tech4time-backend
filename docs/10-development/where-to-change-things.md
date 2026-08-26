@@ -137,7 +137,7 @@ The public site's palette, layout, motion, JavaScript modules and page markup ar
 | Deploy for the first time | [first-deploy.md](../20-deployment/first-deploy.md) |
 | Push an update | [routine-deploys.md](../20-deployment/routine-deploys.md) |
 | Stand this host up for the first time | [admin-activation.md](../20-deployment/admin-activation.md) |
-| Re-send content the public site is missing | `python3 tools/reconcile.py` |
+| Re-send content the public site is missing | upload `tools/reconcile.py` to the host and run it — [tools.md](../40-reference/tools.md) |
 | Recover a lost password or secret | [secrets-recovery.md](../30-operations/secrets-recovery.md) |
 | Diagnose something broken | [troubleshooting.md](../30-operations/troubleshooting.md) |
 
