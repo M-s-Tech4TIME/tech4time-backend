@@ -4,15 +4,23 @@
 
 Where things live on each machine, and the one piece of path arithmetic that can go wrong.
 
+**Two sites now, on two hosts.** `admin.tech4time.bd` from this repository, `tech4time.bd` from
+`tech4time-frontend`. They share a cPanel account today and are meant not to need to — see
+[0017](../90-decisions/0017-two-private-stores.md) and
+[0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md).
+
 ---
 
 ## The two environments
 
 | | Development | Production |
 |---|---|---|
-| Server | `php -S` via `tools/serve.py` | Apache on cPanel |
-| Document root | the repository | `/home/USER/public_html` |
-| Private store | `../t4t-private` | `/home/USER/t4t-private` |
+| Server | `php -S` via `tools/serve.py` | LiteSpeed on cPanel |
+| Document root | `public/` | `/home/USER/backend/public` |
+| Deploy target | the repository | `/home/USER/backend` |
+| Private store | `../t4t-private-admin` | `/home/USER/t4t-private-admin` |
+| The other half | `../tech4time-frontend`, its own `serve.py` | `tech4time.bd` |
+| Publishing | `$T4T_PUBLIC_URL` at localhost | `https://tech4time.bd/api/publish.php` |
 | `.htaccess` | **not read** | read — it carries the real headers |
 | `mail()` | unavailable | cPanel's MTA |
 | `content/*.json` | test data, in git | **live data, owned by the host** |
@@ -22,11 +30,19 @@ Deliberately the same shape in both places. The private store is a sibling of th
 either way, so nothing about the layout differs between them.
 
 ```
-DEVELOPMENT                         PRODUCTION
-CodeSpace/                          /home/tech4tim/
-├── tech4time-website/    ← docroot ├── public_html/          ← docroot
-└── t4t-private/                    └── t4t-private/
+DEVELOPMENT                          PRODUCTION
+CodeSpace/                           /home/techtime/
+├── tech4time-frontend/   ← docroot  ├── public_html/              ← docroot  (frontend)
+├── tech4time-backend/               ├── backend/                  ← deploy target
+│   └── public/           ← docroot  │   └── public/               ← docroot  (backend)
+├── t4t-private/                     ├── t4t-private/              frontend store
+└── t4t-private-admin/               └── t4t-private-admin/        backend store
 ```
+
+The frontend's document root is its repository root; the backend's is `public/` inside its
+repository, so its `lib/`, `sections/` and `content/` are unreachable by construction rather than by
+a rewrite rule. [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) explains why
+the two differ.
 
 ---
 
@@ -35,10 +51,15 @@ CodeSpace/                          /home/tech4tim/
 `t4t_private_dir()` in `lib/private.php`:
 
 1. `T4T_PRIVATE`, from the environment or `$_SERVER`, if set
-2. otherwise `dirname(DOCUMENT_ROOT) . '/t4t-private'`
+2. otherwise **two** levels up from the document root, `/t4t-private-admin`
 
-On cPanel that arithmetic lands on `/home/USER/t4t-private` by construction. Nothing needs
-configuring.
+Two, not one, and the difference matters. The document root here is `<repo>/public`, so one level up
+is `<repo>` — which is the rsync target. A store there would be inside the thing `--delete` empties
+on every deploy, and the first release after somebody relied on the arithmetic would take the
+accounts with it. Two levels up is beside the repository: `/home/USER/t4t-private-admin` on the
+host, `CodeSpace/t4t-private-admin` locally.
+
+**Set `T4T_PRIVATE` explicitly anyway.** This is arithmetic and the value is the accounts.
 
 Then it **refuses if the result is inside the document root** — before creating anything, and again
 on the resolved path, because `realpath()` follows symlinks. It creates the directory 0700 and
@@ -81,7 +102,7 @@ them is safe with the default path arithmetic.
 └── t4t-private/                 ← one level up from both. Correct.
 ```
 
-**Not safe** — `/home/USER/public_html/admin_sub/`
+**Not safe** — `/home/USER/the backend's document root_sub/`
 
 ```
 /home/USER/
@@ -105,11 +126,22 @@ store was placed outside the web root to avoid depending on.
    right shape anyway — the backend is a separate site, not a folder of the public one.
 2. Set `T4T_PRIVATE` explicitly rather than relying on the arithmetic.
 
-> **Open question for the split:** whether the two sites share one private store or get one each.
-> They share by default, and the frontend does touch it — `contact-handler.php` keeps its rate-limit
-> counters there. Sharing is simpler; separate stores mean the public site holds no password hashes
-> at all, which is the better boundary for something two repositories and two pipelines will write
-> to. Not decided.
+> **That question is settled: one store each.**
+> [0017](../90-decisions/0017-two-private-stores.md).
+>
+> The frontend's holds three things — `secret.key`, `throttle.json` and `publish.key` — and its
+> `T4T_PRIVATE_FILES` has no *name* for an account file, so there is no path on that host for a
+> password hash to be written to. The backend's holds the accounts, the sessions, the audit log and
+> its own unrelated master key.
+>
+> The one value both hold is `publish.key`, and it is the **same bytes** on purpose:
+> `tools/make_publish_key.py` prints it once and a person places it on both. It is never derived
+> from `secret.key` — the two master keys differ by construction, so a derived value would differ
+> too and every publish would be refused.
+>
+> **The backend must set `T4T_PRIVATE` explicitly**, to `/home/USER/t4t-private-admin`. The default
+> arithmetic would put it at `backend/t4t-private-admin`, inside the deploy target, where
+> `rsync --delete` would remove it.
 
 ---
 
@@ -128,16 +160,24 @@ keep it away from the server.
 **Everything else** — the other fourteen pages — is part of the website itself, lives in the
 repository, and is deployed normally.
 
+**And on this side, `content/` is the system of record.** Everything the public site shows for those
+two pages is a copy of what is here. Losing it is the loss that matters — the frontend's copy is
+reconstructible from this one with `tools/reconcile.py`, and not the other way round.
+
 | | repository holds | production gets | owner afterwards |
 |---|---|---|---|
 | `careers.json` | rich test data | seeded empty, once | **the live server** |
 | `contact.json` | today's real content | seeded once | **the live server** |
 | every other page | the page itself | deployed every time | the repository |
 
-The planned improvement is seed files — `careers.seed.json` with `jobs: []`, copied into place
-**only if the target is absent** — so a deploy creates a data file when there is none and never
-overwrites one. Losing live edits stops depending on anyone remembering an exclude rule. Not built
-yet.
+**That improvement is built.** `deploy/seed/` holds a `careers.json` with `jobs: []`, and CI copies
+it with `rsync --ignore-existing`: it creates a data file when there is none and overwrites nothing.
+Losing live edits stopped depending on anyone remembering an exclude rule.
+
+It is a **seed, not a migration.** On a host that should have inherited content — the backend
+standing up beside a public site that already has job posts — the content has to be copied across by
+hand *before the first save*, or the first save publishes an empty document over the live page.
+[first-deploy.md](first-deploy.md)
 
 ---
 

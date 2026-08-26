@@ -1,0 +1,109 @@
+# Tech4TIME — admin.tech4time.bd
+#
+# HEADERS ONLY. Nothing here is what keeps anything secret.
+#
+# The document root is public/, so lib/, sections/ and content/ are not blocked
+# by a rule — they are outside the tree a URL can reach. Delete this file and
+# the admin becomes indexable and unhardened; it does not become readable.
+# That is deliberate, and it is the reason the backend has this shape at all:
+# a rule is a policy the server chooses to apply, and this is a new host whose
+# .htaccess has never been tested. See docs/90-decisions/0018-….md.
+#
+# It is also why there is no RewriteRule ^lib/ here. Adding one would suggest
+# that something depends on it.
+
+# --------------------------------------------------------------------------
+# 1. Security headers
+#
+# The CSP is the same one the public site runs, and for the same reason: no
+# CDN, no external origin, no inline style or script. The editor's rich text is
+# sanitised by lib/html.php before it is stored and again by the frontend on
+# receipt; this is the layer that means a mistake in either cannot execute.
+# --------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-Frame-Options "DENY"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+
+    # ----------------------------------------------------------------------
+    # A BLANKET RULE, NOT A PATH MATCH.
+    #
+    # The public site marks the editor noindex with
+    #   expr=%{REQUEST_URI} =~ m#^/admin(/|$)#
+    # and on this host the URI is "/" — so that rule matches nothing here and
+    # would fail silently, with the editor quietly indexable. ADR 0011
+    # catalogued this before the move; this is the fix.
+    #
+    # `always` is the operative word: without it the header is attached only to
+    # 2xx responses, and the login page answers a crawler with 200 while every
+    # other URL here answers with a redirect.
+    # ----------------------------------------------------------------------
+    Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+    Header always set Cache-Control "no-store, max-age=0"
+
+    # Assets are the exception: they carry no session and are fetched on every
+    # page of the editor.
+    <FilesMatch "\.(css|js|woff2|png|webp|svg|ico)$">
+        Header always set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # HSTS. includeSubDomains is deliberately absent, here and on the public
+    # site: this IS the subdomain, and asserting it from either side before
+    # AutoSSL has issued for every name would make an unissued one unreachable.
+    Header always set Strict-Transport-Security "max-age=31536000"
+</IfModule>
+
+# --------------------------------------------------------------------------
+# 2. https, and no directory listings
+# --------------------------------------------------------------------------
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+    # Any path segment beginning with a dot — .git/, .env, .svn/ — whatever
+    # ends up here. .well-known stays reachable or AutoSSL cannot renew, and a
+    # certificate that silently stops renewing is discovered months later.
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+    RewriteRule "(^|/)\." - [F,L]
+</IfModule>
+
+# --------------------------------------------------------------------------
+# 3. Extensions that are never part of a website
+#
+# Belt and braces. Nothing matching these is deployed into public/ — the upload
+# set is an allow list — but an archive or a note left here by hand would
+# otherwise be downloadable in full, which is exactly how a repository zip once
+# ended up readable on the public site.
+# --------------------------------------------------------------------------
+<FilesMatch "\.(md|py|sh|json|lock|yml|yaml|zip|tar|gz|tgz|bz2|rar|7z|sql|bak|log|env|ini)$">
+    Require all denied
+</FilesMatch>
+
+<Files "error_log">
+    Require all denied
+</Files>
+
+# --------------------------------------------------------------------------
+# 4. DIRECTORY PRIVACY MUST NOT BE LEFT ON THIS DIRECTORY
+#
+# cPanel's Directory Privacy writes its OWN .htaccess into whatever directory
+# it protects — which would be this file. Every deploy ships this one, so a
+# deploy would overwrite cPanel's and silently remove the password.
+#
+# That is not a conflict to be solved by protecting the file. The application's
+# own sign-in is the lock (ADR 0005: argon2id, a second factor, a lockout and
+# an audit log), and Directory Privacy is only useful here for the few minutes
+# between the first deploy and the first account existing. Switch it on before
+# that window, and switch it OFF before the next deploy.
+#
+# The frontend is the opposite case, and it is worth knowing why they differ:
+# there, cPanel owned admin/.htaccess and the repository never shipped one, so
+# the deploy protects it. Here the repository owns the file. See
+# docs/90-decisions/0016-a-deploy-protects-what-the-panel-owns.md.
+# --------------------------------------------------------------------------

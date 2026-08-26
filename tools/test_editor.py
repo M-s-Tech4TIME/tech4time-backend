@@ -38,20 +38,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import admin_session  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
+DOCROOT = ROOT / "public"
 DATA = ROOT / "content" / "careers.json"
 W3C = "element-6066-11e4-a52e-4f735466cecf"
 
-ROUTER = """<?php
-/* No faked sign-in: the browser goes through /admin/login.php like a person. */
-$p = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-if (str_starts_with($p, '/admin')) {
-    $f = __DIR__ . $p;
-    require is_file($f) && str_ends_with($f, '.php') ? $f : __DIR__ . '/admin/index.php';
-    return true;
-}
-if (rtrim($p, '/') === '/pages/careers') { require __DIR__ . '/pages/careers/index.php'; return true; }
-return false;
-"""
+ROUTER = ROOT / "tools" / "dev-router.php"
 
 INSTRUMENT = """
 window.__calls = [];
@@ -163,7 +154,7 @@ class Browser:
         """
         base = f"http://127.0.0.1:{web_port}"
 
-        self.go(base + "/admin/login.php")
+        self.go(base + "/login.php")
         self.js(
             "var f = document.querySelector('.signin__form');"
             f"f.querySelector('#user').value = {json.dumps(admin_session.USER)};"
@@ -188,8 +179,8 @@ class Browser:
 
 def run(b: Browser, web_port: int, r: Results):
     # The admin gained a second editor and an icon rail: the job posts moved
-    # from /admin/ to /admin/?s=careers.
-    b.go(f"http://127.0.0.1:{web_port}/admin/?s=careers&action=edit&id=security-engineer")
+    # from / to /?s=careers.
+    b.go(f"http://127.0.0.1:{web_port}/?s=careers&action=edit&id=security-engineer")
 
     print("\nsetup")
     r.check("the editors are built", b.js(
@@ -259,15 +250,13 @@ def main() -> None:
         return
 
     backup = DATA.read_bytes()
-    router = ROOT / f".test-router-{os.getpid()}.php"
-    router.write_text(ROUTER)
     web_port, drv_port = free_port(), free_port()
 
     work = Path(tempfile.mkdtemp(prefix="t4t-editor-"))
     private = work / "private"
 
     php = subprocess.Popen(
-        ["php", "-S", f"127.0.0.1:{web_port}", "-t", str(ROOT), str(router)],
+        ["php", "-S", f"127.0.0.1:{web_port}", "-t", str(DOCROOT), str(ROUTER)],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
         env=dict(os.environ, T4T_PRIVATE=str(private)))
     drv = subprocess.Popen(
@@ -294,7 +283,6 @@ def main() -> None:
                 proc.wait(timeout=5)
             except Exception:
                 pass
-        router.unlink(missing_ok=True)
         DATA.write_bytes(backup)
         shutil.rmtree(work, ignore_errors=True)
 

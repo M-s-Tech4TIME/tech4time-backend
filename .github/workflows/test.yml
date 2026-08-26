@@ -1,5 +1,10 @@
 # Every check this repository has, run on the machine rather than on a promise.
 #
+# THIS IS THE BACKEND. The public site's pages, its renderers and the browser
+# crawls over them are in tech4time-frontend's workflow of the same name.
+# Neither list is the whole suite any more, and neither pretends to be:
+# check_content_model.py and check_docs.py each print which half they ran.
+#
 # The pre-commit list in docs/10-development/testing.md is what a person is
 # asked to run. This is the same list run by something that cannot forget, and
 # deploy.yml requires it: what gates a merge and what gates a release are the
@@ -44,13 +49,16 @@ jobs:
           php -v | head -1
 
       - run: python3 tools/check_contrast.py
-      - run: python3 tools/check_shared_markup.py
       - run: python3 tools/check_content_model.py
       - run: python3 tools/check_secrets.py
       - run: python3 tools/check_docs.py
-      - run: python3 tools/audit_pages.py
-      - run: python3 tools/inject_icons.py --check
       - run: python3 tools/build_deploy_set.py --check
+      # The four files both repositories hold identically -- including the icon
+      # sprite, because CONTACT_ICONS is in the contract and an icon this side
+      # offers must be one the other side can draw. Hygiene, not a guarantee:
+      # the guarantee is CONTRACT_VERSION, checked at run time by the endpoint
+      # this half posts to.
+      - run: python3 tools/check_shared_lib.py
 
   server:
     name: php
@@ -58,13 +66,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # These drive a real PHP server and a real sign-in, and the private
-      # store lands beside the checkout the same way it lands beside the
-      # document root on the host.
+      # These drive a real PHP server and a real sign-in, served from public/
+      # exactly as the host serves it, with the private store beside the
+      # checkout the same way it lands beside the deploy target on the host.
+      #
+      # The three that publish do so to tools/publish_stub.py -- an
+      # implementation of the wire format written a second time, in Python,
+      # from its description. Pointing them at the other repository's endpoint
+      # would check the two halves against each other rather than against the
+      # format they both implement.
       - run: php -v | head -1
       - run: python3 tools/test_store.py
       - run: python3 tools/test_admin_auth.py
-      - run: python3 tools/test_contact_handler.py
+      - run: python3 tools/test_publish_client.py
       - run: python3 tools/test_careers_admin.py
       - run: python3 tools/test_contact_admin.py
 
@@ -96,11 +110,10 @@ jobs:
       - name: pillow
         run: pip install --quiet Pillow
 
-      # Every browser suite calls shutil.which("firefox") — that exact name —
-      # and exits 0 with a notice when it is missing. That is right on a laptop
-      # and wrong here, where a failed install would turn eight suites into
-      # eight silent passes. So the three names they look for are required to
-      # be present before any of them runs.
+      # test_editor.py calls shutil.which("firefox") — that exact name — and
+      # exits 0 with a notice when it is missing. That is right on a laptop and
+      # wrong here, where a failed install would turn the suite into a silent
+      # pass. So the three names it looks for are required to be present first.
       - name: the browser is really here
         run: |
           set -euo pipefail
@@ -110,34 +123,16 @@ jobs:
           firefox --version
           geckodriver --version | head -1
 
-      # All eight, then a verdict — not eight steps that stop at the first
-      # failure. A step-per-suite hides everything behind the earliest
-      # problem: test_motion failed on its third check and the five suites
-      # after it had never run in CI at all, so each fix would have revealed
-      # the next one a three-minute round trip at a time.
+      # One suite here, and it is worth saying what is NOT here.
       #
-      # Grouped so the log is still readable, and the failing names are
-      # repeated at the end where nobody has to scroll for them.
-      - name: browser suites
-        run: |
-          set -uo pipefail
-          failed=""
-          for s in test_nav test_theme test_motion test_editor \
-                   check_hover check_dark_mode check_responsive check_focus; do
-            echo "::group::$s"
-            if python3 "tools/$s.py"; then
-              echo "-- $s passed"
-            else
-              echo "-- $s FAILED"
-              failed="$failed $s"
-            fi
-            echo "::endgroup::"
-          done
-          if [ -n "$failed" ]; then
-            echo "::error::failing suites:$failed"
-            exit 1
-          fi
-          echo "all eight browser suites passed"
+      # check_focus, check_dark_mode, check_responsive and check_hover crawl a
+      # list of public pages and never signed in, so they never covered the
+      # editor even before the split -- they went to tech4time-frontend with
+      # the pages they were written for. Nothing was lost in the move; what is
+      # missing is coverage the admin never had, and it is named in
+      # docs/10-development/testing.md rather than left to be discovered.
+      - name: browser suite
+        run: python3 tools/test_editor.py
 
       # These leave processes behind when a step is cancelled, and a runner
       # that hangs on to Firefox never finishes.

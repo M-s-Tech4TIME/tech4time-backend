@@ -38,17 +38,17 @@ Everything else is detail.
 ### 1. Never upload `content/`
 
 The host's `content/careers.json` and `content/contact.json` are the **real data**, written by people
-using `/admin/`. A deploy that includes them destroys live job posts and contact details.
+using the admin. A deploy that includes them destroys live job posts and contact details.
 
 ### 2. Never upload `tools/`
 
-It contains scripts that manipulate the site and two that can reset an admin password. `.htaccess`
+It contains scripts that manipulate the site and two that can reset an admin password. `public/.htaccess`
 blocks the path as a backstop; the rule is that it is never uploaded at all.
 
 ### 3. Never upload an `admin/.htaccess`
 
 cPanel writes its own file there. Uploading over it silently removes whatever protection it was
-applying. There is no `.htaccess` in `admin/` in this repository, and there must never be one.
+applying. There is no `public/.htaccess` in `admin/` in this repository, and there must never be one.
 
 ---
 

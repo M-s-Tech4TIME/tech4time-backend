@@ -8,8 +8,9 @@
 #   3. rsync runs once with --dry-run and the output is read by a gate before
 #      anything is written. The gate looks for deletions under paths the panel
 #      owns, and fails the job rather than the site.
-#   4. content/ is seeded with --ignore-existing, never synced. A job post on
-#      the host always wins.
+#   4. content/ is seeded with --ignore-existing, never synced. THIS host's
+#      content/ is the system of record — the public site holds a replica —
+#      so what is here always wins over anything a deploy carries.
 #   5. verify_live.py asks the running site whether the rules that protect it
 #      are still there.
 #
@@ -31,7 +32,7 @@ permissions:
 # One deploy at a time. Two rsyncs into the same document root interleave
 # their writes, and the loser is whichever finishes second.
 concurrency:
-  group: deploy-production
+  group: deploy-admin
   cancel-in-progress: false
 
 jobs:
@@ -74,22 +75,25 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
           ssh -i ~/.ssh/deploy -p "$SSH_PORT" \
             -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "$SSH_USER@$SSH_HOST" 'echo connected as $(whoami), docroot $(ls -d ~/public_html)'
+            "$SSH_USER@$SSH_HOST" 'echo connected as $(whoami), target $(ls -d ~/backend)'
 
-      # Everything the panel owns and the repository does not. None of it is in
+      # Everything the host owns and the repository does not. None of it is in
       # _deploy/site, so --delete would remove all of it. 'P' is 'protect':
       # do not delete this on the receiver. See docs/90-decisions/0016.
+      #
+      # The list is SHORTER than the frontend's, and the difference is worth
+      # reading. The target here is ~/backend, not a cPanel document root, so
+      # cgi-bin, .user.ini and php.ini are not written into it by the panel.
+      # public/.htaccess is NOT protected: this repository ships it, and if
+      # cPanel's Directory Privacy has written its own there, that is a
+      # configuration to switch off before deploying rather than a file to
+      # preserve — see the note at the end of public/.htaccess.
       - name: the protect list
         run: |
           cat > /tmp/protect.rules <<'RULES'
           P /content/
-          P /admin/.htaccess
-          P /.well-known/
-          P /cgi-bin/
+          P /public/.well-known/
           P /error_log
-          P /.user.ini
-          P /php.ini
-          P /.htpasswd
           RULES
           cat /tmp/protect.rules
 
@@ -103,7 +107,7 @@ jobs:
           rsync -az --delete --itemize-changes --dry-run \
             --filter='merge /tmp/protect.rules' \
             -e "ssh -i ~/.ssh/deploy -p $SSH_PORT -o BatchMode=yes" \
-            _deploy/site/ "$SSH_USER@$SSH_HOST:~/public_html/" | tee /tmp/plan.txt
+            _deploy/site/ "$SSH_USER@$SSH_HOST:~/backend/" | tee /tmp/plan.txt
           echo
           echo "proposed deletions:"
           grep '^\*deleting' /tmp/plan.txt || echo "  (none)"
@@ -118,9 +122,10 @@ jobs:
           # spaces, and a pattern expecting one silently matches nothing —
           # a gate that always passes, which is worse than no gate at all.
           # Caught by running this against a deliberately unprotected plan.
-          if grep -E '^\*deleting[[:space:]]+(content/|admin/\.htaccess|\.well-known/|cgi-bin/|error_log|\.user\.ini|php\.ini|\.htpasswd)' /tmp/plan.txt; then
+          if grep -E '^\*deleting[[:space:]]+(content/|public/\.well-known/|error_log)' /tmp/plan.txt; then
             echo "::error::The deploy proposed deleting something the host owns. Refusing."
-            echo "content/ holds live job posts and contact details written through /admin/."
+            echo "content/ here is the SYSTEM OF RECORD — every job post and contact"
+            echo "detail the client has written. The public site holds a replica of it."
             echo "Nothing has been written to the server. Fix the protect list and re-run."
             exit 1
           fi
@@ -136,12 +141,19 @@ jobs:
           rsync -az --delete --itemize-changes \
             --filter='merge /tmp/protect.rules' \
             -e "ssh -i ~/.ssh/deploy -p $SSH_PORT -o BatchMode=yes" \
-            _deploy/site/ "$SSH_USER@$SSH_HOST:~/public_html/"
+            _deploy/site/ "$SSH_USER@$SSH_HOST:~/backend/"
 
       # --ignore-existing is the whole content rule: it creates what is absent
       # and overwrites nothing. A file already on the host was written by
-      # somebody through /admin/ and wins, permanently, without anyone having
-      # to decide so on the day. No --delete here, ever.
+      # somebody in the editor and wins, permanently, without anyone having to
+      # decide so on the day. No --delete here, ever.
+      #
+      # This is a SEED, not a migration. If the public site already had content
+      # when this host was built, that content had to be copied here by hand
+      # before the first save — see docs/20-deployment/first-deploy.md. A seed
+      # arriving over an empty content/ on a host that should have inherited
+      # one is how the first save publishes an empty document over the live
+      # site.
       - name: seed content, only where there is none
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -151,10 +163,15 @@ jobs:
           set -euo pipefail
           rsync -az --ignore-existing --itemize-changes \
             -e "ssh -i ~/.ssh/deploy -p $SSH_PORT -o BatchMode=yes" \
-            _deploy/seed/ "$SSH_USER@$SSH_HOST:~/public_html/content/"
+            _deploy/seed/ "$SSH_USER@$SSH_HOST:~/backend/content/"
 
-      - name: ask the site whether it is still protected
-        run: python3 tools/verify_live.py https://tech4time.bd
+      # The 404s matter more than the 200s here, and they must be 404s: lib/,
+      # sections/ and content/ are OUTSIDE the document root, so a request for
+      # them reaches nothing rather than reaching a rule that refuses. A 403
+      # would mean the subdomain's document root is pointed one level too high
+      # and the whole shape of this repository has been undone silently.
+      - name: ask the admin whether it is still shaped right
+        run: python3 tools/verify_live.py https://admin.tech4time.bd
 
       - name: forget the key
         if: always()

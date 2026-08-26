@@ -22,16 +22,26 @@
  * t4t_private_dir() refuses rather than accept a location it cannot vouch for.
  *
  * WHERE IT IS
- *   host   $T4T_PRIVATE, or /home/USER/t4t-private beside /home/USER/public_html
+ *   host   $T4T_PRIVATE, or /home/USER/t4t-private-admin
  *   local  $T4T_PRIVATE, set by tools/serve.py and by the test harnesses
  *
- * Not reachable over HTTP: .htaccess forbids /lib/.
+ * TWO STORES, ONE PER HALF
+ * The public site keeps its own at /home/USER/t4t-private, holding three
+ * things: a master key that peppers nothing but its throttle, the contact
+ * form's counters, and publish.key. It has no name for an account file at all.
+ *
+ * This one holds everything else, and the two master keys are unrelated: the
+ * halves are meant to be separable, so the frontend must be able to run on a
+ * machine with no access to any of this. See ADR 0017.
+ *
+ * Not reachable over HTTP: this directory is outside the document root, and so
+ * is lib/ itself — the document root is public/. See ADR 0018.
  */
 
 declare(strict_types=1);
 
-/** The directory name looked for beside the document root when nothing says otherwise. */
-const T4T_PRIVATE_NAME = 't4t-private';
+/** The directory name looked for when nothing says otherwise. */
+const T4T_PRIVATE_NAME = 't4t-private-admin';
 
 /**
  * Everything the store holds. Names are here rather than spelled out at each
@@ -53,16 +63,23 @@ const T4T_PRIVATE_FILES = [
 /**
  * The document root, as the thing the private store must stay outside of.
  *
- * Empty under the CLI — the tools run from the repository, whose root stands in
- * for the document root there, which is exactly the comparison we want when a
- * test or a probe is deciding whether a path would be reachable in production.
+ * On this host that is public/, not the repository — lib/, sections/ and
+ * content/ all sit beside it rather than inside it, which is what makes them
+ * unreachable by construction rather than by a rewrite rule (ADR 0018).
+ *
+ * Under the CLI there is no request to ask. public/ is the document root on
+ * every host this runs on, so that is what stands in for one — which is
+ * exactly the comparison wanted when a test or a probe is deciding whether a
+ * path would be reachable in production. Answering "the repository" there
+ * would make the CLI think lib/ was web-reachable and the store beside the
+ * repository was inside the web root; both are wrong.
  */
 function t4t_document_root(): string
 {
     $root = trim((string)($_SERVER['DOCUMENT_ROOT'] ?? ''));
 
     if ($root === '') {
-        $root = dirname(__DIR__);
+        $root = dirname(__DIR__) . '/public';
     }
 
     return rtrim(realpath($root) ?: $root, '/');
@@ -87,9 +104,21 @@ function t4t_private_dir(): string
     $dir = trim((string)(getenv('T4T_PRIVATE') ?: ($_SERVER['T4T_PRIVATE'] ?? '')));
 
     if ($dir === '') {
-        /* The cPanel shape: the document root is /home/USER/public_html, so the
-           store belongs at /home/USER/t4t-private — one level up, out of reach. */
-        $dir = dirname(t4t_document_root()) . '/' . T4T_PRIVATE_NAME;
+        /* TWO levels up, not one, and the difference matters.
+
+           The document root is <repo>/public, so one level up is <repo> — and
+           <repo> is the rsync target. A store there would be inside the thing
+           --delete empties on every deploy, and the first release after
+           somebody relied on the arithmetic would take the accounts with it.
+
+           Two levels up is beside the repository: /home/USER/t4t-private-admin
+           on the host, CodeSpace/t4t-private-admin locally. The same shape in
+           both places, and outside anything a deploy writes to.
+
+           Setting $T4T_PRIVATE explicitly is still recommended — see
+           docs/20-deployment/environments.md — because this is arithmetic and
+           the value is the accounts. */
+        $dir = dirname(dirname(t4t_document_root())) . '/' . T4T_PRIVATE_NAME;
     }
 
     $dir = rtrim($dir, '/');

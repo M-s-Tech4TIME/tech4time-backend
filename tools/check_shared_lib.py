@@ -18,8 +18,16 @@ WHAT IS SHARED, AND WHY EACH ONE IS
                       differently is a field one of them loses on the next save.
 
     lib/publish.php   the wire format. Disagree here and nothing publishes at
-                      all — which is the least bad of the three, because it
+                      all — which is the least bad of the four, because it
                       fails loudly on the first attempt.
+
+    sprite.svg        the icon set. CONTACT_ICONS is in the contract, so the
+                      backend offers a fixed list of icons and the frontend
+                      has to be able to DRAW every one of them. A sprite that
+                      has drifted means a reach row the editor previewed
+                      correctly and the public page renders as an empty box —
+                      which nothing else here would notice, because both
+                      halves would be behaving exactly as written.
 
 WHAT THIS CHECK IS WORTH, HONESTLY
 Not much on its own, and it is important to say so where somebody will read it.
@@ -51,24 +59,39 @@ MANIFEST = ROOT / "tools" / "shared-lib.sha256"
 
 # Byte-identical in tech4time-frontend and tech4time-backend. Adding a file
 # here means adding it to BOTH repositories and re-recording in both.
-SHARED = [
-    "lib/html.php",
-    "lib/contract.php",
-    "lib/publish.php",
-]
+#
+# Recorded by a LOGICAL NAME, with the places it may live listed after it. The
+# two halves do not put everything in the same place — the frontend's document
+# root is the repository and the backend's is public/, so the sprite is at
+# assets/icons/ in one and public/assets/icons/ in the other. Recording the
+# path would make the two manifests differ and the comparison meaningless;
+# recording the name keeps this file itself identical in both.
+SHARED = {
+    "html.php":     ["lib/html.php"],
+    "contract.php": ["lib/contract.php"],
+    "publish.php":  ["lib/publish.php"],
+    "sprite.svg":   ["assets/icons/sprite.svg", "public/assets/icons/sprite.svg"],
+}
+
+
+def located() -> dict[str, Path]:
+    """Where each shared file is in THIS repository."""
+    out = {}
+    for name, places in SHARED.items():
+        here = next((ROOT / p for p in places if (ROOT / p).is_file()), None)
+        if here is None:
+            raise SystemExit(
+                f"{name} is named as a shared file and is in none of "
+                f"{places} in this repository.\n"
+                f"Both halves must hold it, or neither should list it."
+            )
+        out[name] = here
+    return out
 
 
 def digests() -> dict[str, str]:
-    out = {}
-    for rel in SHARED:
-        path = ROOT / rel
-        if not path.is_file():
-            raise SystemExit(
-                f"{rel} is named as a shared file and is not in this repository.\n"
-                f"Both halves must hold it, or neither should list it."
-            )
-        out[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
-    return out
+    return {name: hashlib.sha256(path.read_bytes()).hexdigest()
+            for name, path in located().items()}
 
 
 def recorded() -> dict[str, str]:
@@ -95,7 +118,7 @@ def write(now: dict[str, str]) -> None:
         "# checked at run time by the side receiving the payload.",
         "",
     ]
-    lines += [f"{now[rel]}  {rel}" for rel in SHARED]
+    lines += [f"{now[name]}  {name}" for name in SHARED]
     MANIFEST.write_text("\n".join(lines) + "\n")
 
 
@@ -111,8 +134,8 @@ def main() -> None:
     if args.update:
         write(now)
         print(f"Recorded {len(SHARED)} digests in {MANIFEST.relative_to(ROOT)}\n")
-        for rel in SHARED:
-            print(f"  {now[rel][:16]}…  {rel}")
+        for name in SHARED:
+            print(f"  {now[name][:16]}…  {name}")
         print("\nNow copy the changed file AND this manifest into the other")
         print("repository, and bump CONTRACT_VERSION if the SHAPE changed.")
         return
@@ -126,25 +149,28 @@ def main() -> None:
 
     problems = []
 
-    for rel in SHARED:
-        if rel not in was:
-            problems.append(f"{rel} is shared but not recorded — run --update")
-        elif was[rel] != now[rel]:
+    where = located()
+
+    for name in SHARED:
+        if name not in was:
+            problems.append(f"{name} is shared but not recorded — run --update")
+        elif was[name] != now[name]:
             problems.append(
-                f"{rel} has changed since it was recorded\n"
-                f"          recorded  {was[rel][:16]}…\n"
-                f"          now       {now[rel][:16]}…\n"
+                f"{name} has changed since it was recorded\n"
+                f"          at        {where[name].relative_to(ROOT)}\n"
+                f"          recorded  {was[name][:16]}…\n"
+                f"          now       {now[name][:16]}…\n"
                 f"          If this was deliberate: run --update, copy the file and\n"
                 f"          the manifest to the other repository, and bump\n"
                 f"          CONTRACT_VERSION if the SHAPE of a document changed."
             )
 
-    for rel in sorted(set(was) - set(SHARED)):
-        problems.append(f"{rel} is recorded but no longer listed as shared — run --update")
+    for name in sorted(set(was) - set(SHARED)):
+        problems.append(f"{name} is recorded but no longer listed as shared — run --update")
 
-    for rel in SHARED:
-        print(f"  {now[rel][:16]}…  {rel}"
-              + ("" if was.get(rel) == now[rel] else "   CHANGED"))
+    for name in SHARED:
+        print(f"  {now[name][:16]}…  {name:<13} {where[name].relative_to(ROOT)}"
+              + ("" if was.get(name) == now[name] else "   CHANGED"))
 
     if problems:
         print(f"\ncheck_shared_lib: {len(problems)} problem(s)\n")

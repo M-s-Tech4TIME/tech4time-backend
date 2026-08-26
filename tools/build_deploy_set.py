@@ -8,16 +8,24 @@ Build/deploy tool. NOT deployed to the web server (see tools/README.md).
     python3 tools/build_deploy_set.py --out _deploy  # build it
 
 WHY THIS EXISTS
-Until now the upload set was a sentence in a document — an rsync command with
-eight --exclude flags, run by hand, correct as long as everybody typed all
-eight. The flags are not equally important: seven of them save bandwidth, and
-one of them, --exclude='content/', is the only thing standing between a deploy
-and every job post the client has written. There is no way to tell them apart
-by looking, and the day one is dropped the site keeps working and the loss is
-silent.
+An upload set described by --exclude flags is correct only as long as everybody
+types all of them, and the flags are not equally important: most save
+bandwidth, and one is the only thing standing between a deploy and every job
+post the client has written. There is no way to tell them apart by looking, and
+the day one is dropped everything keeps working and the loss is silent.
 
 So the set is built here instead, and CI rsyncs a directory rather than
 assembling a rule. What may be uploaded stops being something to remember.
+
+WHAT THE TARGET IS, AND WHY IT IS NOT THE DOCUMENT ROOT
+This half deploys to /home/USER/backend/, and admin.tech4time.bd's document
+root is /home/USER/backend/public/ — one level inside it. So the upload set
+carries lib/ and sections/ as well as public/, and none of them is reachable
+over HTTP because none of them is inside the document root. See ADR 0018.
+
+That also means rsync --delete runs against a directory holding content/, the
+system of record. It is protected the same way the frontend's is: never synced,
+seeded once with --ignore-existing, and named in the deploy's protect list.
 
 WHY AN ALLOW LIST, NOT AN IGNORE LIST
 The two fail in opposite directions. Under an ignore list a new file in the
@@ -31,7 +39,7 @@ therefore exhaustive, and anything not named in it does not go.
 
 CONTENT IS NOT PART OF THE SET
 content/ is the client's data — job posts and contact details typed into
-/admin/ on the live server — and the repository's copy is test data. It is
+the admin — and the repository's copy is test data. It is
 never synced. But the first deploy has to put something there or the two
 dynamic pages have nothing to render, so it is built separately, into seed/,
 and CI copies that with rsync --ignore-existing: it creates what is absent and
@@ -52,30 +60,21 @@ ROOT = Path(__file__).resolve().parent.parent
 # Everything that goes to the document root, named. Nothing else does.
 # A directory here brings its contents, minus DENY below.
 UPLOAD = [
-    ".htaccess",          # headers, caching, and the rules that block lib/ and content/
-    "index.html",
-    "404.html",
-    "robots.txt",
-    "sitemap.xml",
-    "site.webmanifest",
-    "contact-handler.php",
-    "api/",               # where the admin host pushes content in
-    "pages/",
-    "assets/",
-    "lib/",               # server-side rendering and the whole sign-in
-    "admin/",
+    "public/",            # THE DOCUMENT ROOT — its .htaccess, the six entry
+                          # points, and the assets a browser fetches
+    "lib/",               # outside it: the sign-in, the contract, the client
+    "sections/",          # outside it: included by public/index.php, never fetched
 ]
 
 # Refused anywhere inside the above. Each is a thing that would otherwise be
 # carried along by the directory it sits in.
 DENY = [
-    "admin/.htaccess",    # cPanel writes its own there; ours would fight it
-    "*.md",               # documentation, and the plan
+    "*.md",               # documentation
     "*.py",               # tools that happen to sit beside site files
-    "*.key",              # the master key, if one ever strays into the tree
+    "*.key",              # secret.key or publish.key, if one strays into the tree
     "admins.json",        # password hashes, likewise
     "setup-token.txt",
-    "*.bak",              # content backups written by the editor
+    "*.bak",              # content backups written by store_write()
     "*.tmp",
     ".DS_Store",
     "__pycache__/*",
@@ -86,22 +85,25 @@ DENY = [
 # both FTP clients and zip tools have been seen to drop it silently, taking
 # the block on lib/ and content/ with it and leaving a site that looks fine.
 REQUIRED = [
-    ".htaccess",
-    "index.html",
-    "404.html",
-    "assets/css/base.css",
+    "public/.htaccess",              # headers, and the blanket noindex
+    "public/index.php",
+    "public/login.php",
+    "public/setup.php",
+    "public/assets/css/admin.css",
+    "public/assets/icons/sprite.svg",   # read from disk and inlined by lib/admin.php
     "lib/private.php",
-    "admin/index.php",
-    "admin/login.php",
-    "admin/setup.php",
-    "pages/careers/index.php",
-    "pages/contact/index.php",
-    "api/publish.php",    # the only route content takes to the live site
+    "lib/auth.php",
+    "lib/contract.php",              # the shape both halves agree on
+    "lib/publish.php",               # and the format they agree it travels in
+    "lib/publish_client.php",        # without it a save writes and never sends
+    "sections/careers.php",
+    "sections/contact.php",
 ]
 
 # Never in the set, whatever else changes. Stated separately from "not in
 # UPLOAD" because that is the claim worth failing on out loud.
-FORBIDDEN_TREES = ["content", "tools", "docs", "references", ".git", ".claude"]
+FORBIDDEN_TREES = ["content", "tools", "docs", "references", ".git", ".claude",
+                   "deploy", "pages", "api"]
 
 SEED = ROOT / "deploy" / "seed"
 
@@ -152,10 +154,12 @@ def build(out_dir: Path) -> list[str]:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / rel, dst)
 
-    # careers starts empty on a new host — the repository's copy is test data.
+    # A BRAND NEW backend starts empty. This is not the migration path — if
+    # the public site already has content, that content is the record and must
+    # be copied into this host's content/ before the first save, or the first
+    # save will publish an empty document over it. See
+    # docs/20-deployment/first-deploy.md.
     shutil.copy2(SEED / "careers.json", seed / "careers.json")
-    # contact is the real thing already, and is the same file the footers were
-    # built from. Seeding it from anywhere else would make the two disagree.
     shutil.copy2(ROOT / "content" / "contact.json", seed / "contact.json")
 
     return paths

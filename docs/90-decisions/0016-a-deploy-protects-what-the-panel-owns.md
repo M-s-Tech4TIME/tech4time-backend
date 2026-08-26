@@ -30,7 +30,7 @@ exists to remove files dropped from the repository — treats every one of them 
 The costs are not equal, and that is what makes this worth a record:
 
 - **`content/`** is the client's data. Deleting it destroys job posts and contact details typed
-  into `/admin/`, and the loss is silent: the site keeps working, showing whatever the seed put
+  into the admin, and the loss is silent: the site keeps working, showing whatever the seed put
   there, until somebody notices their vacancy is gone.
 - **`.well-known/`** is how AutoSSL answers ACME challenges. Deleting it breaks certificate
   renewal, and that failure surfaces *months later* as an expired certificate on a site nobody

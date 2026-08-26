@@ -12,7 +12,7 @@ Password hashes, the master key, authenticator secrets, sessions, counters and t
 
 The obvious place was `content/`, which is already blocked by `RewriteRule ^content/ - [F,L]`.
 
-But an `.htaccess` rule is a policy the server *chooses* to apply. If `mod_rewrite` is off, or an
+But an `public/.htaccess` rule is a policy the server *chooses* to apply. If `mod_rewrite` is off, or an
 upload replaces the file, it silently stops applying — and the failure is invisible.
 
 That risk is acceptable for site copy: if `content/` were ever served, a stranger would read the

@@ -1,0 +1,11 @@
+# Tech4TIME admin. Nothing here is for a crawler.
+#
+# The blanket X-Robots-Tag in .htaccess is what actually keeps this out of
+# results — a header a crawler cannot ignore and cannot fail to fetch. This
+# file only asks, and asking is the weaker half of the pair.
+#
+# Disallow: / is correct HERE, unlike on the public site, where naming /admin
+# in robots.txt would have published the path to anyone who read it. There is
+# no path to leak on a host whose whole purpose is one application.
+User-agent: *
+Disallow: /

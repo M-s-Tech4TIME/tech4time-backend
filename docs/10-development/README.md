@@ -29,7 +29,7 @@ Then make a change and run [the checks](testing.md).
 **`python3 -m http.server` is not enough.** Four things need PHP: the careers page, the contact page,
 the admin, and the contact form's handler. Use `python3 tools/serve.py`.
 
-**The admin sign-in is real, locally too.** Nothing is faked. Visit `/admin/setup.php` once, create
+**The admin sign-in is real, locally too.** Nothing is faked. Visit `/setup.php` once, create
 an account, pair an authenticator app. See [running-locally.md](running-locally.md).
 
 **Your secrets live outside the repository**, at `../t4t-private`, beside your clone — the same
@@ -37,7 +37,7 @@ shape as `/home/USER/t4t-private` on the host, so nothing about the layout diffe
 
 **The header and footer are copied into every page**, not included at runtime. Edit
 `tools/templates/`, then propagate. Never hand-edit one page's header.
-[shared-markup.md](frontend/shared-markup.md)
+*shared-markup.md* (in tech4time-frontend)
 
 ---
 
@@ -49,8 +49,8 @@ shape as `/home/USER/t4t-private` on the host, so nothing about the layout diffe
 | [running-locally.md](running-locally.md) | the dev server, signing in, what cannot work locally |
 | [where-to-change-things.md](where-to-change-things.md) | **"I want to change X" → the file that owns it** |
 | [testing.md](testing.md) | every check, what it proves, how to read a failure |
-| [frontend/](frontend/) | CSS, JavaScript, motion, icons, shared markup, adding a page |
-| [backend/](backend/) | the libraries, the content model, editors, authentication |
+| [server-side/](server-side/) | CSS, JavaScript, motion, icons, shared markup, adding a page |
+| [backend/](server-side/) | the libraries, the content model, editors, authentication |
 
 ---
 

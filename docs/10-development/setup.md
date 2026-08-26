@@ -81,7 +81,7 @@ python3 tools/serve.py
 That is the whole setup. There is nothing to build and no dependency to fetch.
 
 > **Do not use `python3 -m http.server`.** It will show you the *source* of the careers page, the
-> contact page and the admin instead of their output. `serve.py` runs PHP's built-in server with a
+> the editors instead of their output. `serve.py` runs PHP's built-in server with a
 > router that resolves the same clean URLs Apache does on the host.
 
 Open the site and click around. Every page should work.
@@ -93,7 +93,7 @@ Open the site and click around. Every page should work.
 The sign-in is real locally — nothing is faked, because on the host there is nothing to fake it
 against any more.
 
-1. Go to **http://localhost:8000/admin/setup.php**
+1. Go to **http://localhost:8001/setup.php**
 2. Fill in a username, an email and a password.
    *No setup key is asked for*, because the request comes from your own machine. On the host it is
    required — see [admin-activation.md](../20-deployment/admin-activation.md).
@@ -106,7 +106,9 @@ You now have `../t4t-private/` beside your clone, holding your account.
 
 ```
 CodeSpace/
-├── tech4time-website/     ← your clone
+├── tech4time-backend/       ← your clone
+├── tech4time-frontend/      ← the other half, worth cloning beside it
+└── t4t-private-admin/       ← created on first run. NEVER commit it
 └── t4t-private/           ← your local secrets, never committed
 ```
 
@@ -156,7 +158,7 @@ account you just made.
 | Pages show PHP source | You used `python3 -m http.server`. Use `tools/serve.py`. |
 | `php: command not found` | `php-cli` is not installed — step 1 |
 | Assets 404, page unstyled | You opened the file over `file://`. Every path is root-relative; use the server. |
-| `/admin/` refuses to load | The private store cannot be created. The message names the path — check permissions on the directory *above* your clone. |
+| The admin refuses to load | The private store cannot be created. The message names the path — check permissions on the directory *above* your clone. |
 | Browser tests skip with a notice | Firefox or geckodriver is missing. That is by design — they exit 0 rather than fail. |
 | `ModuleNotFoundError: PIL` | Only the asset builders need Pillow: `pip3 install --user Pillow` |
 

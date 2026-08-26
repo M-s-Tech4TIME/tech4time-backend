@@ -46,7 +46,15 @@ require_once __DIR__ . '/throttle.php';
 require_once __DIR__ . '/totp.php';
 
 /** Where the admin lives. One constant, so the subdomain move is one edit. */
-const ADMIN_BASE = '/admin/';
+/* The admin's own root. It was '/admin/' while the editor was a folder of the
+   public site; on admin.tech4time.bd it is the document root, so every
+   redirect, every "next" target and every form action here is '/'-relative to
+   this host and nothing else.
+
+   Kept as a constant rather than inlined because it is what admin_safe_next()
+   compares against: a "next" that does not start with it is refused, which is
+   what stops ?next= from being an open redirect. */
+const ADMIN_BASE = '/';
 
 const AUTH_COOKIE   = 't4tadm';
 const AUTH_IDLE     = 3600;    // seconds of inactivity before a session lapses

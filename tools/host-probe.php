@@ -29,7 +29,7 @@
  *
  * HOW TO USE
  *   1. Change PROBE_TOKEN to anything unguessable. It will not run until you do.
- *   2. Upload to public_html/ alongside index.html — NOT into tools/, which
+ *   2. Upload to the DOCUMENT ROOT — ~/backend/public/ — NOT into tools/, which
  *      .htaccess forbids over HTTP. Leaving it there does nothing; it only runs
  *      if you deliberately move it to the web root.
  *   3. Visit https://tech4time.bd/host-probe.php?token=whatever-you-chose
@@ -127,7 +127,7 @@ if (!is_dir($where)) {
     printf("  Permissions        %04o%s\n", fileperms($where) & 0777,
         (fileperms($where) & 0777) === 0700 ? '' : '  (0700 is expected)');
     printf("  Account set up     %s\n",
-        is_file($where . '/admins.json') ? 'yes' : 'no — visit /admin/setup.php');
+        is_file($where . '/admins.json') ? 'yes' : 'no — visit /setup.php');
 }
 
 $inside = $docroot !== '' && str_starts_with(rtrim($where, '/') . '/', $docroot . '/');

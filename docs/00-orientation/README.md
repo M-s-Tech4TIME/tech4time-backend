@@ -2,8 +2,12 @@
 
 **Applies to:** both
 
-The public website of Tech4TIME, a Bangladeshi IT company: sixteen pages, a contact form, a job
-board, and a small admin panel for editing the two pages whose content changes.
+The editor behind the Tech4TIME website — a Bangladeshi IT company — and the content of record for
+the two pages whose content changes without a redeploy.
+
+**The website itself is not here.** Its sixteen pages, its contact form and its job board are
+`tech4time-frontend`, serving `tech4time.bd`. This half serves `admin.tech4time.bd`, owns the
+content, and pushes a signed copy to that one on every save.
 
 It is built to a constraint that explains almost every decision you will find odd:
 
@@ -23,13 +27,15 @@ to resurrect. Every time that trade-off was made, it is written down in
 
 ```
 tech4time.bd/                 the public website — mostly flat .html files
-    /pages/careers/           .php — renders job posts from content/careers.json
-    /pages/contact/           .php — renders offices and numbers from content/contact.json
+    /                         the overview — what can be edited, and what cannot
+    /?s=careers               job posts and the CV link  → content/careers.json
+    /?s=contact               offices, numbers, the form → content/contact.json
+    /?s=account               your password, second factor and recovery codes
     /contact-handler.php      where the enquiry form posts
-    /admin/                   the editor for those two pages, behind its own sign-in
 ```
 
-Fourteen of the sixteen pages are static HTML. Two are PHP, because what they say changes without a
+The public site's other fourteen pages are static HTML in the frontend. Two are PHP, because what
+they say changes without a
 redeploy — and re-uploading a website to change a phone number is not a workflow anyone sustains.
 
 Those two render **on the server**, from JSON on disk. They do not fetch anything at runtime. That
@@ -57,7 +63,8 @@ Fuller version: [repository-map.md](repository-map.md).
 
 ## The parts worth understanding early
 
-**There is no database.** Content is JSON files, edited through `/admin/` and written atomically.
+**There is no database.** Content is JSON files, edited here and written atomically, then published
+to the public site over a signed API.
 Accounts are a JSON file too. If you are looking for a schema migration, there isn't one — see
 [0002-no-database.md](../90-decisions/0002-no-database.md).
 
@@ -68,7 +75,7 @@ ever committed. See [security-model.md](../40-reference/security-model.md).
 
 **The admin has its own sign-in.** Password, then an authenticator app, with lockout, an audit log,
 recovery codes, and password recovery by emailed code. It used to be cPanel Directory Privacy;
-it is not any more. See [authentication.md](../10-development/backend/authentication.md).
+it is not any more. See [authentication.md](../10-development/server-side/authentication.md).
 
 **Progressive enhancement is a hard rule, not an aspiration.** Every page works with JavaScript
 off: the forms post natively, content is visible, navigation works, and nothing is hidden that
@@ -84,15 +91,20 @@ If you add a CDN link, the browser will refuse it.
 
 Honest status, so you do not go looking for things that are not there.
 
-- **Two of sixteen pages are editable.** The other fourteen are hand-edited HTML. Making them
+- **Two of sixteen pages are editable.** The other fourteen are hand-edited HTML in the frontend.
+  Making them
   manageable is planned work, not missing work — see
-  [adding-an-editor.md](../10-development/backend/adding-an-editor.md).
-- **The repository has not been split yet.** The plan is `tech4time-website-frontend` and
-  `tech4time-website-backend` on `tech4time.bd` and `admin.tech4time.bd`, talking over a signed
-  publish API. Not built. See [0011-two-repositories.md](../90-decisions/0011-two-repositories.md).
-- **There is no CI/CD.** Deploys are manual uploads today. GitHub Actions over rsync/SSH is planned.
-- **The site is not live yet.** It has never been deployed to production. The accessibility, Core
-  Web Vitals and responsiveness audit is still outstanding and should run before it is.
+  [adding-an-editor.md](../10-development/server-side/adding-an-editor.md).
+- **The four accessibility crawlers never covered the admin.** They walk a list of public pages and
+  never sign in, so these screens were missed before the split as well as after it. Adapting them is
+  outstanding.
+- **The split is done and built.** `tech4time-frontend` and `tech4time-backend`, on `tech4time.bd`
+  and `admin.tech4time.bd`, talking over a signed publish API.
+  [0011](../90-decisions/0011-two-repositories.md) ·
+  [0017](../90-decisions/0017-two-private-stores.md) ·
+  [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md)
+- **A push to `main` deploys.** Checks run, rsync over SSH, and the running host is asked whether
+  it is still shaped right. [ci-cd.md](../20-deployment/ci-cd.md)
 
 ---
 

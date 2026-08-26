@@ -4,7 +4,7 @@
 
 ## Decision
 
-`admin/setup.php` demands a value that exists only in `t4t-private/setup-token.txt` on the server's
+`public/setup.php` demands a value that exists only in `t4t-private/setup-token.txt` on the server's
 disk. It is created on demand, destroyed the moment an account exists, and skipped when the request
 comes from the machine itself — by peer address, never by a header.
 

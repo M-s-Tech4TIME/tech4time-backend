@@ -10,7 +10,7 @@ Pushing an update to a site that is already live, without destroying anything pe
 
 > **The host's `content/` is the real data. Yours is test data.**
 
-Job posts and contact details are written by people using `/admin/`. They are not in your working
+Job posts and contact details are written by people using the admin. They are not in your working
 copy. A deploy that includes `content/` destroys them, and the loss is silent — the site keeps
 working, showing older content, until somebody notices their job post is gone.
 
@@ -82,17 +82,17 @@ python3 tools/test_contact_admin.py
 
 - [ ] The changed pages look right
 - [ ] `/pages/careers/` and `/pages/contact/` still render — **live content intact**
-- [ ] `/admin/` still signs in
+- [ ] the admin still signs in
 - [ ] `lib/`, `content/` and `tools/` still return 403
 
-That third check matters more than it looks: an `.htaccess` that failed to upload takes the blocking
+That third check matters more than it looks: an `public/.htaccess` that failed to upload takes the blocking
 rules with it, and nothing about the site's appearance will tell you.
 
 ---
 
 ## Cache busting
 
-Asset filenames are not content-hashed — there is no build step to hash them — and `.htaccess`
+Asset filenames are not content-hashed — there is no build step to hash them — and `public/.htaccess`
 caches CSS, JS and fonts for a year.
 
 **A changed `base.css` will not reach returning visitors on its own.**
@@ -103,8 +103,8 @@ When you change one, either append a version query to the tag:
 <link rel="stylesheet" href="/assets/css/base.css?v=2">
 ```
 
-(via `tools/templates/head.html`, then `propagate_shared.py`) or lower the `max-age` for that file
-type in `.htaccess`.
+(via `tech4time-frontend/tools/templates/head.html`, then `propagate_shared.py`) or lower the `max-age` for that file
+type in `public/.htaccess`.
 
 ---
 
@@ -126,7 +126,7 @@ python3 tools/check_shared_markup.py
 Getting step 1 wrong pushes your stale local details into all sixteen pages.
 
 The admin shows a banner when the JSON and the footers disagree, so the gap is never invisible — but
-closing it is a deploy, not a save. [shared-markup.md](../10-development/frontend/shared-markup.md)
+closing it is a deploy, not a save. *shared-markup.md* (in tech4time-frontend)
 
 ---
 

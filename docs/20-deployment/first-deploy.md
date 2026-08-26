@@ -62,14 +62,14 @@ done
 Upload the zip through cPanel's File Manager and extract it in `public_html`, which also preserves
 the directory structure — every asset path is root-relative, so a flattened upload breaks the site.
 
-> `.htaccess` is a dotfile. Some FTP clients hide it and some zip tools drop it. Confirm it arrived:
+> `public/.htaccess` is a dotfile. Some FTP clients hide it and some zip tools drop it. Confirm it arrived:
 > the checks in step 3 all fail without it.
 
 **`content/` is uploaded this once**, to seed the two JSON files. Never again — from now on the
 host's copy is the real one.
 
-**`.htaccess` must be uploaded.** It carries the real security headers. `X-Frame-Options` and
-`X-Content-Type-Options` are ignored by browsers when set via `<meta>`, so the `.htaccess` copy is
+**`public/.htaccess` must be uploaded.** It carries the real security headers. `X-Frame-Options` and
+`X-Content-Type-Options` are ignored by browsers when set via `<meta>`, so the `public/.htaccess` copy is
 the one that counts.
 
 ## 3. Check it serves
@@ -78,13 +78,13 @@ the one that counts.
 - [ ] `https://tech4time.bd/pages/about/` resolves **without** `.html`
 - [ ] `https://tech4time.bd/pages/careers/` renders job posts
 - [ ] `https://tech4time.bd/pages/contact/` renders offices
-- [ ] A nonsense URL renders `404.html`
+- [ ] A nonsense URL renders `tech4time-frontend/404.html`
 - [ ] `https://tech4time.bd/lib/auth.php` is **403**
 - [ ] `https://tech4time.bd/content/careers.json` is **403**
 - [ ] `https://tech4time.bd/tools/` is **403**
 - [ ] `http://` redirects to `https://`
 
-Any of those failing means `.htaccess` is not being read. Stop and fix it — several protections
+Any of those failing means `public/.htaccess` is not being read. Stop and fix it — several protections
 depend on it.
 
 ## 4. Probe the host
@@ -127,7 +127,7 @@ recovery codes → prove a full password reset works → only then remove Direct
 
 **Only now**, after the site has been served over HTTPS a few times.
 
-In `.htaccess`, find `HSTS — READY TO ENABLE` and delete the `# ` in front of its `Header`
+In `public/.htaccess`, find `HSTS — READY TO ENABLE` and delete the `# ` in front of its `Header`
 directive.
 
 It tells browsers never to request this site over plain http again, which closes the one
@@ -141,9 +141,9 @@ certificate.
 
 ## 8. Search engines
 
-- [ ] Submit `sitemap.xml` in Google Search Console
-- [ ] Confirm `/admin/` is **not** indexed — it is covered by an `X-Robots-Tag` rule in `.htaccess`
-      rather than by `robots.txt`, deliberately: listing it in `robots.txt` advertises it
+- [ ] Submit `tech4time-frontend/sitemap.xml` in Google Search Console
+- [ ] Confirm the admin is **not** indexed — it is covered by an `X-Robots-Tag` rule in `public/.htaccess`
+      rather than by `tech4time-frontend/robots.txt`, deliberately: listing it in `tech4time-frontend/robots.txt` advertises it
 
 ## 9. Write down what you did
 

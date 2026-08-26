@@ -4,13 +4,13 @@
 
 Day-to-day content work. Written for whoever maintains the site, not for a developer.
 
-Everything here happens at **https://tech4time.bd/admin/** — no file editing, no deploy.
+Everything here happens at **https://admin.tech4time.bd/** — no file editing, no deploy.
 
 ---
 
 ## Signing in
 
-1. Go to `/admin/`
+1. Go to the admin
 2. Your username and password
 3. Six digits from your authenticator app
 
@@ -123,7 +123,7 @@ need a developer and a deploy.
 The admin's Overview page says the same thing, plainly, so nobody has to guess.
 
 Making more pages editable is planned work —
-[adding-an-editor.md](../10-development/backend/adding-an-editor.md).
+[adding-an-editor.md](../10-development/server-side/adding-an-editor.md).
 
 ---
 

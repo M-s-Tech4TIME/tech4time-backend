@@ -2,7 +2,7 @@
 
 **Applies to:** backend
 
-Every way back into `/admin/`, from "I forgot my password" to "the entire private store is gone",
+Every way back into the admin, from "I forgot my password" to "the entire private store is gone",
 in order of severity.
 
 **Nothing here can lose the website.** The private store holds credentials and nothing else. Every
@@ -34,7 +34,7 @@ cannot be forgotten, expire, or be thrown away with an old phone.
 
 ## 1. Forgotten password
 
-1. `/admin/forgot.php`
+1. `/forgot.php`
 2. Enter the username or the account email
 3. A six-digit code arrives at the address **on the account** — never one typed into the form
 4. Enter the code, then an authenticator code, then the new password
@@ -150,11 +150,11 @@ If there is no `.bak`, go to rung 7.
 
 A rebuilt server, a restore that missed the home directory, a deleted folder.
 
-**Tested:** the admin rebuilds the directory, finds no accounts, and presents `/admin/setup.php` —
+**Tested:** the admin rebuilds the directory, finds no accounts, and presents `/setup.php` —
 which **still demands the setup key**, so a stranger cannot walk in during your rebuild.
 
 ```bash
-cat ~/t4t-private/setup-token.txt      # load /admin/setup.php first; that writes it
+cat ~/t4t-private/setup-token.txt      # load /setup.php first; that writes it
 ```
 
 Then work through [admin-activation.md](../20-deployment/admin-activation.md) again: create the

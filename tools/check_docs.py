@@ -34,9 +34,9 @@ DOCS = ROOT / "docs"
 # --------------------------------------------------------------- what to check
 
 TOOLS_DOC = DOCS / "40-reference" / "tools.md"
-LIBS_DOC = DOCS / "10-development" / "backend" / "libraries.md"
+LIBS_DOC = DOCS / "10-development" / "server-side" / "libraries.md"
 MAP_DOC = DOCS / "00-orientation" / "repository-map.md"
-AUTH_DOC = DOCS / "10-development" / "backend" / "authentication.md"
+AUTH_DOC = DOCS / "10-development" / "server-side" / "authentication.md"
 INDEX_DOC = DOCS / "README.md"
 
 # Tools that are libraries for other tools rather than scripts anyone runs.
@@ -55,8 +55,6 @@ PATH_EXEMPT = {
     "content/contact.json.bak",
     # a worked example in adding-a-page.md
     "pages/services/managed-detection/index.html",
-    # planned for the repository split, not built yet -- ADR 0011
-    "lib/contract.php",
 }
 
 # Prose that states a constant's value in words. If the constant changes, the
@@ -71,7 +69,11 @@ CLAIMS = {
     "AUTH_RECOVERY": {10: ["ten recovery codes"]},
     "THROTTLE_MAX_BLOCK": {3600: ["one hour"]},
 }
-CLAIM_FILES = [AUTH_DOC]
+# No fixed list of files. The prose that must be right is the prose in
+# whichever document names the constant -- which is stronger than naming one
+# file, self-maintaining when a constant is quoted somewhere new, and the only
+# version of this that works in both repositories, since the sign-in's
+# constants exist in only one of them.
 
 # ------------------------------------------------------------------ machinery
 
@@ -124,9 +126,20 @@ def check_tools() -> None:
     # Names that belong to files elsewhere in the repository -- tools.md
     # mentions contact-handler.php, for instance -- are not ghosts.
     elsewhere = {p.name for p in ROOT.rglob("*.p[yh]*") if "/tools/" not in p.as_posix()}
+
+    # Nor is a tool that belongs to the OTHER repository, PROVIDED some
+    # document says so in full: `tech4time-backend/tools/admin-cli.php`. The
+    # full path has to appear at least once, which is what stops "it's in the
+    # other one" from becoming a way to keep a dead name in the prose forever.
+    attributed = set(re.findall(
+        r"tech4time-(?:frontend|backend)/tools/([a-z0-9_-]+\.(?:py|php))",
+        all_docs_text(),
+    ))
+
     ghosts = sorted(
         n for n in named
-        if n not in on_disk and n != "check_docs.py" and n not in elsewhere
+        if n not in on_disk and n != "check_docs.py"
+        and n not in elsewhere and n not in attributed
     )
     if ghosts:
         fail("tools", "named in the doc but not in tools/: " + ", ".join(ghosts))
@@ -146,13 +159,28 @@ def check_libraries() -> None:
 
     missing = sorted(n for n in on_disk if n not in body)
     if missing:
-        fail("libraries", "undocumented in backend/libraries.md: " + ", ".join(missing))
+        fail("libraries", "undocumented in server-side/libraries.md: " + ", ".join(missing))
     else:
         ok("libraries", f"{len(on_disk)} libraries documented")
 
 
 def check_admin_sections() -> None:
-    """Every ADMIN_SECTIONS entry, and every section file, is documented."""
+    """Every ADMIN_SECTIONS entry, and every section file, is documented.
+
+    Only where the admin is. Since the split the frontend has no lib/admin.php
+    and no sections to document -- that repository owns the pages instead, and
+    check_pages() below is its half. Skipped out loud rather than quietly: a
+    check that prints nothing when it does nothing is a check that will one day
+    do nothing without anyone noticing.
+    """
+    if not (ROOT / "lib" / "admin.php").is_file():
+        if not ROOT.joinpath("pages").is_dir():
+            fail("sections", "neither an admin nor any pages are here -- "
+                             "this is not one of the two repositories")
+        else:
+            ok("sections", "no admin here; tech4time-backend documents them")
+        return
+
     admin_php = text(ROOT / "lib" / "admin.php")
     block = re.search(r"const ADMIN_SECTIONS = \[(.*?)\n\];", admin_php, re.S)
     if not block:
@@ -166,7 +194,11 @@ def check_admin_sections() -> None:
     if missing:
         fail("sections", "ADMIN_SECTIONS entries not documented: " + ", ".join(missing))
 
-    files = {p.name for p in ROOT.joinpath("admin", "sections").glob("*.php")}
+    section_dir = next(
+        (d for d in (ROOT / "sections", ROOT / "admin" / "sections") if d.is_dir()),
+        None,
+    )
+    files = {p.name for p in section_dir.glob("*.php")} if section_dir else set()
     map_body = text(MAP_DOC) if MAP_DOC.is_file() else ""
     unmapped = sorted(n for n in files if n not in map_body)
     if unmapped:
@@ -177,9 +209,16 @@ def check_admin_sections() -> None:
 
 
 def check_pages() -> None:
-    """Every page under pages/ appears in the repository map."""
+    """Every page under pages/ appears in the repository map.
+
+    The frontend's half of the pairing above. The backend has no pages/.
+    """
     if not MAP_DOC.is_file():
         fail("pages", f"{MAP_DOC.relative_to(ROOT)} is missing")
+        return
+
+    if not ROOT.joinpath("pages").is_dir():
+        ok("pages", "no pages here; tech4time-frontend documents them")
         return
 
     body = text(MAP_DOC)
@@ -224,9 +263,15 @@ def check_cited_paths() -> None:
     directory and carry a file extension. A placeholder like `lib/<name>.php`
     is excluded by the character class, and genuine exceptions are listed in
     PATH_EXEMPT rather than being guessed at.
+
+    A file in the OTHER repository is written with the repository name in
+    front -- `tech4time-backend/lib/auth.php` -- and is not a claim about this
+    one. That is the whole convention: after the split a bare `lib/auth.php`
+    means "here", always, so the two can never be confused in prose.
     """
     pattern = re.compile(
-        r"`((?:assets|lib|admin|pages|tools|content|docs)/[A-Za-z0-9_./-]+\.[a-z0-9]+)`"
+        r"`((?:assets|lib|admin|pages|tools|content|docs|api|public|sections)"
+        r"/[A-Za-z0-9_./-]+\.[a-z0-9]+)`"
     )
     missing = []
     for doc in docs():
@@ -289,9 +334,20 @@ def php_constant_names() -> set[str]:
 
 
 def check_constant_table() -> None:
-    """The values in authentication.md's constants table match the code."""
+    """The values in authentication.md's constants table match the code.
+
+    The sign-in is the backend's. Where there is no authentication.md there is
+    no lib/auth.php either, and there is nothing here for the table to be about
+    -- but only where BOTH are absent. One without the other is a doc
+    describing code that is gone, or code nothing describes, and both of those
+    are exactly what this file exists to catch.
+    """
     if not AUTH_DOC.is_file():
-        fail("constants", f"{AUTH_DOC.relative_to(ROOT)} is missing")
+        if (ROOT / "lib" / "auth.php").is_file():
+            fail("constants", f"lib/auth.php is here but "
+                              f"{AUTH_DOC.relative_to(ROOT)} is not")
+        else:
+            ok("constants", "no sign-in here; tech4time-backend documents it")
         return
 
     code = php_constants()
@@ -321,15 +377,30 @@ def check_constant_table() -> None:
 
 
 def check_claims() -> None:
-    """Prose that states a constant's value in words still states it correctly."""
+    """Prose that states a constant's value in words still states it correctly.
+
+    Checked against every document that NAMES the constant. A constant this
+    repository does not define and no document here mentions belongs to the
+    other half and is skipped; one that is described here but defined nowhere
+    is prose about code that is gone, and fails.
+    """
     code = php_constants()
-    body = "\n".join(text(p) for p in CLAIM_FILES if p.is_file()).lower()
+    naming = {name: [d for d in docs() if name in text(d)] for name in CLAIMS}
 
     wrong = []
     for name, mapping in CLAIMS.items():
+        where = naming[name]
+
         if name not in code:
-            wrong.append(f"{name} is claimed in prose but not defined in lib/")
+            if where:
+                wrong.append(
+                    f"{name} is described in "
+                    + ", ".join(d.relative_to(ROOT).as_posix() for d in where)
+                    + " but is not defined in lib/ here -- if it belongs to the "
+                      "other half, name it as tech4time-backend/lib/…"
+                )
             continue
+
         value = code[name]
         if value not in mapping:
             wrong.append(
@@ -337,9 +408,20 @@ def check_claims() -> None:
                 f"Update the wording, then update CLAIMS in this file."
             )
             continue
+        if not where:
+            wrong.append(
+                f"{name} is {value} and no document states it in words -- the "
+                f"whole point of CLAIMS is that somewhere says what the number means"
+            )
+            continue
+
+        body = "\n".join(text(d) for d in where).lower()
         for phrase in mapping[value]:
             if phrase.lower() not in body:
-                wrong.append(f'{name} is {value} but "{phrase}" does not appear in the prose')
+                wrong.append(
+                    f'{name} is {value} but "{phrase}" does not appear in '
+                    + ", ".join(d.relative_to(ROOT).as_posix() for d in where)
+                )
 
     if wrong:
         fail("claims", "prose disagrees with the code:\n    " + "\n    ".join(wrong))

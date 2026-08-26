@@ -40,32 +40,17 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import admin_session  # noqa: E402
+from publish_stub import PublishStub  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
+DOCROOT = ROOT / "public"
 DATA = ROOT / "content" / "careers.json"
 
-# The admin gained a second editor and an icon rail, so /admin/ is now the
+# The admin gained a second editor and an icon rail, so / is now the
 # overview and each editor has its own address. The job posts are here.
-ADMIN = "/admin/?s=careers"
+ADMIN = "/?s=careers"
 
-ROUTER = """<?php
-/* Test harness only. It fakes nothing: the admin has its own accounts now, and
-   the harness signs in through /admin/login.php like a person would. */
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-if (str_starts_with($path, '/admin')) {
-    $file = __DIR__ . $path;
-    require is_file($file) && str_ends_with($file, '.php')
-        ? $file
-        : __DIR__ . '/admin/index.php';
-    return true;
-}
-if (rtrim($path, '/') === '/pages/careers') {
-    require __DIR__ . '/pages/careers/index.php';
-    return true;
-}
-return false;
-"""
+ROUTER = ROOT / "tools" / "dev-router.php"
 
 
 class Results:
@@ -88,11 +73,12 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
-def start_server(port: int, router: Path, private: Path):
+def start_server(port: int, private: Path, public_site: str):
     proc = subprocess.Popen(
-        ["php", "-S", f"127.0.0.1:{port}", "-t", str(ROOT), str(router)],
+        ["php", "-S", f"127.0.0.1:{port}", "-t", str(DOCROOT), str(ROUTER)],
         stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True,
-        env=dict(os.environ, T4T_PRIVATE=str(private)),
+        env=dict(os.environ, T4T_PRIVATE=str(private),
+                 T4T_PUBLIC_URL=public_site, T4T_PUBLISH_URL=""),
     )
     for _ in range(50):
         try:
@@ -259,9 +245,9 @@ def marker(field: str) -> str:
 SHAPED_FIELDS = {
     "id": (
         "",
-        f'id="{MARK.lower()}-title"',
+        f'"{MARK.lower()}-title"',
         "Never typed. careers_slug() derives it from the title, so what proves "
-        "it arrived is the anchor the page hangs the post on.",
+        "it arrived is the slug itself, in the document that was published.",
     ),
     "status": (
         "open",
@@ -271,25 +257,24 @@ SHAPED_FIELDS = {
     ),
     "posted": (
         "2026-08-21",
-        '"datePosted": "2026-08-21"',
-        "careers_validate() requires YYYY-MM-DD. It reaches the visitor only "
-        "through the JobPosting, which is what puts the role into Google Jobs.",
+        '"posted": "2026-08-21"',
+        "careers_validate() requires YYYY-MM-DD, so it cannot carry a marker. "
+        "What the visitor eventually does with it is the frontend's business.",
     ),
     "closes": (
         "2026-12-31",
-        'datetime="2026-12-31"',
-        "YYYY-MM-DD again. The page prints it as '31 December 2026' and keeps "
-        "the machine-readable form in the <time> attribute.",
+        '"closes": "2026-12-31"',
+        "YYYY-MM-DD again.",
     ),
     "apply_url": (
         f"https://example.com/apply-{MARK}",
-        f'href="https://example.com/apply-{MARK}"',
+        f"https://example.com/apply-{MARK}",
         "careers_validate() requires a full URL, so the marker rides in its "
         "path instead.",
     ),
     "cv_form_url": (
         f"https://example.com/cv-{MARK}",
-        f'href="https://example.com/cv-{MARK}"',
+        f"https://example.com/cv-{MARK}",
         "A site-wide setting, saved by a different form than the post editor.",
     ),
 }
@@ -337,7 +322,8 @@ def careers_model() -> dict:
     return json.loads(out.stdout)
 
 
-def check_every_field_reaches_the_page(client: Client, r: Results, token: str):
+def check_every_field_reaches_the_live_site(client: Client, r: Results,
+                                            token: str, site) -> None:
     model = careers_model()
     known = set(model["text"]) | set(model["rich"]) | set(model["settings"])
 
@@ -376,24 +362,26 @@ def check_every_field_reaches_the_page(client: Client, r: Results, token: str):
         client.post(ADMIN, {"action": "settings", "csrf": token, field: value})
         needles[field] = needle
 
-    _, page = client.get("/pages/careers/")
+    published = json.dumps(site.documents.get("careers", {}),
+                           ensure_ascii=False)
 
-    r.check("the post reaches the visitor at all",
-            f'id="{MARK.lower()}-title"' in page,
-            "status=open has to publish it; nothing below can pass without this")
+    r.check("the post reaches the live site at all",
+            f'"{MARK.lower()}-title"' in published,
+            "nothing below can pass without this — the save did not publish")
 
     for field in sorted(needles):
-        r.check(f"'{field}' reaches the visitor", needles[field] in page,
-                f"expected {needles[field]!r} on /pages/careers/ — the model "
-                f"defines this field, so either the page must render it or "
+        r.check(f"'{field}' reaches the live site", needles[field] in published,
+                f"expected {needles[field]!r} in the published document — the "
+                f"model defines this field, so either the save must carry it or "
                 f"SHAPED_FIELDS must say why it cannot carry a marker")
 
-    absent = sorted(l for l in model["sections"].values()
-                    if f">{escaped(l)}<" not in page)
-    r.check("every section heading renders above its body", not absent, str(absent))
+    r.check("every body field the model declares has a section heading",
+            sorted(model["rich"]) == sorted(model["sections"]),
+            "the frontend renders bodies by walking CAREERS_SECTIONS; a field "
+            "without a heading is stored and never shown")
 
 
-def run(client: Client, r: Results):
+def run(client: Client, r: Results, site):
     check_sanitiser(r)
 
     NEW = {
@@ -436,24 +424,30 @@ def run(client: Client, r: Results):
     r.check("its id is derived from the title",
             "test-automation-engineer" in ids, str(ids))
 
-    status, page = client.get("/pages/careers/")
-    r.check("it appears on the careers page", "Test Automation Engineer" in page)
-    r.check("its bullets render as list items", page.count("<li>") >= 4, page[:0])
+    # What was published, rather than what a visitor sees: the page that
+    # renders this is in tech4time-frontend, and its half of the journey —
+    # a published document arriving and being rendered — is proved there by
+    # test_publish.py. This end asserts that the right document left.
+    sent = json.dumps(site.documents.get("careers", {}), ensure_ascii=False)
+    r.check("it reaches the live site", "Test Automation Engineer" in sent,
+            "the save did not publish, or published something else")
+    r.check("the live site holds the revision the record does",
+            site.revisions["careers"] == json.loads(DATA.read_text())["revision"],
+            f"stub {site.revisions['careers']}")
+
+    r.check("its bullets survive the sanitiser as list items", sent.count("<li>") >= 4)
     r.check("its paragraphs survive the round trip",
-            "<p>First paragraph about the role.</p>" in page)
-    r.check("bold survives the round trip",
-            "<strong>tests</strong>" in page)
-    r.check("a numbered list stays numbered", "<ol><li>Patience.</li></ol>" in page)
+            "<p>First paragraph about the role.</p>" in sent)
+    r.check("bold survives the round trip", "<strong>tests</strong>" in sent)
+    r.check("a numbered list stays numbered", "<ol><li>Patience.</li></ol>" in sent)
     r.check("an alignment class survives",
-            'class="ta-center"' in page, "alignment must arrive as a class, not a style")
-    r.check("no inline style reaches the page (CSP is style-src 'self')",
-            not re.search(r"<[^>]+\sstyle=", page), "an inline style would be blocked")
-    r.check("an author link opens safely",
-            'href="https://example.com" target="_blank" rel="noopener noreferrer"' in page)
-    r.check("it carries a JobPosting for Google Jobs",
-            '"title": "Test Automation Engineer"' in page)
-    r.check("a role with no closing date emits no validThrough",
-            page.count('"validThrough"') == 0, "an empty date must not be published")
+            'class=\\"ta-center\\"' in sent,
+            "alignment must arrive as a class, not a style")
+    r.check("no inline style is published (the frontend's CSP is style-src 'self')",
+            not re.search(r"<[^>]+\\?\s+style=", sent),
+            "an inline style would be refused by the browser over there")
+    r.check("an author link is published safely",
+            'rel=\\"noopener noreferrer\\"' in sent)
 
     print("\nvalidating")
     status, _, html = client.post(ADMIN, dict(NEW, action="save", csrf=token, id="",
@@ -473,10 +467,18 @@ def run(client: Client, r: Results):
                             "id": "test-automation-engineer"})
     r.check("unpublishing sets the post to draft",
             statuses().get("test-automation-engineer") == "draft", str(statuses()))
-    _, page = client.get("/pages/careers/")
-    r.check("a draft is hidden from visitors", "Test Automation Engineer" not in page)
-    r.check("a draft emits no JobPosting either",
-            '"Test Automation Engineer"' not in page)
+    # A draft IS published — the whole document travels, and the live site
+    # filters on status when it renders. That is on purpose: the frontend's
+    # copy is a replica, and a projection would make the two revisions
+    # incomparable. It does mean an unpublished job post's text sits on the
+    # public server, in content/, protected by .htaccess. Same as it was
+    # before the split, and stated rather than assumed.
+    sent = json.loads(json.dumps(site.documents["careers"]))
+    draft = next(j for j in sent["jobs"] if j["id"] == "test-automation-engineer")
+    r.check("a draft is published, carrying its status", draft["status"] == "draft",
+            str(draft["status"]))
+    r.check("so hiding it is the live site's job, on one field",
+            all(j.get("status") in ("open", "draft") for j in sent["jobs"]))
 
     client.post(ADMIN, {"action": "toggle", "csrf": token,
                             "id": "test-automation-engineer"})
@@ -513,14 +515,16 @@ def run(client: Client, r: Results):
     print("\nempty state")
     for jid in list(job_ids()):
         client.post(ADMIN, {"action": "delete", "csrf": token, "id": jid})
-    _, page = client.get("/pages/careers/")
-    r.check("with no posts the page invites a CV instead",
-            "Stay Tuned for Opportunities" in page and "empty-state" in page)
-    r.check("and emits no JobPosting", '"JobPosting"' not in page)
-    r.check("the CV form link still shows", "forms.gle" in page)
+    sent = site.documents["careers"]
+    r.check("with no posts an empty document is still published", sent["jobs"] == [],
+            str(sent["jobs"])[:120])
+    r.check("and the site-wide settings survive with it",
+            "cv_form_url" in sent, str(sorted(sent)))
+    r.check("deleting the last post still advanced the revision",
+            site.revisions["careers"] == json.loads(DATA.read_text())["revision"])
 
-    print("\nevery field, editor to visitor")
-    check_every_field_reaches_the_page(client, r, token)
+    print("\nevery field, editor to live site")
+    check_every_field_reaches_the_live_site(client, r, token, site)
 
 
 def main() -> None:
@@ -531,8 +535,6 @@ def main() -> None:
         raise SystemExit(f"{DATA} not found")
 
     backup = DATA.read_bytes()
-    router = ROOT / f".test-router-{os.getpid()}.php"
-    router.write_text(ROUTER)
     port = free_port()
 
     # The accounts, sessions and counters go somewhere disposable, so this run
@@ -540,23 +542,32 @@ def main() -> None:
     work = Path(tempfile.mkdtemp(prefix="t4t-careers-"))
     private = work / "private"
 
-    print(f"php -S 127.0.0.1:{port}   (content/careers.json is restored afterwards)")
-    proc = start_server(port, router, private)
+    # The far side. A stub rather than the real endpoint, because the real one
+    # is in the other repository — and because checking this half against that
+    # half would check the two against each other rather than against the
+    # format they both implement. See tools/publish_stub.py.
+    key = bytes.fromhex("5e" * 32)
+    private.mkdir(mode=0o700, parents=True, exist_ok=True)
+    (private / "publish.key").write_text(key.hex() + "\n")
+
     results = Results()
 
-    try:
-        secret = admin_session.make_account(private)
-        client = Client(port)
-        admin_session.sign_in(client.opener, client.base, secret)
-        run(client, results)
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
-        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-        proc.wait(timeout=5)
-        router.unlink(missing_ok=True)
-        DATA.write_bytes(backup)
-        (DATA.parent / "careers.json.bak").unlink(missing_ok=True)
-        print("\ncontent/careers.json restored")
+    with PublishStub(key) as site:
+        print(f"php -S 127.0.0.1:{port}   (content/careers.json is restored afterwards)")
+        print(f"publishing to {site.url}   (a stub, in this process)")
+        proc = start_server(port, private, site.url)
+        try:
+            secret = admin_session.make_account(private)
+            client = Client(port)
+            admin_session.sign_in(client.opener, client.base, secret)
+            run(client, results, site)
+        finally:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            proc.wait(timeout=5)
+            shutil.rmtree(work, ignore_errors=True)
+            DATA.write_bytes(backup)
+            (DATA.parent / "careers.json.bak").unlink(missing_ok=True)
+            print("\ncontent/careers.json restored")
 
     total = results.passed + len(results.failed)
     print(f"\n{results.passed}/{total} checks passed")

@@ -46,7 +46,7 @@ hot path, against a data-loss window that closes.
 **A limit worth stating.** The content editors still *show* an empty page for a damaged store rather
 than saying so. The backup survives, so the loss is recoverable, but the operator is not told. Doing
 better means the admin knowing which file each section owns, which is a change to the section
-contract in [adding-an-editor.md](../10-development/backend/adding-an-editor.md).
+contract in [adding-an-editor.md](../10-development/server-side/adding-an-editor.md).
 
 **Related.** The public pages deliberately keep the old behaviour. A careers page that renders "no
 openings" because the file is damaged is wrong; one that renders a PHP error is worse, and the

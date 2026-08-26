@@ -11,7 +11,7 @@ Do not improvise it.
 
 ## The problem it solves
 
-`/admin/setup.php` creates the first account. **Whoever creates the first account owns the website.**
+`/setup.php` creates the first account. **Whoever creates the first account owns the website.**
 
 Between the upload finishing and somebody getting round to setup, that page is reachable by anyone
 who finds the URL — and the gap can be days. Being first is not a defence.
@@ -30,7 +30,7 @@ Two things close it, and using both costs nothing:
 ### 1. Deploy with Directory Privacy on
 
 If cPanel Directory Privacy is already protecting `/admin`, **leave it on**. If it is not, switch it
-on now: cPanel → Directory Privacy → `public_html/admin` → set a user and password.
+on now: cPanel → Directory Privacy → `the backend's document root` → set a user and password.
 
 It is no longer required — the application is the lock — but there is no reason to remove it before
 the replacement is proven.
@@ -44,7 +44,7 @@ the replacement is proven.
 cat ~/t4t-private/setup-token.txt
 ```
 
-Or open that file in cPanel's File Manager. It is created the first time `/admin/setup.php` is
+Or open that file in cPanel's File Manager. It is created the first time `/setup.php` is
 loaded, so load the page once if the file is not there yet.
 
 Reading it requires SSH, Terminal or File Manager — the access whoever is setting this up has, and a
@@ -52,7 +52,7 @@ stranger does not.
 
 ### 3. Create the account
 
-Open `https://tech4time.bd/admin/setup.php` and work through three screens.
+Open `https://admin.tech4time.bd/setup.php` and work through three screens.
 
 **Details** — username, email, password.
 
@@ -94,7 +94,7 @@ from then on.
 **This is the step that matters**, because it is the one you will need on the day you cannot sign
 in, and the day you find out it does not work should not be that day.
 
-- [ ] `/admin/forgot.php` → enter the username
+- [ ] `/forgot.php` → enter the username
 - [ ] The code arrives at the mailbox on the account
 - [ ] Enter the code, then an authenticator code, then a new password
 - [ ] Sign in with the new password
@@ -103,7 +103,7 @@ If the code never arrives, `mail()` is the problem, not the admin. Re-run `tools
 
 ### 7. Remove Directory Privacy
 
-**Only now.** cPanel → Directory Privacy → `public_html/admin` → unset.
+**Only now.** cPanel → Directory Privacy → `the backend's document root` → unset.
 
 Keep the old Directory Privacy credentials until step 6 has passed once.
 

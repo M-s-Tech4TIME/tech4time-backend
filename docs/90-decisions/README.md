@@ -29,8 +29,8 @@ new record superseding the old one rather than quietly doing the opposite.
 | [0009](0009-setup-token.md) | A setup token closes the bootstrap window | accepted |
 | [0010](0010-backend-pushes-content.md) | The backend pushes content; the frontend never fetches | accepted, **not built** |
 | [0011](0011-two-repositories.md) | Two repositories, two hosts | accepted, **not built** |
-| [0012](0012-motion-may-not-gate.md) | Motion may decorate, never gate | accepted |
+| *0012* (in tech4time-frontend) | Motion may decorate, never gate | accepted |
 | [0013](0013-damaged-stores-refuse.md) | A damaged store refuses; it never looks empty | accepted |
 | [0014](0014-derived-secrets-name-their-key.md) | A value derived from the master key carries the key's name | accepted |
-| [0015](0015-narrow-widths-need-a-frame.md) | Narrow widths are tested in a frame, not in the window | accepted |
+| *0015* (in tech4time-frontend) | Narrow widths are tested in a frame, not in the window | accepted |
 | [0016](0016-a-deploy-protects-what-the-panel-owns.md) | A deploy protects what the panel owns | accepted |

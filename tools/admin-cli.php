@@ -18,7 +18,7 @@
  *
  * HOW TO USE IT ON THE HOST
  *   1. Upload this one file to your HOME directory — /home/USER/, the level
- *      ABOVE public_html. Not into public_html: nothing here should ever be
+ *      ABOVE the deploy target. Not into it: nothing here should ever be
  *      reachable over HTTP, and outside the document root it cannot be.
  *   2. ssh in, then:  php ~/admin-cli.php list
  *   3. Do what you came for, then DELETE IT.
@@ -40,15 +40,18 @@ if (PHP_SAPI !== 'cli') {
  *
  * Three cases, in order: run from tools/ inside the repository; told where to
  * look; or uploaded to the home directory on a cPanel account, where the site
- * is in public_html beside it.
+ * is in ~/backend beside it. The admin's own document root is one level
+ * further in, at ~/backend/public, and nothing here needs to know that — this
+ * reads files, not URLs.
  */
 function locate_lib(array $argv): string
 {
     $tries = [
         dirname(__DIR__),                                  // tools/ in the repo
+        (getenv('HOME') ?: '') . '/backend',                // cPanel, after the split
         $argv[1] ?? '',                                    // told explicitly
-        (getenv('HOME') ?: '') . '/public_html',           // cPanel
-        __DIR__ . '/public_html',                          // uploaded beside it
+        (getenv('HOME') ?: '') . '/public_html',           // cPanel, before the split
+        __DIR__ . '/backend',                              // uploaded beside it
     ];
 
     foreach ($tries as $root) {
@@ -60,17 +63,24 @@ function locate_lib(array $argv): string
     fwrite(STDERR,
         "Could not find lib/auth.php.\n\n"
         . "Pass the site root as the first argument:\n"
-        . "  php admin-cli.php ~/public_html list\n");
+        . "  php admin-cli.php ~/backend list\n");
     exit(1);
 }
 
 $root = locate_lib($argv);
 
-/* The private store is found the way the website finds it: beside the document
-   root. On cPanel that is /home/USER/t4t-private. Set T4T_PRIVATE to override,
-   exactly as the website would. */
+/* The private store is found the way the admin finds it, which means handing
+   lib/private.php the same DOCUMENT_ROOT the web server would.
+
+   That is $root/public, NOT $root. The admin's document root is one level
+   inside the deploy target (ADR 0018), and t4t_private_dir() walks two levels
+   up from it to reach ~/t4t-private-admin. Handing it $root instead lands one
+   directory too high — /home/USER/t4t-private-admin becomes
+   /home/t4t-private-admin — and the CLI then reports an accounts file that
+   does not exist while the real one sits untouched. Which is precisely the
+   kind of answer a rescue tool must not give. */
 if (!getenv('T4T_PRIVATE')) {
-    $_SERVER['DOCUMENT_ROOT'] = $root;
+    $_SERVER['DOCUMENT_ROOT'] = $root . '/public';
 }
 
 require $root . '/lib/auth.php';
@@ -356,7 +366,7 @@ try {
             . "\n"
             . "With one account, [user] can be left out.\n"
             . "\n"
-            . "On the host, upload this to your HOME directory — above public_html —\n"
+            . "On the host, upload this to your HOME directory — above ~/backend —\n"
             . "run it, and delete it.\n"
         ),
     };

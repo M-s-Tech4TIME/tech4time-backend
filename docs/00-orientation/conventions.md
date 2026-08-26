@@ -46,7 +46,7 @@ has already established it can be revealed again.
 
 **Why:** it is the accessibility floor, and it is what makes the site indexable. Animation may
 decorate; it may never be the only route to something.
-[0012-motion-may-not-gate.md](../90-decisions/0012-motion-may-not-gate.md)
+*0012-motion-may-not-gate.md* (in tech4time-frontend)
 
 ### No database
 
@@ -71,21 +71,21 @@ most often searched for by name.
 `admins.json` hands over the authenticator secrets, which cannot be hashed and so cannot be
 protected any other way.
 
-### Never add an `.htaccess` to `admin/`
+### Never add an `public/.htaccess` to `admin/`
 
 **Why:** cPanel writes its own file there when Directory Privacy is used. Uploading over it silently
 removes whatever protection it was applying.
 
 ### Never overwrite `content/` on a live server
 
-**Why:** the host's copy is the real data. Job posts and contact details are edited through `/admin/`
+**Why:** the host's copy is the real data. Job posts and contact details are edited through the admin
 by people who are not you, and a deploy that includes `content/` destroys their work.
 [routine-deploys.md](../20-deployment/routine-deploys.md)
 
 ### `tools/` is never deployed
 
 **Why:** it contains scripts that manipulate the site, and two that can reset an admin password.
-`.htaccess` blocks the path as a backstop; the real rule is that it never gets uploaded.
+`public/.htaccess` blocks the path as a backstop; the real rule is that it never gets uploaded.
 
 ---
 

@@ -7,8 +7,9 @@
  * which the frontend and the backend hold byte-identical. What is left here is
  * this side's own business with that shape.
  *
- *   backend    validation, and the save that publishes
- *   frontend   the JobPosting structured data the public page emits
+ * On THIS side that is: validation, and the save that publishes. The
+ * JobPosting structured data is the frontend's, because the frontend is what
+ * renders the page a search engine reads.
  *
  * WHAT THE SHAPE IS
  *   {
@@ -23,6 +24,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/contract.php';
 require_once __DIR__ . '/store.php';
+require_once __DIR__ . '/publish_client.php';
 
 const CAREERS_FILE = __DIR__ . '/../content/careers.json';
 
@@ -43,20 +45,39 @@ function careers_load(): array
 /* ------------------------------------------------------------------ write */
 
 /**
- * Stamp the save time, take the next revision, and hand the file to
- * store_write().
+ * Write the record, then publish it. Returns whether the WRITE succeeded.
  *
- * The revision is minted here rather than by the caller because every write
- * must have one — a save that forgot to advance it is a save the live site
- * will refuse as stale, and it would refuse it silently from the operator's
- * point of view.
+ * THIS RECORD IS WRITTEN FIRST, ALWAYS.
+ * It is the system of record; the live site holds a replica. If the push then
+ * fails, the edit is safe here and can be sent again. Publishing first would
+ * mean a live site ahead of the thing it is supposed to be a copy of.
+ *
+ * THE PUBLISH IS IN HERE RATHER THAN AT THE CALL SITES.
+ * The job post editor alone calls this six times — save, delete, toggle, move,
+ * settings — and a publish added to five of them is a publish somebody forgets
+ * at the sixth. It cannot be forgotten from in here.
+ *
+ * The revision is minted here for the same reason. A save that forgot to
+ * advance it is a save the live site refuses as stale, silently from the
+ * operator's point of view.
+ *
+ * The outcome goes to publish_note(), which admin_redirect() reads. The return
+ * value stays "did the write work", because that is the question every caller
+ * was already asking and a publish failure is not a reason to redraw a form
+ * somebody has just filled in.
  */
 function careers_save(array $data): bool
 {
     $data['updated']  = gmdate('c');
     $data['revision'] = contract_next_revision($data);
 
-    return store_write(CAREERS_FILE, $data);
+    if (!store_write(CAREERS_FILE, $data)) {
+        return false;
+    }
+
+    publish_note(publish_push('careers', $data));
+
+    return true;
 }
 
 /* ---------------------------------------------------------- HTML sanitising
@@ -121,76 +142,4 @@ function careers_validate(array $job): array
     }
 
     return $errors;
-}
-
-/* -------------------------------------------------------------- rendering */
-
-/**
- * Google's JobPosting schema for one role.
- *
- * This is what puts a post into Google Jobs rather than only into ordinary
- * results, so it is worth keeping honest: validThrough is only emitted when a
- * closing date is actually set, because a wrong one gets the post dropped.
- */
-function careers_job_posting(array $job): array
-{
-    /* Google wants the description as HTML, and the stored markup is already
-       sanitised, so it goes in as it is. */
-    $description = [];
-    foreach (CAREERS_SECTIONS as $key => $label) {
-        $body = trim((string)($job[$key] ?? ''));
-        if ($body === '') {
-            continue;
-        }
-        $description[] = '<h3>' . h($label) . '</h3>' . $body;
-    }
-
-    $posting = [
-        '@context' => 'https://schema.org',
-        '@type' => 'JobPosting',
-        'title' => (string)($job['title'] ?? ''),
-        'description' => implode('', $description),
-        'identifier' => [
-            '@type' => 'PropertyValue',
-            'name' => 'Tech4TIME',
-            'value' => (string)($job['id'] ?? ''),
-        ],
-        'hiringOrganization' => [
-            '@type' => 'Organization',
-            'name' => 'Tech4TIME',
-            'sameAs' => 'https://tech4time.bd',
-            'logo' => 'https://tech4time.bd/assets/images/logo/logo-light-360.png',
-        ],
-        'jobLocation' => [
-            '@type' => 'Place',
-            'address' => [
-                '@type' => 'PostalAddress',
-                'streetAddress' => '278/3, Manikdi',
-                'addressLocality' => 'Dhaka',
-                'postalCode' => '1206',
-                'addressCountry' => 'BD',
-            ],
-        ],
-        'directApply' => false,
-    ];
-
-    if (($job['posted'] ?? '') !== '') {
-        $posting['datePosted'] = (string)$job['posted'];
-    }
-    if (($job['closes'] ?? '') !== '') {
-        $posting['validThrough'] = (string)$job['closes'] . 'T23:59:59+06:00';
-    }
-
-    /* Schema.org expects the enumerated form, not the prose one. */
-    $type = strtoupper(str_replace([' ', '-'], '_', trim((string)($job['employment_type'] ?? ''))));
-    if (in_array($type, ['FULL_TIME', 'PART_TIME', 'CONTRACTOR', 'TEMPORARY',
-                         'INTERN', 'VOLUNTEER', 'PER_DIEM', 'OTHER'], true)) {
-        $posting['employmentType'] = $type;
-    }
-
-    if (stripos((string)($job['work_arrangement'] ?? ''), 'remote') !== false) {
-        $posting['jobLocationType'] = 'TELECOMMUTE';
-    }
-
-    return $posting;
 }

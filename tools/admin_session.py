@@ -17,7 +17,7 @@ makes cannot collide with another test running beside it or with whatever
 account you use locally.
 
 WHAT IT DELIBERATELY DOES NOT DO
-Drive /admin/setup.php. Those four screens are the subject of
+Drive /setup.php. Those four screens are the subject of
 tools/test_admin_auth.py, and making every other test walk through them would
 mean a change to the setup wording broke tests about job posts. This writes the
 account straight into the store through the same functions setup.php uses, then
@@ -112,15 +112,15 @@ def sign_in(opener, base: str, secret: str,
         except urllib.error.HTTPError as e:
             return e.code, e.read().decode("utf-8", "replace")
 
-    _, page = fetch("/admin/login.php")
-    _, page = fetch("/admin/login.php",
+    _, page = fetch("/login.php")
+    _, page = fetch("/login.php",
                     {"csrf": _csrf(page), "do": "password",
                      "user": user, "password": password})
 
     if "Two-step check" not in page:
         raise SystemExit("the test account could not get past the password step")
 
-    status, page = fetch("/admin/login.php",
+    status, page = fetch("/login.php",
                          {"csrf": _csrf(page), "do": "second", "code": totp(secret)})
 
     if status != 302:

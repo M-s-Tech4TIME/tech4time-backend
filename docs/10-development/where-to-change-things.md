@@ -5,9 +5,14 @@
 "I want to change X — which file do I open?" This page answers that and nothing else. If you read
 one page in this documentation, make it this one.
 
-**The general rule:** if it is *content*, it is edited in `/admin/` and you should not touch a file.
-If it is *design or behaviour*, it is in `assets/`. If it is *structure*, it is in `pages/` or
-`tools/templates/`. If it is *rules*, it is in `lib/` or `.htaccess`.
+**This is the backend.** It is the editor at `admin.tech4time.bd`, and it owns the content. The
+public website — its sixteen pages, its CSS, its JavaScript, its markup — is `tech4time-frontend`,
+which has its own copy of this page for all of that.
+
+**The general rule here:** if it is *content*, it is typed into this admin and you should not touch
+a file. If it is *the editor's own behaviour*, it is in `sections/` or `lib/`. If it is *the shape
+of a document*, it is `lib/contract.php` — **and the same file in the other repository, in the same
+breath**.
 
 ---
 
@@ -15,78 +20,42 @@ If it is *design or behaviour*, it is in `assets/`. If it is *structure*, it is 
 
 | I want to change | Where |
 |---|---|
-| A job post — add, edit, remove, reorder | `/admin/?s=careers` |
-| The CV / application form link | `/admin/?s=careers` |
-| An office address, phone number, email | `/admin/?s=contact` |
-| The contact page's headings and copy | `/admin/?s=contact` |
-| What the enquiry form says | `/admin/?s=contact` |
+| A job post — add, edit, remove, reorder | `/?s=careers` |
+| The CV / application form link | `/?s=careers` |
+| An office address, phone number, email | `/?s=contact` |
+| The contact page's headings and copy | `/?s=contact` |
+| What the enquiry form says | `/?s=contact` |
 
-These write `content/careers.json` and `content/contact.json`.
-[content-runbook.md](../30-operations/content-runbook.md) ·
-[content-schemas.md](../40-reference/content-schemas.md)
+Saving writes `content/careers.json` or `content/contact.json` here — **the system of record** —
+and then pushes a signed copy to the public site, which verifies it, re-sanitises it and writes its
+replica. If that push fails the editor says so, in words, with a **Publish again** control.
+[publish-api.md](server-side/publish-api.md)
 
-> **The footer is the exception.** The contact details repeated in every page's footer are *markup*,
-> not content, so the editor cannot reach them. After changing them in the admin, run
-> `python3 tools/sync_site_contact.py` to push them out to all sixteen pages, then redeploy.
-> The admin shows a banner when the two have drifted.
-
----
-
-## Look and feel
-
-| I want to change | Where |
-|---|---|
-| **A colour** | `assets/css/theme.css` — the tokens. Never a hex value in a component file. |
-| Light/dark behaviour | `assets/css/theme.css` (`data-theme`) and `assets/js/theme-init.js` |
-| Typography, the type scale | `assets/css/base.css` |
-| The font itself | `assets/fonts/` + the `@font-face` in `base.css`; refetch with `tools/fetch_fonts.py` |
-| Spacing, breakpoints | `assets/css/base.css` — the ladder is documented at the top (480 / 768 / 1024 / 1280 / 1440 / 1920) |
-| Page scaffolding | `assets/css/layout.css` |
-| Buttons, cards, forms, shared furniture | `assets/css/components.css` |
-| One page only | `assets/css/pages/<name>.css` |
-| The admin's appearance | `assets/css/admin.css` |
-
-**Cascade order is fixed:** `base` → `theme` → `layout` → `components` → `animations` → `pages/*`.
-[css.md](frontend/css.md)
+> **The footer is the exception.** The contact details repeated in every page's footer are *markup*
+> on the public site, not content, so this editor cannot reach them. After changing an address here,
+> run `python3 tools/sync_site_contact.py` **in tech4time-frontend** and deploy it. The banner in
+> this editor clears on the next save, when the public site reports its new fingerprint back.
 
 ---
 
-## Behaviour in the browser
+## The editor's own look and behaviour
+
+The public site's palette, layout, motion, JavaScript modules and page markup are all in
+`tech4time-frontend`. What is here is the editor's own.
 
 | I want to change | Where |
 |---|---|
-| Navigation, the mobile menu | `assets/js/nav.js` |
-| The theme toggle | `assets/js/theme-toggle.js` |
-| Scroll reveal | `assets/js/animations.js` + `assets/css/animations.css` |
-| Which elements reveal | `tools/apply_reveals.py` — a structural rule, not hand-marked |
-| Sliders on About / Company Profile | `assets/js/slider.js` |
-| The homepage terminal | `assets/js/terminal.js` |
-| The technology sphere | `assets/js/tech-sphere.js` |
-| Counting figures, client logos | `assets/js/animations.js` |
-| Contact form validation (convenience only) | `assets/js/forms.js` |
-| Module wiring | `assets/js/main.js` |
+| A colour | `public/assets/css/theme.css` — tokens only, never a hex elsewhere |
+| The editor's appearance | `public/assets/css/admin.css` |
+| The icon rail's width or behaviour | `public/assets/css/admin.css`, `public/assets/js/admin-nav.js` |
+| The rich-text toolbar | `public/assets/js/editor.js` |
+| The theme switch | `public/assets/js/theme-init.js`, `theme-toggle.js` |
+| An icon the editor offers | `CONTACT_ICONS` in `lib/contract.php` — **and the other repository** |
+| The icon artwork itself | `public/assets/icons/sprite.svg` — **shared; rebuild it in tech4time-frontend and copy it here** |
 
-Every module registers on `window.Tech4Time` and must degrade — the page has to work with scripting
-off. [javascript.md](frontend/javascript.md) · [motion.md](frontend/motion.md)
-
----
-
-## Structure and markup
-
-| I want to change | Where |
-|---|---|
-| **The header or footer** | `tools/templates/`, then `python3 tools/propagate_shared.py` — **never one page** |
-| A page's content | `pages/<name>/index.html` |
-| The homepage | `index.html`, at the repository root |
-| The 404 page | `404.html` |
-| Add a whole new page | [adding-a-page.md](frontend/adding-a-page.md) |
-| An icon on a page | edit the markup, then `python3 tools/inject_icons.py` |
-| Add a new icon to the set | `assets/icons/sprite.svg` via `tools/build_icon_sprite.py`, then inject |
-| Images | `tools/masters/`, then `python3 tools/build_images.py` |
-| The favicon | `tools/build_favicons.py` |
-| The social share card | `tools/build_og_image.py` |
-
-[shared-markup.md](frontend/shared-markup.md) · [icons.md](frontend/icons.md)
+> `theme.css` is the same palette the public site uses, on purpose: the editor should read as the
+> same product. `tools/check_contrast.py` checks it here as well, because the admin is where
+> somebody works for an hour at a time.
 
 ---
 
@@ -94,19 +63,26 @@ off. [javascript.md](frontend/javascript.md) · [motion.md](frontend/motion.md)
 
 | I want to change | Where |
 |---|---|
-| Who the contact form emails | `MAIL_TO` in `contact-handler.php` |
-| The envelope sender for all mail | `MAIL_FROM_ADDRESS` in `lib/mailer.php` |
-| Contact form validation | `contact-handler.php` — the server side is the real one |
-| The contact form's rate limit | `contact-handler.php`, using `lib/throttle.php` |
-| The shape of a job post | `lib/careers.php` — **and the form and the renderer with it** |
-| The shape of the contact page | `lib/contact.php` — **and the form and the renderer with it** |
-| What HTML is allowed in rich text | `lib/html.php` — the sanitiser |
+| Who the contact form emails | `MAIL_TO` in `tech4time-frontend/contact-handler.php` |
+| The envelope sender for the mail THIS half sends | `MAIL_FROM_ADDRESS` in `lib/mailer.php` — reset codes and change notices |
+| Contact form validation | `tech4time-frontend/contact-handler.php` — the server side is the real one |
+| The contact form's rate limit | `tech4time-frontend/contact-handler.php`, using `lib/throttle.php` |
+| **The shape of a document** | `lib/contract.php` — **and the byte-identical copy in tech4time-frontend** |
+| What this side does with that shape | `lib/careers.php`, `lib/contact.php` — validation and the save |
+| What HTML is allowed in rich text | `lib/html.php` — **shared, both repositories** |
+| How a document is signed | `lib/publish.php` — **shared, both repositories** |
+| Where the public site is | `PUBLIC_SITE` in `lib/publish_client.php`, or `$T4T_PUBLIC_URL` |
 | How JSON is read and written | `lib/store.php` |
 
-> Changing a content shape means changing three files together — the model, the form and the
-> renderer. Something fails the build if one is left behind: `check_content_model.py` for contact,
-> `test_careers_admin.py` for careers, which posts a marker through every declared field and reads
-> it back off the page. [content-model.md](backend/content-model.md)
+> Changing a content shape means changing three things together — the model, the form and the
+> renderer — and two of them are in different repositories now. `check_shared_lib.py` tells you
+> when you have touched the shared file; `check_content_model.py` checks the model against the form
+> **here** and against the renderer **there**, and each says which half it ran.
+> [content-model.md](server-side/content-model.md) · [publish-api.md](server-side/publish-api.md)
+>
+> **Bump `CONTRACT_VERSION`** when a change would make a document written by one version render
+> wrongly under the other. The public site refuses a version it does not implement, which is what
+> stops a half-deployed change from corrupting the live page.
 
 ---
 
@@ -114,7 +90,7 @@ off. [javascript.md](frontend/javascript.md) · [motion.md](frontend/motion.md)
 
 | I want to change | Where |
 |---|---|
-| **Add an editable page to the admin** | `ADMIN_SECTIONS` in `lib/admin.php` + a file in `admin/sections/` — [adding-an-editor.md](backend/adding-an-editor.md) |
+| **Add an editable page to the admin** | `ADMIN_SECTIONS` in `lib/admin.php` + a file in `sections/` + a name in `CONTRACT_DOCUMENTS` **in both repositories** — [adding-an-editor.md](server-side/adding-an-editor.md) |
 | The icon rail | `ADMIN_SECTIONS`; new icons go in `ADMIN_ICONS`, same file |
 | How long a session lasts | `AUTH_IDLE` (1 hour idle) and `AUTH_ABSOLUTE` (12 hours) in `lib/auth.php` |
 | How many failures before a lockout | `AUTH_ALLOW` in `lib/auth.php`; the backoff is in `lib/throttle.php` |
@@ -128,7 +104,7 @@ off. [javascript.md](frontend/javascript.md) · [motion.md](frontend/motion.md)
 | Where the private store lives | `T4T_PRIVATE`, or the default in `lib/private.php` |
 
 > **These constants are quoted in the documentation.** `tools/check_docs.py` fails if you change one
-> without updating the prose. [authentication.md](backend/authentication.md)
+> without updating the prose. [authentication.md](server-side/authentication.md)
 
 ---
 
@@ -136,17 +112,21 @@ off. [javascript.md](frontend/javascript.md) · [motion.md](frontend/motion.md)
 
 | I want to change | Where |
 |---|---|
-| Security headers (CSP, X-Frame-Options…) | `.htaccess` section 1 |
-| Caching | `.htaccess` section 6 |
-| Clean URLs | `.htaccess` section 3 |
-| What is blocked over HTTP | `.htaccess` section 8 |
-| Keeping the admin out of search results | `.htaccess` section 9 |
-| Enabling HSTS | `.htaccess` — uncomment, **after** the site is live on HTTPS |
-| Crawl rules | `robots.txt` |
-| The sitemap | `sitemap.xml` |
+| Security headers (CSP, HSTS, X-Frame-Options…) | `public/.htaccess` section 1 |
+| Caching of the editor's assets | `public/.htaccess` section 1 |
+| Forcing https, refusing dotted paths | `public/.htaccess` section 2 |
+| Extensions that are never part of a site | `public/.htaccess` section 3 |
+| **What is blocked over HTTP** | **Nothing needs to be.** `lib/`, `sections/` and `content/` are outside the document root — [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) |
+| Keeping the WHOLE host out of search results | `public/.htaccess` section 1 — a blanket header, not a path match |
+| Crawl rules | `public/robots.txt` — `Disallow: /`, which is correct here and would not be on the public site |
+| The public site's sitemap and crawl rules | `tech4time-frontend` |
 
-> `.htaccess` is not read by the local dev server. Changes there can only be verified on the host.
+> `public/.htaccess` is not read by the local dev server. Changes there can only be verified on the
+> host, with `python3 tools/verify_live.py https://admin.tech4time.bd`.
 > [security-model.md](../40-reference/security-model.md)
+>
+> **Nothing in that file keeps anything secret.** Delete it and the admin becomes indexable and
+> unhardened; it does not become readable. That is deliberate — see the header of the file itself.
 
 ---
 
@@ -156,7 +136,8 @@ off. [javascript.md](frontend/javascript.md) · [motion.md](frontend/motion.md)
 |---|---|
 | Deploy for the first time | [first-deploy.md](../20-deployment/first-deploy.md) |
 | Push an update | [routine-deploys.md](../20-deployment/routine-deploys.md) |
-| Turn on the admin sign-in | [admin-activation.md](../20-deployment/admin-activation.md) |
+| Stand this host up for the first time | [admin-activation.md](../20-deployment/admin-activation.md) |
+| Re-send content the public site is missing | `python3 tools/reconcile.py` |
 | Recover a lost password or secret | [secrets-recovery.md](../30-operations/secrets-recovery.md) |
 | Diagnose something broken | [troubleshooting.md](../30-operations/troubleshooting.md) |
 
@@ -167,8 +148,8 @@ off. [javascript.md](frontend/javascript.md) · [motion.md](frontend/motion.md)
 | | Read this first |
 |---|---|
 | Anything in `lib/private.php` | [security-model.md](../40-reference/security-model.md) |
-| Anything in `lib/auth.php` | [authentication.md](backend/authentication.md) |
-| The `.htaccess` blocking rules | [security-model.md](../40-reference/security-model.md) |
-| A page's header or footer, directly | [shared-markup.md](frontend/shared-markup.md) |
-| `content/*.json` on a live server | [routine-deploys.md](../20-deployment/routine-deploys.md) |
-| Adding an `.htaccess` to `admin/` | Don't. [conventions.md](../00-orientation/conventions.md) |
+| Anything in `lib/auth.php` | [authentication.md](server-side/authentication.md) |
+| The `public/.htaccess` blocking rules | [security-model.md](../40-reference/security-model.md) |
+| `lib/html.php`, `lib/contract.php`, `lib/publish.php` | They are **byte-identical** with the other repository. [publish-api.md](server-side/publish-api.md) |
+| `content/*.json` on a live server | It is the system of record. [routine-deploys.md](../20-deployment/routine-deploys.md) |
+| Where the document root points | It must be `backend/public/`. [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) |

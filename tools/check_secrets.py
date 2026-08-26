@@ -34,14 +34,26 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # Names that must never be committed, wherever they turn up.
 SECRET_NAMES = [
-    "secret.key", "admins.json", "audit.log", "audit.log.1",
+    "secret.key", "publish.key", "admins.json", "audit.log", "audit.log.1",
     "throttle.json", "resets.json", "setup-token.txt",
 ]
-SECRET_DIRS = ["t4t-private", ".dev-private"]
+SECRET_DIRS = ["t4t-private", "t4t-private-admin", ".dev-private"]
 
-# Every file that can emit an HTML page under /admin/.
+# Every file that can emit an HTML page. They are the document root now, not a
+# folder inside somebody else's site.
 ADMIN_PAGES = [
-    "admin/login.php", "admin/forgot.php", "admin/reset.php", "admin/setup.php",
+    "public/login.php", "public/forgot.php", "public/reset.php", "public/setup.php",
+]
+
+# What belongs to the frontend and must not reappear here. Each was deleted in
+# the split; each would work perfectly well if somebody copied it back, and the
+# admin host would then be serving a public website nobody asked it to serve.
+FRONTEND_ONLY = [
+    "pages",
+    "api",
+    "contact-handler.php",
+    "index.html",
+    "lib/footer-fingerprint.php",
 ]
 
 problems: list[str] = []
@@ -130,7 +142,12 @@ def check_nothing_committed() -> None:
 def check_store_refuses_web_root() -> None:
     print("\nthe private store refuses to be reachable")
 
-    inside = ROOT / "content" / "would-be-web-readable"
+    # Inside the DOCUMENT ROOT, which on this host is public/ — not the
+    # repository. content/ used to be the obvious "inside the website" and
+    # stopped being it when the admin gained a public/ root: a store there is
+    # now correctly outside the web root, and pointing at it would assert that
+    # the check passes, which is the opposite of the point.
+    inside = ROOT / "public" / "would-be-web-readable"
 
     done = subprocess.run(
         ["php", "-r",
@@ -285,11 +302,11 @@ def check_no_bypass() -> None:
                 "it does not call admin_start_session()")
 
     # And every page behind it must require an account.
-    index = (ROOT / "admin" / "index.php").read_text()
+    index = (ROOT / "public" / "index.php").read_text()
     if "admin_require_auth()" in index:
-        ok("admin/index.php requires an account")
+        ok("public/index.php requires an account")
     else:
-        bad("admin/index.php requires an account")
+        bad("public/index.php requires an account")
 
 
 # --------------------------------------------------------------- what is stored
@@ -371,21 +388,70 @@ def check_unindexed() -> None:
         bad("lib/admin.php marks every page shape noindex",
             f"found {count} robots tags, expected at least 3")
 
-    htaccess = (ROOT / ".htaccess").read_text()
-    if "X-Robots-Tag" in htaccess and "/admin" in htaccess:
-        ok(".htaccess marks /admin noindex as a header too")
-    else:
-        bad(".htaccess marks /admin noindex as a header too")
+    # A BLANKET header, not a path match. The public site marks the editor
+    # noindex with expr=%{REQUEST_URI} =~ m#^/admin(/|$)#, and on this host the
+    # URI is "/" — so that same rule would match nothing and fail silently,
+    # leaving the editor quietly indexable. ADR 0011 catalogued it; this is the
+    # check that it was actually fixed rather than copied.
+    htaccess = (ROOT / "public" / ".htaccess").read_text()
 
-    if re.search(r'Cache-Control "no-store[^"]*".*admin', htaccess):
-        ok(".htaccess keeps /admin out of shared caches")
+    blanket = re.search(r'^\s*Header always set X-Robots-Tag "[^"]*noindex[^"]*"\s*$',
+                        htaccess, re.M)
+    if blanket:
+        ok("public/.htaccess noindexes the WHOLE host, not a path")
     else:
-        bad(".htaccess keeps /admin out of shared caches")
+        bad("public/.htaccess noindexes the WHOLE host, not a path",
+            "a rule with an expr= condition would match nothing here")
 
-    if "t4t-private" in htaccess:
-        ok(".htaccess blocks a stray private store")
+    if re.search(r'^\s*Header always set Cache-Control "no-store[^"]*"\s*$', htaccess, re.M):
+        ok("and keeps it out of shared caches")
     else:
-        bad(".htaccess blocks a stray private store")
+        bad("and keeps it out of shared caches")
+
+    if re.search(r"^\s*User-agent: \*\s*$", (ROOT / "public" / "robots.txt").read_text(), re.M):
+        ok("robots.txt asks as well, which is the weaker half of the pair")
+    else:
+        bad("robots.txt asks as well")
+
+
+# ------------------------------------- nothing outside public/ is reachable
+
+
+def check_nothing_below_the_docroot() -> None:
+    """The reason this repository has the shape it has.
+
+    lib/, sections/ and content/ are outside public/, so no URL maps to them.
+    That is stronger than a rewrite rule, and it is the whole argument of
+    ADR 0018 — so it is asserted rather than assumed, because a document root
+    pointed one level too high on the host would undo all of it silently.
+    """
+    print("\nnothing but public/ can be requested")
+
+    for name in ("lib", "sections", "content"):
+        here = ROOT / name
+        if here.is_dir() and not (ROOT / "public" / name).exists():
+            ok(f"{name}/ is outside the document root")
+        else:
+            bad(f"{name}/ is outside the document root",
+                f"{name}/ is missing, or a copy has appeared inside public/")
+
+    front = [p for p in FRONTEND_ONLY if (ROOT / p).exists()]
+    if front:
+        bad("nothing belonging to the public site is here", ", ".join(front))
+    else:
+        ok("nothing belonging to the public site is here")
+
+    # The guard on each section file. Unnecessary while the document root is
+    # public/ -- and kept exactly because that is a configuration, and this is
+    # what stands between a docroot set one level too high and a section file
+    # running on its own.
+    unguarded = [p.name for p in sorted((ROOT / "sections").glob("*.php"))
+                 if "T4T_ADMIN" not in p.read_text()]
+    if unguarded:
+        bad("every section refuses to run unless T4T_ADMIN is defined",
+            ", ".join(unguarded))
+    else:
+        ok("every section refuses to run unless T4T_ADMIN is defined")
 
 
 def main() -> None:
@@ -395,6 +461,7 @@ def main() -> None:
     check_setup_window_closes()
     check_nothing_leaks()
     check_unindexed()
+    check_nothing_below_the_docroot()
 
     for note in notes:
         print(f"\nnote: {note}")

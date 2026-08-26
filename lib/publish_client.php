@@ -23,9 +23,10 @@
  * and the two have disagreed ever since.
  *
  * WHERE IT SENDS
- * PUBLISH_ENDPOINT below, or $T4T_PUBLISH_URL when it is set — which is how
- * the tests point it at a local server, and how a staging frontend could be
- * fed without editing code.
+ * PUBLIC_SITE below, or $T4T_PUBLIC_URL when it is set — which is how both
+ * halves are run side by side on a development machine. $T4T_PUBLISH_URL
+ * overrides the endpoint more narrowly still, for a test that wants to point
+ * one document at somewhere else.
  *
  * Not reachable over HTTP: lib/ is outside this host's document root.
  */
@@ -34,18 +35,43 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/publish.php';
 
-/** The live site's endpoint. Overridden by $T4T_PUBLISH_URL. */
-const PUBLISH_ENDPOINT = 'https://tech4time.bd/api/publish.php';
+/**
+ * The public site. One constant, because three things need it: the endpoint
+ * content is pushed to, the "view the page" links in the rail, and the
+ * "open the site" link beside them. Root-relative URLs used to do that job and
+ * cannot any more — on this host `/` is the admin.
+ *
+ * Overridden by $T4T_PUBLIC_URL, which is how both halves are run side by side
+ * on a development machine.
+ */
+const PUBLIC_SITE = 'https://tech4time.bd';
+
+/** Where a document is posted. Overridden more narrowly by $T4T_PUBLISH_URL. */
+const PUBLISH_PATH = '/api/publish.php';
 
 /** Seconds to wait for the connection, and for the whole exchange. */
 const PUBLISH_CONNECT_TIMEOUT = 5;
 const PUBLISH_TIMEOUT = 15;
 
+/** The public site's origin, without a trailing slash. */
+function public_site(): string
+{
+    $url = trim((string)(getenv('T4T_PUBLIC_URL') ?: ($_SERVER['T4T_PUBLIC_URL'] ?? '')));
+
+    return rtrim($url !== '' ? $url : PUBLIC_SITE, '/');
+}
+
+/** A URL on the public site: public_url('/pages/careers/'). */
+function public_url(string $path = '/'): string
+{
+    return public_site() . '/' . ltrim($path, '/');
+}
+
 function publish_endpoint(): string
 {
     $url = trim((string)(getenv('T4T_PUBLISH_URL') ?: ($_SERVER['T4T_PUBLISH_URL'] ?? '')));
 
-    return $url !== '' ? $url : PUBLISH_ENDPOINT;
+    return $url !== '' ? $url : public_url(PUBLISH_PATH);
 }
 
 /**
@@ -198,4 +224,31 @@ function publish_post_stream(string $url, array $headers, string $body): array
     }
 
     return [$status, (string)$answer, ''];
+}
+
+/* ------------------------------------------------------- carrying the news
+
+   careers_save() and contact_save() publish; admin_redirect() reports. The two
+   are several frames apart on the stack, with a redirect between them, so the
+   outcome is left here rather than threaded through every call site — which is
+   the same reasoning that put the publish inside the save.
+   -------------------------------------------------------------------------- */
+
+/**
+ * Set or read the outcome of the last publish in this request.
+ *
+ * Call with a result to record it; call with nothing to read it. Returns null
+ * when nothing has published, which is not the same as a publish that
+ * succeeded — a section that never saved must not report "sent to the live
+ * site".
+ */
+function publish_note(?array $result = null): ?array
+{
+    static $last = null;
+
+    if ($result !== null) {
+        $last = $result;
+    }
+
+    return $last;
 }

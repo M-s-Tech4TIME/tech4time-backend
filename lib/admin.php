@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/html.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/publish_client.php';
 
 /**
  * What the rail lists, in the order it lists them.
@@ -38,9 +39,13 @@ require_once __DIR__ . '/auth.php';
  * admin/sections/. Nothing else in the shell needs to know about it.
  *
  *   label  the name in the rail
- *   icon   a symbol id from assets/icons/sprite.svg
+ *   icon   a symbol id from public/assets/icons/sprite.svg
  *   desc   one line, shown when the rail is wide
- *   view   the public page this section edits, or '' for none
+ *   view   the public page this section edits, as a PATH ON THE PUBLIC SITE,
+ *          or '' for none. Root-relative used to be right and stopped being:
+ *          on this host '/' is the admin, so '/pages/careers/' would link the
+ *          editor to a page of itself that does not exist. public_url() puts
+ *          the other half's origin in front. See ADR 0011.
  */
 const ADMIN_SECTIONS = [
     'overview' => [
@@ -53,7 +58,7 @@ const ADMIN_SECTIONS = [
         'label' => 'Careers',
         'icon'  => 'briefcase',
         'desc'  => 'Job posts and the CV link',
-        'view'  => '/pages/careers/',
+        'view'  => '/pages/careers/',   // resolved through public_url()
     ],
     'contact' => [
         'label' => 'Contact',
@@ -156,25 +161,49 @@ function admin_go_to_login(): never
 /**
  * Where the login page may send somebody once they are in.
  *
- * Only a path inside the admin, and never one starting "//", which a browser
- * reads as another host entirely. Without this check the next= parameter is an
- * open redirect: a link to our own login page that lands on somebody else's
- * copy of it, with our domain in the part of the URL people look at.
+ * Only a path on this host. Without this check the next= parameter is an open
+ * redirect: a link to our own login page that lands on somebody else's copy of
+ * it, with our domain in the part of the URL people look at.
+ *
+ * THIS GOT WEAKER WHEN THE ADMIN MOVED, AND HAD TO BE REBUILT.
+ * While the editor was a folder of the public site, ADMIN_BASE was '/admin/'
+ * and "starts with ADMIN_BASE" did most of the work — a value had to begin
+ * with those seven characters to survive. On admin.tech4time.bd the admin IS
+ * the document root, ADMIN_BASE is '/', and that same test now accepts every
+ * absolute path there is. What was a narrow allow-list quietly became "starts
+ * with a slash", which "//evil.example" also does.
+ *
+ * So the shape of the check is different here: an explicit refusal of every
+ * form a browser can read as another host, and then a positive test that what
+ * is left looks like a path.
  */
 function admin_safe_next(string $next): string
 {
     $next = trim($next);
 
-    if ($next === '' || !str_starts_with($next, ADMIN_BASE) || str_starts_with($next, '//')) {
+    /* A positive shape rather than a list of things to refuse: one leading
+       slash, then a character that is NOT another slash or a backslash, then
+       nothing a header could be split with.
+
+       "//evil.example" and "/\evil.example" are both read as another host by a
+       browser and fail the lookahead. "https://evil.example" has no leading
+       slash. A value carrying CR or LF fails the character class. And bare "/"
+       matches, which is what an empty next should become. */
+    if (!preg_match('~^/(?![/\\\\])[^\x00-\x1f\x7f]*$~', $next)) {
         return ADMIN_BASE;
     }
 
-    if (str_contains($next, "\r") || str_contains($next, "\n")) {
+    /* The encoded spellings of those same two characters. This value goes into
+       a Location header and is decoded by the browser, not here, so "/%2f" is
+       "//" by the time it matters. */
+    $lower = strtolower($next);
+    if (str_starts_with($lower, '/%2f') || str_starts_with($lower, '/%5c')) {
         return ADMIN_BASE;
     }
 
     return $next;
 }
+
 
 /**
  * Stop, and say what is wrong, when the admin is not safe to run.
@@ -260,12 +289,35 @@ function admin_url(string $section, array $params = []): string
     return '?' . http_build_query(['s' => $section] + $params);
 }
 
-/** Finish a POST by redirecting, so a reload does not repeat it. */
+/**
+ * Finish a POST by redirecting, so a reload does not repeat it.
+ *
+ * It also carries the publish outcome across the redirect. Every save
+ * publishes, and a save that reached this file but not the live site must not
+ * report itself as done — so the check is here, where every section already
+ * ends up, rather than in each of them.
+ *
+ * The failure goes in the session rather than the query string: the message is
+ * a sentence, sometimes two, and a URL is not where a person should meet it.
+ */
 function admin_redirect(string $section, string $message = '', array $params = []): never
 {
     if ($message !== '') {
         $params['saved'] = $message;
     }
+
+    $note = publish_note();
+
+    if ($note !== null && ($note['ok'] ?? false) !== true) {
+        $_SESSION['publish_failed'] = [
+            'section' => $section,
+            'code'    => (string)($note['code'] ?? 'refused'),
+            'error'   => (string)($note['error'] ?? publish_reason((string)($note['code'] ?? ''))),
+        ];
+    } else {
+        unset($_SESSION['publish_failed']);
+    }
+
     header('Location: ' . admin_url($section, $params));
     exit;
 }
@@ -283,7 +335,7 @@ function admin_redirect(string $section, string $message = '', array $params = [
  */
 function admin_icons(array $names): string
 {
-    $sprite = @file_get_contents(__DIR__ . '/../assets/icons/sprite.svg');
+    $sprite = @file_get_contents(__DIR__ . '/../public/assets/icons/sprite.svg');
     if ($sprite === false) {
         return '';
     }
@@ -349,7 +401,7 @@ function admin_head(string $section, string $user, string $lede = ''): void
            edited. */ ?>
   <aside class="rail" data-rail id="admin-rail">
     <div class="rail__head">
-      <a class="rail__brand" href="/" aria-label="Tech4TIME — view the site">
+      <a class="rail__brand" href="<?= h(public_url('/')) ?>" aria-label="Tech4TIME — view the site">
         <picture class="rail__logo-wrap theme-swap--light">
           <source srcset="/assets/images/logo/logo-light-180.webp" type="image/webp">
           <img class="rail__logo" src="/assets/images/logo/logo-light-180.png"
@@ -383,12 +435,12 @@ function admin_head(string $section, string $user, string $lede = ''): void
 
     <div class="rail__foot">
 <?php if ($meta['view'] !== ''): ?>
-      <a class="rail__link" href="<?= h($meta['view']) ?>" target="_blank" rel="noopener">
+      <a class="rail__link" href="<?= h(public_url($meta['view'])) ?>" target="_blank" rel="noopener">
         <span class="rail__icon"><?= admin_icon('eye') ?></span>
         <span class="rail__text"><span class="rail__label">View the page</span></span>
       </a>
 <?php endif; ?>
-      <a class="rail__link" href="/" target="_blank" rel="noopener">
+      <a class="rail__link" href="<?= h(public_url('/')) ?>" target="_blank" rel="noopener">
         <span class="rail__icon"><?= admin_icon('link') ?></span>
         <span class="rail__text"><span class="rail__label">Open the site</span></span>
       </a>
@@ -450,6 +502,8 @@ function admin_notices(array $errors): void
 {
     $saved = trim((string)($_GET['saved'] ?? ''));
 
+    admin_publish_notice();
+
     if ($errors) {
         echo '<div class="admin__notice admin__notice--error"><p><strong>Not saved.</strong></p><ul>';
         foreach ($errors as $error) {
@@ -462,6 +516,48 @@ function admin_notices(array $errors): void
     if ($saved !== '') {
         echo '<p class="admin__notice admin__notice--ok">' . h($saved) . '</p>';
     }
+}
+
+/**
+ * Say so when the live site did not take the last save, and offer to send it
+ * again.
+ *
+ * Shown ABOVE the ordinary "Saved" notice and not instead of it, because both
+ * are true: the record here is written, and the public site does not have it.
+ * Telling somebody only the first is how a gap goes uninvestigated — nothing
+ * asked them to look.
+ *
+ * The retry is a form with a token, not a link. It writes to another host.
+ */
+function admin_publish_notice(): void
+{
+    $failed = $_SESSION['publish_failed'] ?? null;
+
+    if (!is_array($failed)) {
+        return;
+    }
+
+    unset($_SESSION['publish_failed']);
+
+    $section = (string)($failed['section'] ?? '');
+    ?>
+<div class="admin__notice admin__notice--warn">
+  <p><strong>Saved here, but the live site does not have it yet.</strong></p>
+  <p><?= h((string)($failed['error'] ?? '')) ?></p>
+<?php if (in_array($section, CONTRACT_DOCUMENTS, true)): ?>
+  <form method="post" action="<?= h(admin_url($section)) ?>">
+    <?= admin_form_fields($section) ?>
+    <input type="hidden" name="action" value="republish">
+    <button class="btn btn--primary" type="submit">Publish again</button>
+  </form>
+<?php endif; ?>
+  <p class="admin__hint">
+    Nothing was lost. This record is the one that counts, and it can be sent
+    again at any time — from here, or with
+    <code>python3 tools/reconcile.py</code> on this server.
+  </p>
+</div>
+    <?php
 }
 
 function admin_foot(string $note = ''): void
@@ -522,7 +618,7 @@ function admin_shell_head(string $title, string $lede = '', string $icon = 'user
   <div class="signin__card">
 
     <div class="signin__top">
-      <a class="signin__brand" href="/" aria-label="Tech4TIME — view the site">
+      <a class="signin__brand" href="<?= h(public_url('/')) ?>" aria-label="Tech4TIME — view the site">
         <picture class="signin__logo-wrap theme-swap--light">
           <source srcset="/assets/images/logo/logo-light-180.webp" type="image/webp">
           <img class="signin__logo" src="/assets/images/logo/logo-light-180.png"

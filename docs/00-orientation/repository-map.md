@@ -4,116 +4,138 @@
 
 Every directory: what it holds, who owns it, and what must never happen to it.
 
+**This is the backend.** The public site's sixteen pages, its assets and its renderers are in
+`tech4time-frontend`, which has its own copy of this map.
+
 ---
 
 ## Top level
 
 ```
-tech4time-website/
-├── index.html              the homepage — stays at the root, not in pages/
-├── 404.html                the custom error page
-├── contact-handler.php     where the enquiry form posts
-├── .htaccess               security headers, caching, clean URLs, blocking
-├── robots.txt              crawl rules
-├── sitemap.xml             submitted to Search Console
-├── site.webmanifest        PWA manifest (the one .json that stays public)
-├── .gitattributes          line endings and diff behaviour
-├── .gitignore              includes the private store, as a backstop
-│
-├── pages/                  the other fifteen pages
-├── assets/                 css, js, fonts, icons, images — all self-hosted
-├── lib/                    server-side PHP
-├── content/                the JSON the dynamic pages render from
-├── admin/                  the editor UI
+tech4time-backend/
+├── public/                 ← THE DOCUMENT ROOT. Everything a browser may ask for
+├── lib/                    ← outside it. Cannot be requested at all
+├── sections/               ← outside it. Included by public/index.php
+├── content/                ← outside it. The system of record
 ├── tools/                  build, audit and test scripts — NEVER DEPLOYED
 ├── docs/                   this documentation
-└── references/             notes kept from the original design work
+├── deploy/seed/            what a brand-new install starts with
+├── .gitattributes          line endings and diff behaviour
+└── .gitignore              includes both private stores, as a backstop
 ```
+
+**Three of those four are outside the document root, and that is the shape of
+this repository.** `admin.tech4time.bd` points at `public/`, so `lib/`,
+`sections/` and `content/` are not blocked by a rule — no URL maps to them.
+[0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) explains
+why, and `tools/verify_live.py` asserts it after every deploy by requiring a
+**404** rather than a 403.
+
+The deploy target is `/home/USER/backend/`, one level *outside* the document
+root. The public site is a different repository at a different document root —
+`tech4time-frontend`, at `/home/USER/public_html/`.
 
 ---
 
-## `pages/` — the website
+## `public/` — the document root
 
-Every page lives at `pages/<name>/index.*` and is served at `/pages/<name>/` with no extension,
-because `.htaccess` resolves it. The homepage is the exception: it stays at the root.
+```
+public/
+├── .htaccess               HEADERS ONLY. Nothing here keeps anything secret
+├── robots.txt              Disallow: / — correct here, unlike on the public site
+├── index.php               the shell and the router; sections load through here
+├── login.php               password, then six digits from an authenticator app
+├── logout.php              POST only, with a token
+├── forgot.php              asks for a reset code
+├── reset.php               the code, then the app, then the new password
+├── setup.php               creates the first account; refuses ever after
+└── assets/
+    ├── css/                base, theme, layout, components, admin
+    ├── js/                 theme-init, theme-toggle, admin-init, admin-nav, editor
+    ├── fonts/              Inter, self-hosted
+    ├── icons/sprite.svg    read from disk by lib/admin.php and inlined
+    └── images/             favicon, the logo, and the office flags
+```
 
-| Page | File | |
+Six entry points, and everything else here is fetched by a browser. `public/.htaccess`
+carries the CSP, HSTS and a **blanket** `X-Robots-Tag` — blanket because the
+public site's rule is scoped to `^/admin(/|$)` and on this host the URI is `/`,
+so a copied rule would match nothing and fail silently.
+[0011](../90-decisions/0011-two-repositories.md) catalogued that before the
+move; `tools/check_secrets.py` asserts the fix.
+
+> **Do not leave cPanel's Directory Privacy on this directory.** It writes its
+> own `public/.htaccess` here, and every deploy ships ours over it — which would
+> remove the password silently. The application's own sign-in is the lock; see
+> the note at the end of `public/.htaccess`.
+
+`assets/` is only what the editor needs. The public site's fourteen other
+pages, their CSS and their ninety-odd images are not here.
+
+---
+
+## `sections/` — the editors
+
+```
+sections/
+├── overview.php        what can be edited, and plainly what cannot
+├── careers.php         the job post editor      → content/careers.json
+├── contact.php         the contact page editor  → content/contact.json
+└── account.php         password, second factor, recovery codes, the log
+```
+
+The rail draws itself from `ADMIN_SECTIONS` in `lib/admin.php`:
+
+| URL | Section | Edits |
 |---|---|---|
-| Home | `index.html` | at the repository root |
-| About | `pages/about/index.html` | |
-| Services hub | `pages/services/index.html` | |
-| — Cybersecurity | `pages/services/cybersecurity/index.html` | |
-| — Software development | `pages/services/software-development/index.html` | |
-| — Cloud infrastructure | `pages/services/cloud-infrastructure/index.html` | |
-| — HR solutions | `pages/services/hr-solutions/index.html` | |
-| — IT consultancy & training | `pages/services/it-consultancy-training/index.html` | |
-| — IT equipment supply | `pages/services/it-equipment-supply/index.html` | |
-| Company profile | `pages/company-profile/index.html` | |
-| Careers | `pages/careers/index.php` | **dynamic** — renders `content/careers.json` |
-| Contact | `pages/contact/index.php` | **dynamic** — renders `content/contact.json` |
-| Resource certifications | `pages/resource-certifications/index.html` | |
-| Branding & advertisement | `pages/branding-and-advertisement/index.html` | |
-| Privacy policy | `pages/privacy-policy/index.html` | |
-| Not found | `404.html` | at the repository root |
+| `/` | `overview` | nothing — it says what can and cannot be changed |
+| `/?s=careers` | `careers` | `content/careers.json`, then publishes |
+| `/?s=contact` | `contact` | `content/contact.json`, then publishes |
+| `/?s=account` | `account` | your own password, second factor and recovery codes |
 
-Fourteen static, two dynamic. Adding one: [adding-a-page.md](../10-development/frontend/adding-a-page.md).
+`ADMIN_PAGE_SECTIONS` names the subset that edits a page of the public website
+— `careers` and `contact` — so anything counting "the pages you can edit" asks
+there rather than filtering the registry by hand.
 
-**Every page carries its own copy of the header and footer**, because runtime `fetch()` partials are
-forbidden. `tools/templates/` holds the canonical copies and `check_shared_markup.py` proves no page
-has drifted. Never hand-edit a header in one page — see
-[shared-markup.md](../10-development/frontend/shared-markup.md).
-
----
-
-## `assets/` — everything the browser loads
-
-```
-assets/
-├── css/            17 files
-│   ├── base.css            reset, type scale, the breakpoint ladder (documented at the top)
-│   ├── theme.css           the colour tokens, and the light/dark switch
-│   ├── layout.css          page scaffolding
-│   ├── components.css      buttons, cards, forms, the shared furniture
-│   ├── animations.css      keyframes and reveal states
-│   ├── admin.css           the editor UI — loaded only under /admin/
-│   └── pages/              one optional file per page
-├── js/             13 files — see frontend/javascript.md
-├── fonts/          Inter, self-hosted, two subsets (latin, latin-ext)
-├── icons/          sprite.svg — the master icon set
-└── images/         170 files: logo, favicon, og, tech, clients, photos, sections, flags, branding
-```
-
-**Cascade order matters** and is fixed: `base` → `theme` → `layout` → `components` → `animations` →
-optional `pages/<name>.css`. See [css.md](../10-development/frontend/css.md).
-
-**`assets/icons/sprite.svg` is a master, not a runtime asset.** Pages inline the symbols they use;
-they do not link to this file. The reason is in [icons.md](../10-development/frontend/icons.md).
+Each file refuses to run unless `T4T_ADMIN` is defined. That guard is
+unnecessary while the document root is `public/`, and it is kept for exactly
+that reason: a document root pointed one level too high is a configuration
+mistake, and this is what stands between that mistake and a section file
+running on its own. `check_secrets.py` asserts every one of them still has it.
 
 ---
 
 ## `lib/` — server-side PHP
 
-Never reachable over HTTP: `.htaccess` has `RewriteRule ^lib/ - [F,L]`.
+Never reachable over HTTP: it is outside the document root.
 
 | File | Owns |
 |---|---|
-| `html.php` | escaping, and the rich-text sanitiser |
+| `html.php` **shared** | escaping, and the rich-text sanitiser |
+| `contract.php` **shared** | the shape of every editable document, and `CONTRACT_VERSION` |
+| `publish.php` **shared** | how a document is signed, and how a signature is checked |
+| `publish_client.php` | sending one, and where the public site is |
 | `store.php` | reading and writing a JSON file atomically, with a lock |
-| `careers.php` | the shape of a job post, and its JobPosting schema |
-| `contact.php` | the shape of the contact page, and its ContactPage schema |
-| `admin.php` | the section registry, the icon rail, the page furniture |
-| `auth.php` | accounts, hashing, sessions, the audit log |
+| `careers.php` | validation, and the save that publishes |
+| `contact.php` | the same, plus the flag picker |
 | `private.php` | where the secrets are, and the keys derived from them |
+| `auth.php` | accounts, hashing, sessions, the audit log |
 | `totp.php` | RFC 6238, hand-written, checked against its published vectors |
 | `reset.php` | the emailed one-time code |
 | `throttle.php` | counting attempts, so guessing costs something |
 | `mailer.php` | the one place mail leaves this site |
+| `admin.php` | the section registry, the icon rail, the page furniture |
 
-Detail on each: [libraries.md](../10-development/backend/libraries.md).
+**Shared** means byte-identical with `tech4time-frontend` —
+`tools/check_shared_lib.py` compares four things against a committed digest,
+those three plus the icon sprite. The real guarantee is `CONTRACT_VERSION`,
+checked at run time by the endpoint this half posts to.
+
+Detail on each: [libraries.md](../10-development/server-side/libraries.md).
 
 ---
 
-## `content/` — the data
+## `content/` — the system of record
 
 ```
 content/
@@ -121,56 +143,25 @@ content/
 └── contact.json     offices, phone numbers, the enquiry form's copy
 ```
 
-**On the host, this directory is the real data and the repository's copy is not.** It is written by
-people using `/admin/`, not by developers. A deploy that overwrites it destroys live job posts.
+**This is the real data, and the public site holds a replica of it.** Every
+save here writes this file first, then pushes a signed copy to
+`tech4time.bd/api/publish.php`. A deploy that overwrote this directory would
+destroy live job posts — so it is never synced, seeded once with
+`--ignore-existing`, and named in the deploy's protect list.
 
 > **Rule:** never upload `content/` to a server that already has one.
-> See [routine-deploys.md](../20-deployment/routine-deploys.md).
+> [routine-deploys.md](../20-deployment/routine-deploys.md)
 
-Field-by-field: [content-schemas.md](../40-reference/content-schemas.md).
-
----
-
-## `admin/` — the editor
-
-```
-admin/
-├── index.php               the shell and the router; sections load through here
-├── login.php               password, then six digits from an authenticator app
-├── logout.php              POST only, with a token
-├── forgot.php              asks for a reset code
-├── reset.php               the code, then the app, then the new password
-├── setup.php               creates the first account; refuses ever after
-└── sections/
-    ├── overview.php        what can be edited, and plainly what cannot
-    ├── careers.php         the job post editor      → content/careers.json
-    ├── contact.php         the contact page editor  → content/contact.json
-    └── account.php         password, second factor, recovery codes, the log
-```
-
-The rail draws itself from `ADMIN_SECTIONS` in `lib/admin.php`:
-
-| URL | Section | Edits |
-|---|---|---|
-| `/admin/` | `overview` | nothing — it says what can and cannot be changed |
-| `/admin/?s=careers` | `careers` | `content/careers.json` |
-| `/admin/?s=contact` | `contact` | `content/contact.json` |
-| `/admin/?s=account` | `account` | your own password, second factor and recovery codes |
-
-`ADMIN_PAGE_SECTIONS` names the subset that edits a page of the website — `careers` and `contact` —
-so anything counting "the pages you can edit" asks there rather than filtering the registry by hand. Section files refuse to run unless `T4T_ADMIN` is defined, so requesting one by its
-own path gets a 403 however the server is configured — a backstop, not the lock. The lock is the
-sign-in.
-
-> **Rule:** never add an `.htaccess` file to `admin/` in this repository. cPanel writes its own
-> there, and uploading over it removes whatever protection it was applying.
+Field-by-field: [content-schemas.md](../40-reference/content-schemas.md), and
+how it travels: [publish-api.md](../10-development/server-side/publish-api.md).
 
 ---
 
 ## `tools/` — never deployed
 
-33 scripts: asset builders, markup propagators, auditors, and the test suite. Blocked over HTTP by
-`RewriteRule ^tools/ - [F,L]` as a backstop, but the real rule is that they are not uploaded at all.
+The editors' tests, the auditors, and the two tools that reach the host. Not reachable over HTTP for
+the same reason `lib/` is not — this directory is outside the document root — and not uploaded at
+all either.
 
 Two files there are exceptions, uploaded by hand and then deleted:
 
@@ -185,20 +176,26 @@ Full list: [tools.md](../40-reference/tools.md).
 
 ### The private store
 
-`/home/USER/t4t-private/` on the host, `../t4t-private` beside your clone locally. Password hashes,
-the master key, authenticator secrets, sessions, counters and the audit log.
+`/home/USER/t4t-private-admin/` on the host, `../t4t-private-admin` beside your clone locally.
+Password hashes, the master key, authenticator secrets, sessions, counters, the audit log — and
+`publish.key`.
 
-Never committed, never deployed, never inside the document root. `.gitignore` lists it as a
-backstop; `lib/private.php` refuses to start if it finds itself in the web root.
+Never committed, never deployed, never inside the document root, and never inside the **deploy
+target** either: it is two levels up from `public/`, beside the repository rather than inside it,
+because `rsync --delete` empties what is inside. `.gitignore` lists both store names as a backstop;
+`lib/private.php` refuses to start if it finds itself in the web root.
+
+The public site has its own, `t4t-private/`, holding three files and no name for an account.
+Neither host can read the other's. [0017](../90-decisions/0017-two-private-stores.md)
 
 [security-model.md](../40-reference/security-model.md) ·
-[secrets-recovery.md](../30-operations/secrets-recovery.md)
+[secrets-recovery.md](../30-operations/secrets-recovery.md) ·
+[publish-api.md](../10-development/server-side/publish-api.md)
 
 ### Generated and ignored
 
 | | |
 |---|---|
-| `tools/shots/` | screenshots from `shoot_pages.py`, regenerated on demand |
 | `content/*.json.bak` | one generation of backup, written on every save |
 | `__pycache__/`, `*.pyc` | Python bytecode |
 | `Tech4TIME-Static-Website-Plan_v3.md` | the original working brief, kept locally |

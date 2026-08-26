@@ -27,6 +27,7 @@ here is the editor's behaviour once past it. The sign-in is the subject of
 tools/test_admin_auth.py.
 """
 
+import json
 import os
 import re
 import shutil
@@ -44,31 +45,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import admin_session  # noqa: E402
+from publish_stub import PublishStub  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
+DOCROOT = ROOT / "public"
 DATA = ROOT / "content" / "contact.json"
 
-ADMIN = "/admin/?s=contact"
-PAGE = "/pages/contact/"
+ADMIN = "/?s=contact"
 
-ROUTER = """<?php
-/* Test harness only. It fakes nothing: the admin has its own accounts now, and
-   the harness signs in through /admin/login.php like a person would. */
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-if (str_starts_with($path, '/admin')) {
-    $file = __DIR__ . $path;
-    require is_file($file) && str_ends_with($file, '.php')
-        ? $file
-        : __DIR__ . '/admin/index.php';
-    return true;
-}
-if (rtrim($path, '/') === '/pages/contact') {
-    require __DIR__ . '/pages/contact/index.php';
-    return true;
-}
-return false;
-"""
+ROUTER = ROOT / "tools" / "dev-router.php"
 
 
 class Results:
@@ -186,7 +171,7 @@ def stop(proc):
 # ------------------------------------------------------------------- tests
 
 
-def run(client, r):
+def run(client, r, site):
     # ---------------------------------------------------------------- loads
     print("\nthe editor")
     status, html = client.get(ADMIN)
@@ -226,50 +211,47 @@ def run(client, r):
     r.check("saving redirects rather than re-rendering",
             status == 302, f"status {status}: {body[:160]}")
 
-    status, page = client.get(PAGE)
-    r.check("the new banner is on the page", "Talk To Us" in page)
-    r.check("the h1 is the banner title",
-            re.search(r'<h1[^>]*>\s*Talk To Us\s*</h1>', page) is not None)
-    r.check("the old banner is gone", "Contact Us</h1>" not in page)
-    r.check("the new numbers are on the page", "+880 1111111111" in offices(page))
-    r.check("the number a visitor sees is the number they dial",
-            'href="tel:+8801111111111">+880 1111111111</a>' in offices(page))
+    doc = published(site)
+    r.check("the new banner reaches the live site",
+            doc.get("hero", {}).get("title") == "Talk To Us", str(doc.get("hero")))
+    r.check("the old banner is gone", doc["hero"]["title"] != "Contact Us")
+
+    first = offices_sent(site)[0]
+    r.check("the new numbers reach the live site",
+            "+880 1111111111" in first["phones"], str(first["phones"]))
     # Scoped to the card that was edited: the Brussels office is reached on
-    # the Dhaka numbers, so one of them is still on the page, correctly.
-    first = re.search(r'<li[^>]*class="office">.*?</li>', offices(page), re.S)
+    # the Dhaka numbers, so one of them is still in the document, correctly.
     r.check("the number it replaced is gone from that card",
-            first is not None and "1320571562" not in first.group(0),
-            first.group(0)[:200] if first else "no office card found")
-    r.check("the new opening hours show",
-            "Sat – Wed: 8:00 AM – 4:00 PM" in offices(page))
+            not any("1320571562" in p for p in first["phones"]), str(first["phones"]))
+    r.check("the new opening hours travel with it",
+            first["hours"] == "Sat – Wed: 8:00 AM – 4:00 PM", str(first["hours"]))
 
     # ------------------------------------------------------------ the head
-    print("\nsearch results and structured data")
+    print("\nwhat a search engine will be given")
     fields["meta[title]"] = "Reach Tech4TIME"
     fields["meta[description]"] = "Three offices, one working day."
     fields["meta[share_title]"] = "Say hello"
     client.post(ADMIN, fields)
-    _, page = client.get(PAGE)
-    r.check("the browser tab title follows",
-            "<title>Reach Tech4TIME</title>" in page)
+    meta = published(site)["meta"]
+    r.check("the browser tab title follows", meta["title"] == "Reach Tech4TIME", str(meta))
     r.check("so does the search description",
-            'name="description" content="Three offices, one working day."' in page)
-    r.check("and the title on a shared link",
-            'property="og:title" content="Say hello"' in page)
-    r.check("the phone number reaches the structured data",
-            '"telephone": "+8801111111111"' in contact_schema(page))
-    r.check("and the ContactPage graph is still valid JSON",
-            valid_contact_schema(page))
+            meta["description"] == "Three offices, one working day.", str(meta))
+    r.check("and the title on a shared link", meta["share_title"] == "Say hello", str(meta))
+    # The <title>, the og: tags and the ContactPage graph are built from these
+    # three fields by the frontend. That they are built correctly is proved
+    # there; that they are given the right values is proved here.
 
     # -------------------------------------------------------- hidden office
     print("\nhiding an office")
     fields["offices[items][2][status]"] = "hidden"
     client.post(ADMIN, fields)
-    _, page = client.get(PAGE)
-    r.check("a hidden office leaves the page", "Avenue Louise" not in offices(page))
-    r.check("the others stay", "Batu Caves" in offices(page))
-    r.check("and it leaves the ContactPage structured data",
-            '"addressCountry": "BE"' not in contact_schema(page))
+    sent = offices_sent(site)
+    hidden = [o for o in sent if "Avenue Louise" in o.get("address", "")]
+    r.check("a hidden office is published carrying its status",
+            hidden and hidden[0]["status"] == "hidden", str(hidden)[:160])
+    r.check("the others are untouched",
+            any(o["status"] == "shown" and "Batu Caves" in o.get("address", "")
+                for o in sent), str([o["status"] for o in sent]))
 
     _, html = client.get(ADMIN)
     r.check("but it is still in the editor, marked hidden",
@@ -278,8 +260,9 @@ def run(client, r):
 
     fields["offices[items][2][status]"] = "shown"
     client.post(ADMIN, fields)
-    _, page = client.get(PAGE)
-    r.check("showing it again brings it back", "Avenue Louise" in offices(page))
+    r.check("showing it again publishes it as shown",
+            all(o["status"] == "shown" for o in offices_sent(site)),
+            str([o["status"] for o in offices_sent(site)]))
 
     # ------------------------------------------------------------- reorder
     print("\nreordering and removing")
@@ -299,9 +282,9 @@ def run(client, r):
 
     moved = dict(form_fields(body), csrf=token, do="save")
     client.post(ADMIN, moved)
-    _, page = client.get(PAGE)
-    r.check("saving the move reorders the cards",
-            offices(page).index("Batu Caves") < offices(page).index("Manikdi"))
+    order = [o["name"] for o in offices_sent(site)]
+    r.check("saving the move reorders the published document",
+            order.index("Malaysia") < order.index("Bangladesh"), str(order))
 
     _, html = client.get(ADMIN)
     status, _, body = client.post(ADMIN, dict(form_fields(html), csrf=token,
@@ -323,13 +306,19 @@ def run(client, r):
     fields[f"reach[items][{last}][values]"] = "+880 1999999999"
     fields[f"reach[items][{last}][icon]"] = "mobile-alt"
     client.post(ADMIN, dict(fields, csrf=token, do="save"))
-    _, page = client.get(PAGE)
-    r.check("the new row is on the page", "WhatsApp" in reach(page))
-    r.check("as a dialling link", 'href="tel:+8801999999999"' in reach(page))
-    r.check("with the icon it was given",
-            re.search(r'reach__icon.*?href="#mobile-alt"', reach(page), re.S) is not None)
-    r.check("and the symbol for that icon is in the page's sprite",
-            '<symbol id="mobile-alt"' in page)
+    row = next((i for i in reach_sent(site) if i["label"] == "WhatsApp"), None)
+    r.check("the new row reaches the live site", row is not None,
+            str([i["label"] for i in reach_sent(site)]))
+    r.check("carrying the kind that decides how it links",
+            row and row["type"] == "phone", str(row))
+    r.check("and the number itself", row and row["values"] == ["+880 1999999999"],
+            str(row))
+    r.check("with the icon it was given", row and row["icon"] == "mobile-alt", str(row))
+    # The icon list is in lib/contract.php and the sprite is shared, so an
+    # icon offered here must be one the frontend can actually draw. That is
+    # the whole reason CONTACT_ICONS is in the contract rather than here.
+    r.check("and the sprite this editor draws from has that symbol",
+            '<symbol id="mobile-alt"' in (DOCROOT / "assets" / "icons" / "sprite.svg").read_text())
 
     print("\nseveral numbers under one heading")
     _, html = client.get(ADMIN)
@@ -345,19 +334,16 @@ def run(client, r):
     status, _, _ = client.post(ADMIN, fields)
     r.check("three numbers in one row save", status == 302)
 
-    _, page = client.get(PAGE)
-    row = re.search(r'<li[^>]*class="reach__item">(?:(?!</li>).)*?'
-                    r'3333333333(?:(?!</li>).)*?</li>', reach(page), re.S)
-    r.check("all three are on the page",
+    row = next((i for i in reach_sent(site)
+                if any("3333333333" in v for v in i["values"])), None)
+    r.check("all three travel in one row",
+            row is not None and len(row["values"]) == 3, str(row))
+    r.check("each as its own value, so each can become its own link",
             row is not None
-            and all(n in row.group(0) for n in ("3333333333", "4444444444", "5555555555")),
-            "not all three are in one reach row")
-    r.check("each one dials its own number",
-            row is not None and row.group(0).count('href="tel:+880') == 3)
-    r.check("under a single heading",
-            row is not None and row.group(0).count("reach__label") == 1)
-    r.check("and they are stacked, not run together",
-            row is not None and "reach__value--many" in row.group(0))
+            and all(any(n in v for v in row["values"])
+                    for n in ("3333333333", "4444444444", "5555555555")),
+            str(row))
+    r.check("under a single label", row is not None and row["label"] != "", str(row))
 
     # ---------------------------------------------------------- validation
     print("\nwhat it refuses")
@@ -392,9 +378,10 @@ def run(client, r):
     status, _, _ = client.post(ADMIN, dict(good, csrf="wrong"))
     r.check("a request without the token is refused", status == 400)
 
-    _, page = client.get(PAGE)
-    r.check("none of the refused values reached the page",
-            "not-an-address" not in page and "javascript:alert" not in page)
+    sent = json.dumps(published(site))
+    r.check("none of the refused values were published",
+            "not-an-address" not in sent and "javascript:alert" not in sent,
+            "a refused save must not reach the live site at all")
 
     # Hiding an office and changing a number both change what the footer
     # should say, so the editor must already be flagging the drift by now.
@@ -411,18 +398,15 @@ def run(client, r):
         ("a javascript: link", '<p><a href="javascript:x()">Hi</a></p>', "javascript:"),
     ]:
         client.post(ADMIN, dict(good, **{"form[lead]": sent}))
-        _, page = client.get(PAGE)
-        lead = re.search(r'<div class="contact__lead">(.*?)</div>', page, re.S)
-        r.check(f"{name} does not survive into the page",
-                lead is not None and expect_absent not in lead.group(1),
-                lead.group(1)[:120] if lead else "no lead on the page")
+        lead = published(site).get("form", {}).get("lead", "")
+        r.check(f"{name} is not published", expect_absent not in lead, lead[:120])
 
     client.post(ADMIN, dict(good, **{
         "form[lead]": '<p>Ask about <strong>anything</strong>.</p>'
                       '<ul><li>Security</li><li>Cloud</li></ul>'}))
-    _, page = client.get(PAGE)
-    r.check("but ordinary formatting does",
-            "<strong>anything</strong>" in page and "<li>Security</li>" in page)
+    lead = published(site).get("form", {}).get("lead", "")
+    r.check("but ordinary formatting is",
+            "<strong>anything</strong>" in lead and "<li>Security</li>" in lead, lead[:160])
 
     # ---------------------------------------------------------- the footer
     print("\nthe footer that this editor cannot reach")
@@ -442,23 +426,47 @@ def run(client, r):
     status, _, _ = client.post(ADMIN, empty)
     r.check("removing every row is allowed", status == 302)
 
-    _, page = client.get(PAGE)
-    r.check("the page still renders", "<h1" in page and "</html>" in page)
-    r.check("with no office cards", offices(page).strip() == "")
-    r.check("and no reach rows", reach(page).strip() == "")
-    r.check("and the form is still there to use",
-            'action="/contact-handler.php"' in page)
+    r.check("an empty document is still published", offices_sent(site) == [], str(offices_sent(site)))
+    r.check("with no reach rows either", reach_sent(site) == [], str(reach_sent(site)))
+    r.check("and the page's own copy survives, so the live site still has a page",
+            published(site)["hero"]["title"] != "", str(published(site)["hero"]))
 
     # ---------------------------------------------------- a missing data file
     print("\nwhen the data file is unreadable")
     DATA.rename(DATA.with_suffix(".json.moved"))
     try:
-        status, page = client.get(PAGE)
-        r.check("the page still answers", status == 200)
-        r.check("and falls back to the details it shipped with",
-                "Contact Us" in page)
+        status, html = client.get(ADMIN)
+        r.check("the editor still answers", status == 200, f"status {status}")
+        r.check("and falls back to the copy it shipped with",
+                "Contact Us" in html,
+                "contact_load() must never throw — a missing file is an empty page, "
+                "not a broken one")
     finally:
         DATA.with_suffix(".json.moved").rename(DATA)
+
+
+def published(site) -> dict:
+    """The contact document as the live site last received it.
+
+    This is where the editor's half of the journey ends. What the frontend
+    then DOES with the document — the <h1>, the tel: hrefs, the ContactPage
+    graph, the office cards — is proved in tech4time-frontend, by
+    test_publish.py, which publishes a document and reads the rendered page.
+
+    Splitting it this way is not a loss of coverage so much as an honest
+    statement of where each half's responsibility ends. What it does cost is
+    that neither test alone proves a field survives the whole trip; the model
+    they share, lib/contract.php, is what makes the two ends meet.
+    """
+    return site.documents.get("contact", {})
+
+
+def offices_sent(site) -> list:
+    return published(site).get("offices", {}).get("items", [])
+
+
+def reach_sent(site) -> list:
+    return published(site).get("reach", {}).get("items", [])
 
 
 def region(page: str, css_class: str) -> str:
@@ -520,8 +528,6 @@ def main() -> None:
         raise SystemExit(f"Missing {DATA.relative_to(ROOT)}")
 
     backup = DATA.read_bytes()
-    router = ROOT / "_test_contact_router.php"
-    router.write_text(ROUTER)
 
     port = free_port()
 
@@ -530,35 +536,42 @@ def main() -> None:
     work = Path(tempfile.mkdtemp(prefix="t4t-contact-"))
     private = work / "private"
 
-    server = subprocess.Popen(
-        ["php", "-S", f"127.0.0.1:{port}", "-t", str(ROOT), str(router)],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        start_new_session=True,
-        env=dict(os.environ, T4T_PRIVATE=str(private)),
-    )
+    # The far side. A stub, not the other repository's endpoint — see
+    # tools/publish_stub.py for why that distinction is the point.
+    key = bytes.fromhex("a4" * 32)
+    private.mkdir(mode=0o700, parents=True, exist_ok=True)
+    (private / "publish.key").write_text(key.hex() + "\n")
 
     r = Results()
-    try:
-        base = f"http://127.0.0.1:{port}"
-        for _ in range(80):
-            try:
-                urllib.request.urlopen(base + PAGE, timeout=1)
-                break
-            except Exception:
-                time.sleep(0.15)
 
-        secret = admin_session.make_account(private)
-        client = Client(base)
-        admin_session.sign_in(client.opener, base, secret)
-        run(client, r)
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
-        stop(server)
-        router.unlink(missing_ok=True)
-        DATA.write_bytes(backup)
-        for stray in (DATA.with_suffix(".json.bak"), DATA.with_suffix(".json.moved")):
-            stray.unlink(missing_ok=True)
-        print(f"\n{DATA.relative_to(ROOT)} restored")
+    with PublishStub(key) as site:
+        server = subprocess.Popen(
+            ["php", "-S", f"127.0.0.1:{port}", "-t", str(DOCROOT), str(ROUTER)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            env=dict(os.environ, T4T_PRIVATE=str(private),
+                     T4T_PUBLIC_URL=site.url, T4T_PUBLISH_URL=""),
+        )
+        try:
+            base = f"http://127.0.0.1:{port}"
+            for _ in range(80):
+                try:
+                    urllib.request.urlopen(base + "/login.php", timeout=1)
+                    break
+                except Exception:
+                    time.sleep(0.15)
+
+            secret = admin_session.make_account(private)
+            client = Client(base)
+            admin_session.sign_in(client.opener, base, secret)
+            run(client, r, site)
+        finally:
+            stop(server)
+            shutil.rmtree(work, ignore_errors=True)
+            DATA.write_bytes(backup)
+            for stray in (DATA.with_suffix(".json.bak"), DATA.with_suffix(".json.moved")):
+                stray.unlink(missing_ok=True)
+            print(f"\n{DATA.relative_to(ROOT)} restored")
 
     total = r.passed + len(r.failed)
     if r.failed:

@@ -57,6 +57,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import admin_session  # noqa: E402  -- needs the path line above
 
 ROOT = Path(__file__).resolve().parent.parent
+DOCROOT = ROOT / "public"
 ROUTER = ROOT / "tools" / "dev-router.php"
 
 USER = "testadmin"
@@ -121,7 +122,7 @@ def free_port() -> int:
 def start_server(port: int, private: Path, sendmail: Path):
     env = dict(os.environ, T4T_PRIVATE=str(private))
     proc = subprocess.Popen(
-        ["php", "-S", f"127.0.0.1:{port}", "-t", str(ROOT),
+        ["php", "-S", f"127.0.0.1:{port}", "-t", str(DOCROOT),
          "-d", f"sendmail_path={sendmail}", str(ROUTER)],
         stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
         start_new_session=True, env=env,
@@ -249,50 +250,50 @@ class Mailbox:
 def test_setup(c: Client, r: Results, private: Path) -> tuple[str, list[str]]:
     r.section("first run")
 
-    status, _, _ = c.get("/admin/")
-    r.check("with no account, /admin/ sends you to setup", status == 302)
+    status, _, _ = c.get("/")
+    r.check("with no account, / sends you to setup", status == 302)
 
-    status, _, page = c.get("/admin/setup.php")
+    status, _, page = c.get("/setup.php")
     r.check("setup opens", status == 200 and "Set up the admin" in page)
     r.check("no setup key is demanded from the machine itself",
             'name="token"' not in page)
 
     token = csrf_of(page)
-    status, _, page = c.post("/admin/setup.php", {
+    status, _, page = c.post("/setup.php", {
         "csrf": token, "do": "details", "user": USER, "name": "Test Admin",
         "email": EMAIL, "password": "short", "password2": "short",
     })
     r.check("a short password is refused", "at least 12 characters" in page.lower())
 
-    status, _, page = c.post("/admin/setup.php", {
+    status, _, page = c.post("/setup.php", {
         "csrf": csrf_of(page), "do": "details", "user": USER, "name": "Test Admin",
         "email": EMAIL, "password": PASSWORD, "password2": PASSWORD + "x",
     })
     r.check("two different passwords are refused", "not the same" in page)
 
-    status, headers, _ = c.post("/admin/setup.php", {
+    status, headers, _ = c.post("/setup.php", {
         "csrf": csrf_of(page), "do": "details", "user": USER, "name": "Test Admin",
         "email": EMAIL, "password": PASSWORD, "password2": PASSWORD,
     })
     r.check("good details move on to the authenticator", status == 302)
 
-    status, _, page = c.get("/admin/setup.php")
+    status, _, page = c.get("/setup.php")
     secret = setup_key_of(page)
     r.check("a setup key is shown", len(secret) >= 16, secret)
     r.check("with a link for apps that take one", "otpauth://totp/" in page)
 
-    status, _, page = c.post("/admin/setup.php", {
+    status, _, page = c.post("/setup.php", {
         "csrf": csrf_of(page), "do": "enrol", "code": "000000",
     })
     r.check("a wrong code does not create the account",
             "not right" in page and not (private / "admins.json").exists())
 
-    status, _, page = c.post("/admin/setup.php", {
+    status, _, page = c.post("/setup.php", {
         "csrf": csrf_of(page), "do": "enrol", "code": totp(secret),
     })
     r.check("the right code creates it", status == 302)
 
-    status, _, page = c.get("/admin/setup.php")
+    status, _, page = c.get("/setup.php")
     codes = recovery_codes_of(page)
     r.check("ten recovery codes are shown once", len(codes) == 10, str(codes))
 
@@ -304,10 +305,10 @@ def test_setup(c: Client, r: Results, private: Path) -> tuple[str, list[str]]:
             all(code not in stored for code in codes))
     r.check("the setup key file is gone", not (private / "setup-token.txt").exists())
 
-    status, _, _ = c.post("/admin/setup.php", {"csrf": csrf_of(page), "do": "finish"})
+    status, _, _ = c.post("/setup.php", {"csrf": csrf_of(page), "do": "finish"})
     r.check("finishing sends you to sign in", status == 302)
 
-    status, _, _ = c.get("/admin/setup.php")
+    status, _, _ = c.get("/setup.php")
     r.check("setup refuses to run a second time", status == 302)
 
     return secret, codes
@@ -319,13 +320,13 @@ def sign_in(c: Client, secret: str, password: str = PASSWORD, code: str | None =
     status is None when the password step never got as far as asking for a
     code — which is itself the assertion in several tests below.
     """
-    _, _, page = c.get("/admin/login.php")
-    _, _, page = c.post("/admin/login.php", {
+    _, _, page = c.get("/login.php")
+    _, _, page = c.post("/login.php", {
         "csrf": csrf_of(page), "do": "password", "user": USER, "password": password,
     })
     if "Two-step check" not in page:
         return None, {}, page
-    return c.post("/admin/login.php", {
+    return c.post("/login.php", {
         "csrf": csrf_of(page), "do": "second",
         "code": fresh_code(secret) if code is None else code,
     })
@@ -334,18 +335,18 @@ def sign_in(c: Client, secret: str, password: str = PASSWORD, code: str | None =
 def test_login(c: Client, r: Results, secret: str):
     r.section("signing in")
 
-    status, _, page = c.get("/admin/")
-    r.check("signed out, /admin/ sends you to the login page", status == 302)
+    status, _, page = c.get("/")
+    r.check("signed out, / sends you to the login page", status == 302)
 
-    _, _, page = c.get("/admin/login.php")
+    _, _, page = c.get("/login.php")
     r.check("the login page opens", "Sign in" in page)
     r.check("and offers a way through a forgotten password", "forgot.php" in page)
 
-    _, _, bad_user = c.post("/admin/login.php", {
+    _, _, bad_user = c.post("/login.php", {
         "csrf": csrf_of(page), "do": "password",
         "user": "nobody-at-all", "password": "whatever it is",
     })
-    _, _, bad_pass = c.post("/admin/login.php", {
+    _, _, bad_pass = c.post("/login.php", {
         "csrf": csrf_of(bad_user), "do": "password",
         "user": USER, "password": "not the password",
     })
@@ -355,20 +356,20 @@ def test_login(c: Client, r: Results, secret: str):
     r.check("and the two say exactly the same thing",
             bad_user.count(wrong) == bad_pass.count(wrong) == 1)
 
-    _, _, page = c.post("/admin/login.php", {
+    _, _, page = c.post("/login.php", {
         "csrf": csrf_of(bad_pass), "do": "password",
         "user": USER, "password": PASSWORD,
     })
     r.check("the right password asks for the app", "Two-step check" in page)
     r.check("and does not sign you in on its own", "admin-bar" not in page)
 
-    _, _, page = c.post("/admin/login.php", {
+    _, _, page = c.post("/login.php", {
         "csrf": csrf_of(page), "do": "second", "code": "000000",
     })
     r.check("a wrong code is refused", "not right" in page)
 
     before = c.session_id()
-    status, headers, _ = c.post("/admin/login.php", {
+    status, headers, _ = c.post("/login.php", {
         "csrf": csrf_of(page), "do": "second", "code": fresh_code(secret),
     })
     r.check("the right code signs you in", status == 302)
@@ -378,15 +379,15 @@ def test_login(c: Client, r: Results, secret: str):
     r.check("the session cookie is HttpOnly", "HttpOnly" in cookie, cookie)
     r.check("and SameSite", "SameSite" in cookie, cookie)
 
-    status, headers, page = c.get("/admin/")
+    status, headers, page = c.get("/")
     r.check("the overview now opens", status == 200 and "admin-bar" in page)
     r.check("it is not stored in a shared cache",
             "no-store" in headers.get("Cache-Control", ""))
     r.check("it names who is signed in", USER in page)
 
-    for path, want in [("/admin/?s=careers", "Job posts"),
-                       ("/admin/?s=contact", "Reach us directly"),
-                       ("/admin/?s=account", "Recovery codes")]:
+    for path, want in [("/?s=careers", "Job posts"),
+                       ("/?s=contact", "Reach us directly"),
+                       ("/?s=account", "Recovery codes")]:
         status, _, page = c.get(path)
         r.check(f"{path} opens", status == 200 and want.lower() in page.lower())
 
@@ -394,22 +395,22 @@ def test_login(c: Client, r: Results, secret: str):
 def test_signout(c: Client, r: Results, secret: str):
     r.section("signing out")
 
-    status, _, page = c.get("/admin/")
+    status, _, page = c.get("/")
     token = csrf_of(page)
 
-    status, _, _ = c.get("/admin/logout.php")
+    status, _, _ = c.get("/logout.php")
     r.check("a link cannot sign you out", status in (302, 405))
-    status, _, _ = c.get("/admin/")
+    status, _, _ = c.get("/")
     r.check("so you are still signed in", status == 200)
 
-    status, _, _ = c.post("/admin/logout.php", {"csrf": "wrong"})
+    status, _, _ = c.post("/logout.php", {"csrf": "wrong"})
     r.check("signing out without a token is refused", status == 400)
 
-    status, _, _ = c.post("/admin/logout.php", {"csrf": token})
+    status, _, _ = c.post("/logout.php", {"csrf": token})
     r.check("signing out with one works", status == 302)
 
-    status, _, _ = c.get("/admin/")
-    r.check("and /admin/ sends you back to the login page", status == 302)
+    status, _, _ = c.get("/")
+    r.check("and / sends you back to the login page", status == 302)
 
 
 _spent = {"counter": -1}
@@ -459,7 +460,7 @@ def test_totp_replay(c: Client, r: Results, secret: str, private: Path):
     status, _, _ = sign_in(c, secret, code=code)
     r.check("a fresh code signs you in", status == 302)
 
-    c.post("/admin/logout.php", {"csrf": csrf_of(c.get("/admin/")[2])})
+    c.post("/logout.php", {"csrf": csrf_of(c.get("/")[2])})
     (private / "throttle.json").unlink(missing_ok=True)
 
     status, _, _ = sign_in(c, secret, code=code)
@@ -470,19 +471,19 @@ def test_totp_replay(c: Client, r: Results, secret: str, private: Path):
 def test_csrf_and_redirect(c: Client, r: Results):
     r.section("tokens and redirects")
 
-    status, _, _ = c.post("/admin/login.php", {
+    status, _, _ = c.post("/login.php", {
         "do": "password", "user": USER, "password": PASSWORD,
     })
     r.check("posting to the login page without a token is refused", status == 400)
 
-    _, _, page = c.get("/admin/login.php?next=https://example.com/")
+    _, _, page = c.get("/login.php?next=https://example.com/")
     r.check("an off-site next= is dropped", "https://example.com" not in page)
 
-    _, _, page = c.get("/admin/login.php?next=//example.com/")
+    _, _, page = c.get("/login.php?next=//example.com/")
     r.check("a protocol-relative next= is dropped", "//example.com" not in page)
 
-    _, _, page = c.get("/admin/login.php?next=%2Fadmin%2F%3Fs%3Dcontact")
-    r.check("an in-admin next= is kept", "/admin/?s=contact" in page)
+    _, _, page = c.get("/login.php?next=%2F%3Fs%3Dcontact")
+    r.check("an in-admin next= is kept", "/?s=contact" in page)
 
 
 def test_lockout(c: Client, r: Results, secret: str, private: Path):
@@ -490,30 +491,30 @@ def test_lockout(c: Client, r: Results, secret: str, private: Path):
 
     (private / "throttle.json").unlink(missing_ok=True)
 
-    _, _, page = c.get("/admin/login.php")
+    _, _, page = c.get("/login.php")
 
     # AUTH_ALLOW failures are free; the wait starts on the one after.
     for _ in range(6):
-        _, _, page = c.post("/admin/login.php", {
+        _, _, page = c.post("/login.php", {
             "csrf": csrf_of(page), "do": "password",
             "user": USER, "password": "wrong every time",
         })
     r.check("six wrong passwords are each just refused", "do not match" in page)
 
-    _, _, page = c.post("/admin/login.php", {
+    _, _, page = c.post("/login.php", {
         "csrf": csrf_of(page), "do": "password",
         "user": USER, "password": "wrong every time",
     })
     r.check("the seventh is made to wait", "Try again in" in page)
 
-    _, _, page = c.post("/admin/login.php", {
+    _, _, page = c.post("/login.php", {
         "csrf": csrf_of(page), "do": "password", "user": USER, "password": PASSWORD,
     })
     r.check("and the RIGHT password is refused while locked out",
             "Try again in" in page and "Two-step check" not in page)
 
     (private / "throttle.json").unlink(missing_ok=True)
-    _, _, page = c.post("/admin/login.php", {
+    _, _, page = c.post("/login.php", {
         "csrf": csrf_of(page), "do": "password", "user": USER, "password": PASSWORD,
     })
     r.check("once the wait is over it works again", "Two-step check" in page)
@@ -525,18 +526,18 @@ def test_reset(c: Client, r: Results, mail: Mailbox, secret: str, private: Path)
     (private / "throttle.json").unlink(missing_ok=True)
     mail.clear()
 
-    _, _, page = c.get("/admin/forgot.php")
+    _, _, page = c.get("/forgot.php")
     r.check("the forgotten-password page opens", "Forgotten password" in page)
 
-    status, headers, _ = c.post("/admin/forgot.php", {
+    status, headers, _ = c.post("/forgot.php", {
         "csrf": csrf_of(page), "who": "somebody-who-does-not-exist",
     })
     unknown_to = headers.get("Location", "")
     r.check("an unknown account is accepted without comment", status == 302)
     r.check("and no mail is sent for it", mail.all() == [])
 
-    _, _, page = c.get("/admin/forgot.php")
-    status, headers, _ = c.post("/admin/forgot.php", {
+    _, _, page = c.get("/forgot.php")
+    status, headers, _ = c.post("/forgot.php", {
         "csrf": csrf_of(page), "who": USER,
     })
     r.check("a real account is answered identically",
@@ -556,10 +557,10 @@ def test_reset(c: Client, r: Results, mail: Mailbox, secret: str, private: Path)
     stored = (private / "resets.json").read_text()
     r.check("the code is stored only as a hash", code not in stored)
 
-    _, _, page = c.get("/admin/reset.php?sent=1")
+    _, _, page = c.get("/reset.php?sent=1")
     r.check("the reset page says a code is on its way", "on its way" in page)
 
-    _, _, page = c.post("/admin/reset.php", {
+    _, _, page = c.post("/reset.php", {
         "csrf": csrf_of(page), "do": "code", "code": "000000",
     })
     r.check("a wrong code is refused", "not right" in page)
@@ -567,36 +568,36 @@ def test_reset(c: Client, r: Results, mail: Mailbox, secret: str, private: Path)
 
     # A second browser, which never asked for this code.
     other = Client(int(c.base.rsplit(":", 1)[1]))
-    _, _, opage = other.get("/admin/reset.php")
-    _, _, opage = other.post("/admin/reset.php", {
+    _, _, opage = other.get("/reset.php")
+    _, _, opage = other.post("/reset.php", {
         "csrf": csrf_of(opage), "do": "code", "code": code,
     })
     r.check("the code does not work in another browser", "not right" in opage)
 
-    status, _, _ = c.post("/admin/reset.php", {
+    status, _, _ = c.post("/reset.php", {
         "csrf": csrf_of(page), "do": "code", "code": code,
     })
     r.check("the right code is accepted", status == 302)
 
-    _, _, page = c.get("/admin/reset.php")
+    _, _, page = c.get("/reset.php")
     r.check("which asks for the app AND a new password",
             "Authenticator code" in page and "New password" in page)
 
-    _, _, page = c.post("/admin/reset.php", {
+    _, _, page = c.post("/reset.php", {
         "csrf": csrf_of(page), "do": "finish", "second": "000000",
         "password": NEWPASSWORD, "password2": NEWPASSWORD,
     })
     r.check("an emailed code alone will NOT set a password",
             "authenticator code is not right" in page.lower())
 
-    _, _, page = c.post("/admin/reset.php", {
+    _, _, page = c.post("/reset.php", {
         "csrf": csrf_of(page), "do": "finish", "second": totp(secret),
         "password": "short", "password2": "short",
     })
     r.check("a weak new password is refused", "at least 12" in page.lower())
 
     mail.clear()
-    status, headers, page = c.post("/admin/reset.php", {
+    status, headers, page = c.post("/reset.php", {
         "csrf": csrf_of(page), "do": "finish", "second": fresh_code(secret),
         "password": NEWPASSWORD, "password2": NEWPASSWORD,
     })
@@ -607,8 +608,8 @@ def test_reset(c: Client, r: Results, mail: Mailbox, secret: str, private: Path)
 
     # A fresh page: the successful reset replaced the session id, so the token
     # from before it is no longer the one this session carries.
-    _, _, page = c.get("/admin/reset.php")
-    _, _, page = c.post("/admin/reset.php", {
+    _, _, page = c.get("/reset.php")
+    _, _, page = c.post("/reset.php", {
         "csrf": csrf_of(page), "do": "code", "code": code,
     })
     r.check("the used code cannot be used again", "not right" in page)
@@ -626,15 +627,15 @@ def test_recovery_code(c: Client, r: Results, codes: list[str], private: Path):
     r.section("recovery codes")
 
     (private / "throttle.json").unlink(missing_ok=True)
-    c.post("/admin/logout.php", {"csrf": csrf_of(c.get("/admin/")[2])})
+    c.post("/logout.php", {"csrf": csrf_of(c.get("/")[2])})
 
     status, _, _ = sign_in(c, "", password=NEWPASSWORD, code=codes[0])
     r.check("a recovery code stands in for the app", status == 302)
 
-    status, _, _ = c.get("/admin/")
+    status, _, _ = c.get("/")
     r.check("and really signs you in", status == 200)
 
-    c.post("/admin/logout.php", {"csrf": csrf_of(c.get("/admin/")[2])})
+    c.post("/logout.php", {"csrf": csrf_of(c.get("/")[2])})
     (private / "throttle.json").unlink(missing_ok=True)
 
     status, _, _ = sign_in(c, "", password=NEWPASSWORD, code=codes[0])
@@ -795,7 +796,7 @@ def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
         away = Client(port, source_ip=REMOTE)
         here = Client(port)
 
-        status, _, page = away.get("/admin/setup.php")
+        status, _, page = away.get("/setup.php")
         r.check("setup opens for a remote request", status == 200)
         r.check("and demands the setup key", 'name="token"' in page)
         r.check("and says where to read it on the server",
@@ -812,7 +813,7 @@ def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
         # redirects everyone to login.php and a 200 is no longer the right
         # answer for anybody — which would make this a check of the redirect
         # rather than of the loopback branch it is written to cover.
-        status, _, home = here.get("/admin/setup.php")
+        status, _, home = here.get("/setup.php")
         r.check("and no key is demanded from the machine itself",
                 status == 200 and 'name="token"' not in home)
 
@@ -821,13 +822,13 @@ def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
             "email": EMAIL, "password": PASSWORD, "password2": PASSWORD,
         }
 
-        status, _, page = away.post("/admin/setup.php",
+        status, _, page = away.post("/setup.php",
                                     {**fields, "csrf": csrf_of(page), "token": ""})
         r.check("no key does not create the account",
                 "does not match" in page and not (private / "admins.json").exists())
 
         status, _, page = away.post(
-            "/admin/setup.php",
+            "/setup.php",
             {**fields, "csrf": csrf_of(page), "token": "AAAA-BBBB-CCCC"},
         )
         r.check("a wrong key does not create the account",
@@ -845,7 +846,7 @@ def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
 
         key = private / "setup-token.txt"
         token = key.read_text().strip() if key.exists() else ""
-        status, _, page = away.post("/admin/setup.php",
+        status, _, page = away.post("/setup.php",
                                     {**fields, "csrf": csrf_of(page), "token": token})
         r.check("the right key moves on to the authenticator", status == 302,
                 f"status {status}" if token else "no key file to read")
@@ -863,12 +864,12 @@ def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
         # next render — the recovery-codes screen, which survives the "setup is
         # over" redirect on purpose — called auth_setup_token() again and put
         # it straight back. Seen on the live host before it was seen here.
-        status, _, page = away.get("/admin/setup.php")
+        status, _, page = away.get("/setup.php")
         secret = setup_key_of(page)
         r.check("the authenticator secret is shown to a remote setup",
                 len(secret) >= 16, secret)
 
-        status, _, page = away.post("/admin/setup.php", {
+        status, _, page = away.post("/setup.php", {
             "csrf": csrf_of(page), "do": "enrol", "code": totp(secret),
         })
         r.check("the right code creates the account remotely", status == 302)
@@ -877,7 +878,7 @@ def test_setup_key_demanded_remotely(r: Results, sendmail: Path):
                 not key.exists(),
                 "auth_setup_done() removed it, then something re-created it")
 
-        status, _, page = away.get("/admin/setup.php")
+        status, _, page = away.get("/setup.php")
         r.check("ten recovery codes are shown", len(recovery_codes_of(page)) == 10)
         r.check("and rendering that screen does not re-mint the key",
                 not key.exists(),
@@ -913,7 +914,7 @@ def test_refuses_damaged_accounts(r: Results, sendmail: Path):
 
     try:
         c = Client(port)
-        c.get("/admin/setup.php")          # the store is created on first use
+        c.get("/setup.php")          # the store is created on first use
 
         accounts = private / "admins.json"
         backup = Path(str(accounts) + ".bak")
@@ -925,7 +926,7 @@ def test_refuses_damaged_accounts(r: Results, sendmail: Path):
         accounts.write_text(good)
         backup.write_text(good)
 
-        status, headers, _ = c.get("/admin/")
+        status, headers, _ = c.get("/")
         r.check("with a readable account file the admin runs",
                 status == 302 and "login" in headers.get("Location", ""),
                 f"status {status}")
@@ -935,12 +936,12 @@ def test_refuses_damaged_accounts(r: Results, sendmail: Path):
                               ("not json at all", "<html>404</html>")]:
             accounts.write_text(damaged)
 
-            status, _, page = c.get("/admin/")
+            status, _, page = c.get("/")
             r.check(f"{name}: the admin refuses",
                     status == 503 and "cannot start safely" in page,
                     f"status {status}")
 
-            status, _, page = c.get("/admin/setup.php")
+            status, _, page = c.get("/setup.php")
             r.check(f"{name}: and does not offer to set up a new account",
                     status == 503 and "Set up the admin" not in page,
                     f"status {status}")
@@ -952,7 +953,7 @@ def test_refuses_damaged_accounts(r: Results, sendmail: Path):
         # walked is a recovery nobody should be told to rely on.
         accounts.write_text(backup.read_text())
 
-        status, headers, _ = c.get("/admin/")
+        status, headers, _ = c.get("/")
         r.check("restoring the .bak brings the admin back",
                 status == 302 and "login" in headers.get("Location", ""),
                 f"status {status}")
@@ -966,10 +967,16 @@ def test_refuses_bad_setup(r: Results, sendmail: Path):
     r.section("refusing to run unsafely")
 
     port = free_port()
-    inside = ROOT / "content" / ".test-private"
+
+    # Inside the DOCUMENT ROOT, which on this host is public/ — not the
+    # repository. content/ used to be the obvious "inside the website" and
+    # stopped being it the day the admin moved to a public/ root: a store
+    # there is now correctly outside the web root, and pointing at it would
+    # test that the admin starts, which is the opposite of the point.
+    inside = DOCROOT / ".test-private"
     env = dict(os.environ, T4T_PRIVATE=str(inside))
     proc = subprocess.Popen(
-        ["php", "-S", f"127.0.0.1:{port}", "-t", str(ROOT),
+        ["php", "-S", f"127.0.0.1:{port}", "-t", str(DOCROOT),
          "-d", f"sendmail_path={sendmail}", str(ROUTER)],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         start_new_session=True, env=env,
@@ -982,7 +989,7 @@ def test_refuses_bad_setup(r: Results, sendmail: Path):
             except OSError:
                 time.sleep(0.1)
 
-        status, _, page = Client(port).get("/admin/")
+        status, _, page = Client(port).get("/")
         r.check("a private directory inside the web root is refused",
                 status == 503, f"status {status}")
         r.check("and it says why", "cannot start safely" in page)

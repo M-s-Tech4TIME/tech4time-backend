@@ -8,95 +8,60 @@ Cannot sign in to the admin? → [secrets-recovery.md](secrets-recovery.md).
 
 ---
 
-## The website
+## Content saved here has not appeared on the public site
 
-### Every page is unstyled
+This is the publish path, and it fails in a way that is meant to be visible: the editor says so, in
+words, with a **Publish again** control. If nobody saw that, start here.
 
-**Assets are 404ing.** Either the upload lost `assets/`, or the directory structure was flattened.
-Every asset path is root-relative (`/assets/…`) — the structure has to be preserved exactly.
+### The editor named a reason
 
-Locally: you opened the file over `file://`. Use `python3 tools/serve.py`.
+The ones that mean something is genuinely wrong:
 
-### `/pages/about/` gives a 404, but `/pages/about/index.html` works
+| the editor said | what it means |
+|---|---|
+| *…holds a different publish key…* | the two private stores have parted. `publish.key` must be **the same bytes** on both hosts |
+| *…disagree about the time by more than five minutes…* | one of the two clocks is wrong |
+| *…implements a different content shape…* | the halves are out of step. Deploy both |
+| *…could not be reached…* | the public site was down, or DNS/TLS failed from this host |
+| *…answered … with something that was not JSON* | `tech4time-frontend/api/publish.php` is not deployed. Run `tech4time-frontend`'s `verify_live.py` |
+| *Publishing is not set up…* | there is no `publish.key` in **this** host's store — `tools/make_publish_key.py` |
 
-**`.htaccess` is not being read**, or `mod_rewrite` is off. Clean URLs come from section 3 of that
-file.
+Full table: [publish-api.md](../10-development/server-side/publish-api.md).
 
-Check that `.htaccess` uploaded, and check `lib/` and `content/` — if those are readable over HTTP
-too, that is the same cause and it is more urgent than the 404.
-
-### A page shows PHP source
-
-PHP is not executing. Locally: use `tools/serve.py`, not `python3 -m http.server`. On the host: the
-domain has no PHP version selected in MultiPHP Manager.
-
-### Changed CSS has not appeared for returning visitors
-
-**Expected.** `.htaccess` caches CSS, JS and fonts for a year and filenames are not content-hashed.
-Add a version query to the tag or lower `max-age` —
-[routine-deploys.md](../20-deployment/routine-deploys.md#cache-busting).
-
-### Content is invisible until you scroll, and never appears
-
-The scroll reveal hid something and never revealed it. `animations.js` failed to load or threw.
-
-There is a watchdog in `theme-init.js` that lifts the hidden state at the load event, so if you are
-seeing this, the watchdog did not run either — check the browser console for an error in
-`theme-init.js` itself.
+### Nobody saw the message, and the two have disagreed since
 
 ```bash
-python3 tools/test_motion.py
+python3 tools/reconcile.py            # sends anything the public site is behind on
+python3 tools/reconcile.py careers    # one document
 ```
 
-### A page's header or footer differs from the others
+It reports one of four things per document. **Stop at "the live site is ahead"** — that means the
+public site holds a revision this host does not, so either something published from elsewhere or
+this host's record was restored from an older backup. Do not force it; compare the two first.
 
-Somebody edited a page instead of the template.
+### Every publish is refused as `unknown-key`
+
+The two stores hold different bytes. Fix it by making one authoritative:
 
 ```bash
-python3 tools/propagate_shared.py --dry-run
-python3 tools/propagate_shared.py
+python3 tools/make_publish_key.py --show      # here
+# then put exactly that value in the frontend's ../t4t-private/publish.key
 ```
 
-If the change was *meant* to be in the page, move it into `tools/templates/` first — otherwise the
-next propagate discards it. [shared-markup.md](../10-development/frontend/shared-markup.md)
+Between the two writes, every publish is refused. That is visible and recoverable, which is why the
+key is copied by hand rather than derived — a derived one would differ by construction and fail the
+same way for a reason nobody could see. [0017](../90-decisions/0017-two-private-stores.md)
 
-### An icon renders as an empty box
+### The first save published an empty document over the live page
 
-The page references a symbol it does not carry.
+The backend was stood up beside a public site that already had content, and its `content/` was
+seeded empty instead of inheriting. The seed only creates what is absent, so it did not overwrite
+anything *here* — but the first save then published this host's empty document, and the live site
+accepted it because the revision was newer.
 
-```bash
-python3 tools/inject_icons.py
-```
-
-If it says the symbol is not in the master sprite, add it with `tools/build_icon_sprite.py` first.
-
----
-
-## The contact form
-
-### "We could not send your message just now"
-
-`mail()` failed.
-
-- **Locally this is expected** — there is no mail server. Everything except delivery is exercised.
-- **On the host:** upload `tools/host-probe.php`, load it once, read the report, delete it. It
-  tests `mail()` on its own, so a mail problem shows as one failed probe rather than as a form that
-  quietly swallows enquiries.
-- Check `disable_functions` does not contain `mail`.
-
-### "That is several messages in a short time"
-
-The rate limit: five an hour from one address. Working as intended.
-
-It **fails open** — if the counter file is unreadable, the form still works. That is deliberate: the
-counter shares a directory with the passwords, and an unreachable store must not make the company
-uncontactable. This is spam control, not a security boundary.
-
-### Enquiries arrive but replying goes to `no-reply@`
-
-`Reply-To` is not surviving. Check the host is not rewriting headers. The envelope sender is
-deliberately `no-reply@` — that is what SPF and DMARC check — while `Reply-To` carries the visitor's
-address.
+Recover from the public site's `.bak`, or from a backup, into **this** host's `content/`, then save
+once to republish. And read [first-deploy.md](../20-deployment/first-deploy.md), which says to copy
+the content across before the first save for exactly this reason.
 
 ---
 
@@ -190,7 +155,7 @@ php ~/admin-cli.php unlock
 **It means "that combination did not work". It never means "that user does not exist."**
 
 `auth_attempt()` returns `null` for a wrong password and for an unknown username alike, and
-`admin/login.php` logs one `login-failed` event for both, carrying only what was typed. The sign-in
+`public/login.php` logs one `login-failed` event for both, carrying only what was typed. The sign-in
 answers the browser identically too — *"That username and password do not match"* — which is the
 point: an error that distinguished the two would let anyone with the login page enumerate which
 accounts exist, one guess at a time. `test_admin_auth.py` proves the two answers stay identical.
@@ -226,20 +191,26 @@ and confirm SPF/DKIM/DMARC. A recovery code will sign you in meanwhile.
 
 ### A banner says the footer is out of step
 
-The contact details in the JSON and the ones in the pages' footers disagree. Expected after editing
-contact details — the footer is markup, not content.
+The contact details here and the ones baked into the public site's page footers disagree. Expected
+after editing an address — the footer is markup on that side, not content, and this editor cannot
+reach it.
 
 ```bash
-# download the server's contact.json FIRST — it is the real one
-python3 tools/sync_site_contact.py
-# then deploy the pages, and not content/
+# in tech4time-frontend, with content/contact.json as the live site now holds it
+python3 tools/sync_site_contact.py     # rewrites the footers and lib/footer-fingerprint.php
+python3 tools/check_shared_markup.py   # proves the sixteen still agree
+git commit && git push                 # the deploy carries it
 ```
+
+**The banner clears on the next save here**, which is when the public site reports its new
+fingerprint back in the publish response. It is not stored in that side's `content/contact.json`
+any more: that file is a replica, and the next publish would overwrite it.
 
 ---
 
 ## The tests
 
-### A browser test fails intermittently
+### The browser test fails intermittently
 
 Leaked processes from an interrupted run.
 
@@ -247,12 +218,13 @@ Leaked processes from an interrupted run.
 pkill firefox geckodriver
 ```
 
-### A browser test skips with a notice
+### The browser test skips with a notice
 
-Firefox or geckodriver is missing. By design — they exit 0 rather than fail, so a machine without a
-browser can still run everything else.
+Firefox or geckodriver is missing. By design — it exits 0 rather than failing, so a machine without
+a browser can still run everything else. CI asserts the binaries are on PATH first, because there a
+skip would be a silent pass.
 
-### `test_admin_auth.py` hangs
+### A test hangs after an interrupted run
 
 A leaked PHP server holding the port.
 
@@ -263,61 +235,12 @@ pkill -f 'php -S'
 ### `check_content_model.py` fails after adding a field
 
 You changed the shape in one of the three places it lives. The message names the field and the
-missing layer. [content-model.md](../10-development/backend/content-model.md)
+missing layer. [content-model.md](../10-development/server-side/content-model.md)
 
 ### `check_secrets.py` fails
 
 Read the message before "fixing" it. It only fails for things that would silently weaken the admin,
 and every one of its checks was verified against a deliberate breakage.
-
-### `check_responsive.py` fails
-
-A page scrolls sideways, a control is wider than the screen, or a tap target is under 24px, at one
-of seven widths.
-
-The message names the page, the width and the element. Two things to know before chasing it:
-
-- **The overflow may not be where it looks.** An element clipped by an ancestor cannot extend the
-  page, so the check already skips those; what it names is the element that can. A carousel's
-  off-screen slides are never the answer.
-- **`… has no control wider than the screen` is a separate failure from `… does not scroll
-  sideways`,** and the page can look perfect while failing it. `.btn` clips its own overflow for the
-  shine sweep, so an over-long label is cut off in silence rather than pushing the layout.
-
-- **`… has no tap target under 24px` is WCAG 2.2 SC 2.5.8, with its exceptions applied.** Before
-  enlarging anything, check which exception was meant to cover it: a `<label>` counts towards the
-  control it names, an inline link in a sentence is exempt, and a small target with 24px of clear
-  space around it is exempt however small. The reported size is the *union* of the control and its
-  label, which is why a checkbox can be reported as `597x23`. Note the height, not the width.
-
-  The stylesheet aims higher than this check enforces — several components declare `2.75rem` for a
-  44px target. That is deliberate: the check holds the line at the AA standard, and the design
-  exceeds it. Do not lower a 44px control to 24 because the check would still pass.
-
-Each width is measured in a frame, and the run prints the viewport it actually got. If that number
-stops matching the width asked for, stop and read
-[0015](../90-decisions/0015-narrow-widths-need-a-frame.md) — nothing in the run can be believed.
-
-Two of the widths are criteria rather than devices: 320px is SC 1.4.10 Reflow, defined at exactly
-that width, and 640px is a 1280px desktop at 200% zoom, which is SC 1.4.4 Resize Text.
-
-### `check_focus.py` fails
-
-**`Reduced motion did not take effect … Refusing to run.`** Not a site failure. The check needs
-`scroll-behavior: auto` so it reads where a focused element came to rest rather than a position it
-is still travelling through. Either the Firefox pref stopped working or the reduced-motion block in
-`assets/css/base.css` moved. Fix that before trusting any focus result.
-
-**`focus is not hidden`** — something covers the focused element entirely (SC 2.4.11). On mobile it
-is almost always the dock, which is `position: fixed` at the bottom. The mitigation is
-`scroll-padding-bottom` on `html`, next to the `scroll-padding-top` that does the same job for the
-sticky header. If a new piece of fixed chrome is added, it needs its own allowance.
-
-**`focus can be seen`** — the element has no visible indicator (SC 2.4.7). Check the computed
-`outline` *and* the pixels: `<summary>` reports the right outline colour while painting nothing, so
-computed style alone will tell you it is fine. Screenshot it focused and unfocused and count the
-differing pixels; zero means no indicator, whatever the stylesheet says. That is why
-`summary:focus-visible` uses a `box-shadow` in `base.css` rather than an outline.
 
 ### `check_docs.py` fails
 
@@ -332,15 +255,18 @@ Current behaviour, documented because it is surprising rather than because it is
 
 | Trap | Consequence | Until it is fixed |
 |---|---|---|
-| The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly; keep subdomain docroots outside `public_html` |
+| The containment check compares against the *requesting* document root | a store inside a **sibling** docroot would pass and be web-reachable | set `T4T_PRIVATE` explicitly. This host's document root is `backend/public/`, so nothing beside `public_html` is inside it — [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) removes the layout that would exercise the gap rather than the gap itself |
+| `publish.key` is copied between hosts by hand | a mistake places it somewhere readable, or the two drift apart | the fingerprint on every signature makes a drift say so in one attempt; the file is 0600 in a 0700 directory outside both document roots |
+| A draft job post is published | its text sits on the public server, in `content/`, protected by `.htaccess` alone | the whole document travels so the two revisions stay comparable, and the public site filters on `status` when it renders. Unchanged from before the split, and stated rather than assumed — [publish-api.md](../10-development/server-side/publish-api.md) |
 
-That one is a fix scheduled with the Phase B hardening.
+**Fixed 2026-08-23, on the public site** — the whole repository, unpacked into its document root.
+The first deploy was an upload of everything, and it left `docs/`, `tools/`, `references/`, `.git/`,
+`.claude/`, the `.md` files and a **63 MB zip of the repository** beside the homepage.
 
-**Fixed 2026-08-23** — the whole repository, unpacked into the document root. The first deploy was
-an upload of everything, and it left `docs/`, `tools/`, `references/`, `.git/`, `.claude/`, the
-`.md` files and a **63 MB `tech4time-website.zip`** beside `index.html`.
+Worth reading here because it is the argument this repository is shaped around: the rule that was
+supposed to prevent it did not.
 
-`.htaccess` section 8 exists for exactly this — *"if the whole tree is ever uploaded, these must not
+`tech4time-frontend`'s `.htaccess` section 8 exists for exactly this — *"if the whole tree is ever uploaded, these must not
 be readable over HTTP"* — and did not deliver it. `<FilesMatch "^\.">` matches the **filename**, so
 `/.git/HEAD` was the file `HEAD` to it: no leading dot, no blocked extension, straight through. And
 nothing covered `.zip` at all, so the entire source and its commit history were downloadable by
@@ -352,7 +278,7 @@ AutoSSL needs), archives and dumps join the extension rule, `references/` is blo
 `verify_live.py` asserts all of it against the running site after every deploy. The deploy set is
 built from an allow list, so none of it can be uploaded again.
 
-**Fixed 2026-08-23** — the setup token outlived setup. `admin/setup.php` promises the bootstrap
+**Fixed 2026-08-23** — the setup token outlived setup. `public/setup.php` promises the bootstrap
 window is *"shut by the code rather than by a step somebody has to remember"*, and on the live host
 `setup-token.txt` sat in the private store beside a working account.
 
@@ -393,7 +319,7 @@ was cut off. The specialities slider's control row is eight 44px tap targets, ce
 wider than the screen and overhangs both edges; and `.btn` had an unconditional `white-space:
 nowrap`, so a 34-character label became a 351px button that `.cta-band` clipped. Neither was
 visible to any check, because Firefox will not size a window below about 488px and nothing here had
-ever measured a narrower one. `tools/check_responsive.py` now does, in a frame.
+ever measured a narrower one. `tech4time-frontend/tools/check_responsive.py` now does, in a frame.
 
 **Fixed 2026-08-23** — a careers field drifting between model, form and renderer unnoticed.
 `check_content_model.py` could never have caught it: both sides of that page are loops, so its

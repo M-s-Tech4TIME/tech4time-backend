@@ -45,7 +45,7 @@ places the store has one failure mode and it is worth understanding before you h
 
 Run AutoSSL for `tech4time.bd` and `www.tech4time.bd`. Wait for certificates to issue.
 
-The HTTPS redirect in `.htaccess` is already active, so this must work before the site is usable.
+The HTTPS redirect in `public/.htaccess` is already active, so this must work before the site is usable.
 HSTS stays commented out until the site has served over HTTPS a few times —
 [first-deploy.md](first-deploy.md#7-enable-hsts).
 
@@ -97,7 +97,7 @@ cat ~/t4t-private/setup-token.txt
 
 ## 7. Directory Privacy — temporary
 
-**cPanel → Directory Privacy → `public_html/admin`**
+**cPanel → Directory Privacy → `the backend's document root`**
 
 Switch it on before the first deploy and remove it after the sign-in is proven. It covers the window
 between the files landing and the first account existing.
@@ -105,7 +105,7 @@ between the files landing and the first account existing.
 Not required — the application is the lock — but there is no reason to remove it before the
 replacement is proven. [admin-activation.md](admin-activation.md)
 
-> **Never put an `.htaccess` in `admin/` in the repository.** cPanel writes its own file there for
+> **Never put an `public/.htaccess` in `admin/` in the repository.** cPanel writes its own file there for
 > this feature; uploading over it silently removes the password.
 
 ## 8. Backups

@@ -55,13 +55,13 @@ safely:
 above all, because cPanel writes its own there and ours would fight it.
 
 `REQUIRED` is the other direction: files whose *absence* is a broken site rather than a missing
-feature. `.htaccess` heads that list because it is a dotfile, and both FTP clients and zip tools
+feature. `public/.htaccess` heads that list because it is a dotfile, and both FTP clients and zip tools
 have been seen to drop it silently — taking the rules that block `lib/` and `content/` with it, and
 leaving a site that looks completely normal.
 
 ### Content is not in the set
 
-`content/` holds the client's data: job posts and contact details typed into `/admin/` on the live
+`content/` holds the client's data: job posts and contact details typed into the admin on the live
 server. The repository's copy is test data. It is **never** synced.
 
 But a brand-new host has nothing there and the two dynamic pages need something to render, so the

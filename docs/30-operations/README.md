@@ -32,10 +32,10 @@ php ~/admin-cli.php log 25      # recent sign-in attempts, successful and not
 php ~/admin-cli.php where       # which files the admin is using
 ```
 
-Plus, in a browser: the homepage loads, `/pages/careers/` renders, `/admin/` signs in, and
+Plus, in a browser: the homepage loads, `/pages/careers/` renders, the admin signs in, and
 `https://tech4time.bd/content/careers.json` returns **403**.
 
-That last one is the check nobody thinks to run and the one that fails silently — an `.htaccess`
+That last one is the check nobody thinks to run and the one that fails silently — an `public/.htaccess`
 that did not upload takes the blocking rules with it, and nothing about the site's appearance will
 tell you.
 

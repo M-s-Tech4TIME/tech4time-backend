@@ -3,7 +3,7 @@
 **Applies to:** both
 
 What is protected, by what, and what is deliberately not protected. Read this before changing
-`.htaccess`, `lib/private.php` or anything in `lib/auth.php`.
+`public/.htaccess`, `lib/private.php` or anything in `lib/auth.php`.
 
 ---
 
@@ -12,11 +12,11 @@ What is protected, by what, and what is deliberately not protected. Read this be
 | | Protected by | If that protection fails |
 |---|---|---|
 | Public pages, assets | nothing — they are public | nothing |
-| `content/*.json` | an `.htaccess` rule | a stranger reads the office addresses the contact page already shows them |
-| `lib/*.php` | an `.htaccess` rule | source disclosure — bad, not catastrophic |
+| `content/*.json` | an `public/.htaccess` rule | a stranger reads the office addresses the contact page already shows them |
+| `lib/*.php` | an `public/.htaccess` rule | source disclosure — bad, not catastrophic |
 | **`t4t-private/`** | **not being inside the website** | — there is no request that reaches it |
 
-The distinction is the design. **An `.htaccess` rule is a policy the server chooses to apply.** If
+The distinction is the design. **An `public/.htaccess` rule is a policy the server chooses to apply.** If
 `mod_rewrite` is off, or an upload replaces the file, it silently stops applying. That is an
 acceptable risk for site copy and not for a password hash.
 
@@ -74,7 +74,7 @@ HMAC is a **pepper**, and it lives in a different file — so `admins.json` alon
 
 Argon2id at 32 MB and three passes, ~90 ms. bcrypt cost 12 as a probed fallback.
 
-[authentication.md](../10-development/backend/authentication.md)
+[authentication.md](../10-development/server-side/authentication.md)
 
 ---
 
@@ -120,7 +120,7 @@ fixed list.
 (staged, commented until the site is live).
 
 > `X-Frame-Options` and `X-Content-Type-Options` are **ignored by browsers when set via `<meta>`**.
-> The `.htaccess` copy is the one that counts; the `<meta>` equivalents are defence in depth for
+> The `public/.htaccess` copy is the one that counts; the `<meta>` equivalents are defence in depth for
 > hosts that strip headers.
 
 ### Blocking
@@ -148,7 +148,7 @@ Header always set Cache-Control "no-store, max-age=0"          "expr=…"
 `always` matters: without it the header attaches only to 2xx responses, and the login page answers a
 crawler with 200 while every other admin URL answers with a redirect.
 
-> **`/admin` is deliberately not in `robots.txt`.** Listing it there advertises it to anyone who
+> **`/admin` is deliberately not in `tech4time-frontend/robots.txt`.** Listing it there advertises it to anyone who
 > reads the file.
 
 ---
@@ -182,7 +182,7 @@ company uncontactable. This is spam control, not a security boundary.
 **`admin-cli.php` asks for no password.** Anyone who can run it can already read the accounts file.
 Requiring one would add no security and remove the last way in on the day it is needed.
 
-**`content/` is only `.htaccess`-protected.** It holds addresses the contact page already displays.
+**`content/` is only `public/.htaccess`-protected.** It holds addresses the contact page already displays.
 
 **There is no intrusion detection**, no WAF, no fail2ban. The audit log records; nothing watches it.
 

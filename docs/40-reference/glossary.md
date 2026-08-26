@@ -63,7 +63,7 @@ The frontend's copy of content it does not own. After the split, the backend is 
 and pushes a copy; the frontend renders from the copy and never asks at render time.
 
 ### reveal
-The scroll animation that fades sections in. Marked by rule via `tools/apply_reveals.py`, and
+The scroll animation that fades sections in. Marked by rule via `tech4time-frontend/tools/apply_reveals.py`, and
 carefully designed never to leave anything hidden.
 
 ### salt
@@ -72,10 +72,10 @@ hash string** by `password_hash()`. That is why there is no separate salt field 
 
 ### section
 One editable page in the admin — a row in `ADMIN_SECTIONS` plus a file in `admin/sections/`. Reached
-at `/admin/?s=<name>`.
+at `/?s=<name>`.
 
 ### setup token
-A value written to `t4t-private/setup-token.txt` that `admin/setup.php` demands. Readable only with
+A value written to `t4t-private/setup-token.txt` that `public/setup.php` demands. Readable only with
 server access; destroyed the moment an account exists.
 
 ### shared markup
@@ -83,7 +83,7 @@ The head, header, footer, dock and script blocks that must be byte-identical on 
 of truth is `tools/templates/`; never edited in a page.
 
 ### sprite
-`assets/icons/sprite.svg`, the master icon set. Pages **inline** the symbols they use rather than
+`public/assets/icons/sprite.svg`, the master icon set. Pages **inline** the symbols they use rather than
 linking to it, because Chromium and WebKit do not resolve `<use>` across documents.
 
 ### token_version

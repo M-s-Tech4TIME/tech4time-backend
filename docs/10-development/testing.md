@@ -22,32 +22,48 @@ python3 tools/check_secrets.py         # nothing secret committed; no protection
 python3 tools/check_docs.py            # the docs still describe the code
 python3 tools/audit_pages.py           # SEO, accessibility, structure, internal links
 python3 tools/build_deploy_set.py --check   # nothing secret or local is bound for the server
+python3 tools/check_shared_lib.py      # the four files both halves hold identically
 ```
 
-## When you touched the admin, the auth, or the contact handler
+> **Half the suite is in the other repository.** The public site's pages, its markup auditors, its
+> icon injection and the browser crawls over it went with the pages they were written for. Neither
+> list is the whole suite any more, and neither pretends to be — `check_content_model.py` and
+> `check_docs.py` each print which half they ran and name the repository that does the other.
+
+## When you touched the admin, the auth, or an editor
 
 ```bash
-python3 tools/test_admin_auth.py       # the whole sign-in cycle, over HTTP
-python3 tools/test_contact_handler.py  # the enquiry form's endpoint
-python3 tools/test_careers_admin.py    # the job post editor
-python3 tools/test_contact_admin.py    # the contact page editor
-python3 tools/test_store.py            # the JSON store itself
+python3 tools/test_admin_auth.py        # the whole sign-in cycle, over HTTP
+python3 tools/test_publish_client.py    # the push, and the save that calls it
+python3 tools/test_careers_admin.py     # the job post editor
+python3 tools/test_contact_admin.py     # the contact page editor
+python3 tools/test_store.py             # the JSON store itself
 ```
 
-## When you touched CSS, markup or motion
+Touched `lib/contract.php`, `lib/publish.php`, `lib/html.php` or the icon sprite? Then also:
+
+```bash
+python3 tools/check_shared_lib.py --update    # re-record the digests
+# then copy the changed file AND tools/shared-lib.sha256 into tech4time-frontend,
+# and bump CONTRACT_VERSION if the SHAPE of a document changed
+```
+
+## When you touched the rich-text editor
 
 Needs Firefox and geckodriver. Slower.
 
 ```bash
-python3 tools/test_motion.py           # every page, scrolled end to end
-python3 tools/test_nav.py              # navigation at both widths
-python3 tools/test_theme.py            # the theme switch, with a real OS preference
-python3 tools/test_editor.py           # the job post editor, in a real browser
-python3 tools/check_hover.py           # a real pointer over every kind of control
-python3 tools/check_dark_mode.py       # every page as the browser actually paints it
-python3 tools/check_responsive.py      # sideways scroll and tap targets, 320px and up
-python3 tools/check_focus.py           # tab every page: the ring is visible and uncovered
+python3 tools/test_editor.py           # the toolbar, driven as a person drives it
 ```
+
+**What is not here, and never was.** `check_focus.py`, `check_dark_mode.py`,
+`check_responsive.py` and `check_hover.py` crawl a list of *public* pages and never sign in, so
+they never covered these screens — before the split as well as after it. They went to
+`tech4time-frontend` with the pages they were written for.
+
+That is a real gap, and it is named here rather than left to be discovered: **the admin has never
+been checked for focus visibility, tap targets at 320px, or how it paints in dark mode.** Adapting
+those four to a signed-in host is outstanding work.
 
 > Interrupted browser runs leave processes behind. `pkill firefox geckodriver` clears them.
 
@@ -66,7 +82,7 @@ python3 tools/check_focus.py           # tab every page: the ring is visible and
 | `check_secrets.py` | no secret is committed; the private store still refuses the web root; no auth bypass constant has returned; cookie flags intact; no password reachable by the audit log; every admin page shape noindexed |
 | `check_docs.py` | every tool, library and admin section is documented; no doc cites a path that does not exist; no internal link is broken; no doc quotes a constant that has changed |
 | `audit_pages.py` | per page: title and meta description, heading order, `alt` text, landmark roles, no repeated `id`, a label on every form control and an accessible name on every link and button, canonical URL, structured data, internal links resolve |
-| `build_deploy_set.py --check` | the upload set holds no `content/`, `tools/`, `docs/` or key, keeps the `.htaccess` that blocks them, and carries a careers seed with no job posts |
+| `build_deploy_set.py --check` | the upload set holds no `content/`, `tools/`, `docs/` or key, keeps the `public/.htaccess` that blocks them, and carries a careers seed with no job posts |
 | `verify_live.py <url>` | run **after** a deploy, against the real host: the pages answer 200, `lib/`, `content/`, `tools/` and `/.git/` answer 403, and the security headers are present |
 
 ### The HTTP tests
@@ -76,31 +92,30 @@ These start a real PHP server on a spare port and drive it over HTTP.
 | Script | Proves |
 |---|---|
 | `test_admin_auth.py` | first-run setup; **the setup key demanded of a request from off the machine**; signing in and out; a code works once; the lockout; the emailed reset cycle; recovery codes; the audit log; the refusal to run unsafely. Includes the RFC 6238 test vectors, so the TOTP implementation is checked against the specification rather than against itself |
-| `test_contact_handler.py` | method check, honeypot, every validation rule, CR/LF injection into each field, the assembled message, non-ASCII round trips, the rate limit, and the no-JavaScript HTML response |
-| `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write — and that **every field `lib/careers.php` declares reaches the visitor**, by posting a marker through each one and reading it back off the public page |
+| `test_publish_client.py` | `publish_push()` and the save that calls it: a payload an **independent** verifier accepts, and every way it can fail arriving as something the editor can show |
+| `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write — and that **every field the model declares reaches the live site**, by pushing a marker through each one and reading it out of the published document |
 | `test_contact_admin.py` | the contact page editor, and the icon rail |
 | `test_store.py` | `lib/store.php`: telling apart missing, unreadable and corrupt; the atomic write; and the rule that a damaged file is never copied over a good `.bak`, because the backup is what damage is recovered from |
 
-`test_contact_handler.py` captures outgoing mail by pointing PHP's `sendmail_path` at a script that
-writes the message to a file, then reads back the exact bytes `mail()` was asked to send. That is
-what lets it assert the header-injection defences work rather than merely look right. **It does not
-test delivery**, and cannot — that needs a real mail server, and is proven on the host with
-`tools/host-probe.php`.
+**The three that publish do so to a stub, and that is the point.** `tools/publish_stub.py`
+implements the wire format a second time, in Python, from its written description. Pointing them at
+the real endpoint in `tech4time-frontend` would check the two halves against each other rather than
+against the format they both implement — a bug they shared would pass. The frontend has the mirror:
+`test_publish.py` signs in Python and posts to the real PHP endpoint. **Neither side is ever checked
+against its own counterpart.**
 
 The admin tests sign in for real, through `tools/admin_session.py`, against a throwaway account in a
-private directory under `/tmp` — so a test run cannot disturb your own local account.
+private directory under `/tmp` — so a test run cannot disturb your own local account. Every test
+runs against a copy of the real data files, restored afterwards whether the run passes or fails.
 
 ### The browser tests
 
 | Script | Proves |
 |---|---|
-| `test_motion.py` | every page scrolled end to end, with every reveal-marked element required to finish opaque — the reveal never leaves anything unread |
-| `test_nav.py` | navigation is usable at desktop and mobile widths, with a keyboard as well as a pointer |
-| `test_theme.py` | the theme switch honours an explicit choice, falls back to the OS preference, and survives a reload without a flash |
-| `test_editor.py` | the job post editor driven as a person drives it, including a real sign-in |
+| `test_editor.py` | the rich-text editor driven as a person drives it, including a real sign-in: the toolbar, the selection, and that alignment is a class and never an inline style |
 | `check_hover.py` | every interactive element visibly responds to a real pointer |
 | `check_dark_mode.py` | every page in both themes, as painted — catching what a CSS reader cannot, like a token that resolves to the same colour as its background |
-| `check_responsive.py` | every page at 320, 360, 414, 640, 768, 1024 and 1440px: the document does not scroll sideways, no link, button or field is wider than the screen, and no tap target is under 24px. Each width is a frame, not a window — see [0015](../90-decisions/0015-narrow-widths-need-a-frame.md), because Firefox silently clamps a window at about 500px and a check written the obvious way reports widths it never tested |
+| `check_responsive.py` | every page at 320, 360, 414, 640, 768, 1024 and 1440px: the document does not scroll sideways, no link, button or field is wider than the screen, and no tap target is under 24px. Each width is a frame, not a window — see *0015* (in tech4time-frontend), because Firefox silently clamps a window at about 500px and a check written the obvious way reports widths it never tested |
 | `check_focus.py` | every page tabbed one stop at a time, at desktop and mobile widths: each focused element has a visible ring (SC 2.4.7) and is not entirely covered by the sticky header or the fixed dock (SC 2.4.11). Runs with reduced motion so scrolling is instant, and **refuses to run** if that preference did not take effect — otherwise every position it reads is mid-scroll |
 
 They skip with a notice and exit 0 when Firefox or geckodriver is missing, rather than failing —
@@ -115,7 +130,7 @@ so a machine without a browser can still run everything else.
 
 **`check_content_model.py` fails** — you changed a content shape in one of the three places it
 lives. The message names the field and which layer is missing it.
-[content-model.md](backend/content-model.md)
+[content-model.md](server-side/content-model.md)
 
 **`check_docs.py` fails** — the code and the documentation disagree. Usually you added a file and
 have not documented it, or changed a constant the prose quotes. The message names both sides.

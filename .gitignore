@@ -33,12 +33,14 @@ content/*.tmp
 # secrets, sessions, the attempt counters and the audit log.
 #
 # lib/private.php puts this BESIDE the document root — on the host at
-# /home/USER/t4t-private, locally at ../t4t-private — so it is normally outside
+# /home/USER/t4t-private-admin, locally at ../t4t-private-admin — so it is
+# normally outside
 # this repository altogether, and it refuses to run from anywhere inside the
 # document root. These lines are the backstop for a stray copy: nothing here
 # should ever reach a commit, and a leaked master key means every stored
 # password can be attacked offline.
 t4t-private/
+t4t-private-admin/
 .dev-private/
 *.key
 setup-token.txt

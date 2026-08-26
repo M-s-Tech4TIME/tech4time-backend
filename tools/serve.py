@@ -1,39 +1,46 @@
 #!/usr/bin/env python3
 """
-Preview the whole site locally, including the PHP parts.
+Run the admin locally, the way it runs on its own host.
 
 Development tool. NOT deployed to the web server (see tools/README.md).
 
-    python3 tools/serve.py            # http://localhost:8000
+    python3 tools/serve.py            # http://localhost:8001
     python3 tools/serve.py 8080       # a different port
 
 Requires the PHP CLI:  sudo apt install php-cli
 
-WHY NOT python3 -m http.server
-Four pages need PHP now: the careers page renders job posts, the contact page
-renders its addresses and numbers, the admin edits both, and the contact form
-posts to a handler. A static file server shows you their source instead of
-their output.
+IT SERVES public/, NOT THE REPOSITORY
+On the host, admin.tech4time.bd's document root is public/ — so lib/,
+sections/ and content/ are outside anything a URL can reach, rather than merely
+blocked by a rule. tools/dev-router.php reproduces exactly that here and
+refuses a path that escapes public/. A development machine on which
+/../lib/auth.php resolves would teach the wrong lesson. See ADR 0018.
 
-NOTHING IS FAKED ANY MORE
-/admin used to be waved through here, because on the host cPanel's Directory
-Privacy made Apache ask for a password before any PHP ran and there is no
-Apache locally. The admin has its own accounts now, so the local sign-in is the
-real one: visit /admin/setup.php once to create an account and pair an
+THE SIGN-IN IS REAL, LOCALLY TOO
+Nothing is faked. Visit /setup.php once to create an account and pair an
 authenticator app, then sign in as you would on the host.
 
-The accounts, sessions and audit log go in ../t4t-private — beside this
-repository, never inside it, the same shape as /home/USER/t4t-private on the
-server. Delete that directory to start over.
+The accounts, sessions and audit log go in ../t4t-private-admin — beside this
+repository, never inside it, the same shape as /home/USER/t4t-private-admin on
+the server. Delete that directory to start over.
 
 It binds to localhost only, but it is still a real sign-in on a real port: do
 not run it on a public interface.
 
+PUBLISHING NEEDS THE OTHER HALF
+Every save pushes to the public site. With nothing to push to, the editor says
+so on every save — which is correct, and is what it would do on the host. To
+make it work, run tech4time-frontend beside this and point this at it:
+
+    T4T_PUBLIC_URL=http://localhost:8000 python3 tools/serve.py 8001
+
+Both stores need the SAME publish.key, or every publish is refused as
+unknown-key. tools/make_publish_key.py prints one; put the same value in both.
+
 WHAT STILL WILL NOT WORK LOCALLY
-mail(). The contact form validates and answers correctly, then reports that it
-could not send, because there is no mail server here — and a password reset
-code has nowhere to go for the same reason. Both paths are verified on the host
-with tools/host-probe.php. Locally, use a recovery code from setup instead.
+mail(). A password reset code has nowhere to go, because there is no mail
+server here. Use a recovery code from setup instead. The mail path is verified
+on the host with tools/host-probe.php.
 """
 
 import os
@@ -45,20 +52,16 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+DOCROOT = ROOT / "public"
 ROUTER = ROOT / "tools" / "dev-router.php"
 
 PAGES = [
-    ("Home", "/"),
-    ("Admin — sign in", "/admin/login.php"),
-    ("Admin — first-run setup", "/admin/setup.php"),
-    ("Admin — overview", "/admin/"),
-    ("Admin — job posts", "/admin/?s=careers"),
-    ("Admin — contact page", "/admin/?s=contact"),
-    ("Admin — your account", "/admin/?s=account"),
-    ("Careers  (renders content/careers.json)", "/pages/careers/"),
-    ("Contact  (renders content/contact.json)", "/pages/contact/"),
-    ("Resource Certifications", "/pages/resource-certifications/"),
-    ("Branding & Advertisement", "/pages/branding-and-advertisement/"),
+    ("Sign in", "/login.php"),
+    ("First-run setup", "/setup.php"),
+    ("Overview", "/"),
+    ("Job posts       (writes content/careers.json, then publishes)", "/?s=careers"),
+    ("Contact page    (writes content/contact.json, then publishes)", "/?s=contact"),
+    ("Your account", "/?s=account"),
 ]
 
 
@@ -79,17 +82,17 @@ def main() -> None:
             "  sudo apt install php-cli"
         )
 
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8001
     if not port_is_free(port):
         raise SystemExit(f"port {port} is already in use — try: python3 tools/serve.py {port + 1}")
 
     base = f"http://localhost:{port}"
     width = max(len(label) for label, _ in PAGES)
 
-    print(f"\n  Serving {ROOT}\n")
+    print(f"\n  Serving {DOCROOT}\n  (lib/, sections/ and content/ are OUTSIDE it, as on the host)\n")
     for label, path in PAGES:
         print(f"    {label.ljust(width)}   {base}{path}")
-    private = ROOT.parent / "t4t-private"
+    private = ROOT.parent / "t4t-private-admin"
     first_run = not (private / "admins.json").is_file()
 
     if first_run:
@@ -109,7 +112,7 @@ def main() -> None:
     )
 
     proc = subprocess.Popen(
-        ["php", "-S", f"localhost:{port}", "-t", str(ROOT), str(ROUTER)],
+        ["php", "-S", f"localhost:{port}", "-t", str(DOCROOT), str(ROUTER)],
         start_new_session=True,
     )
 

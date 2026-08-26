@@ -1,7 +1,12 @@
-# Tech4TIME — Documentation
+# Tech4TIME — Documentation (backend)
 
 Everything about this project that is not the code itself: how to set it up, how it is built, where
 to change things, how to deploy it, and what to do when something breaks.
+
+**This is the editor.** The public website — its sixteen pages, its CSS, its JavaScript, its
+markup — is in **`tech4time-frontend`**, which has its own copy of this documentation covering that
+half. Entries that read *(in tech4time-frontend)* are there rather than here: the document exists,
+in the other repository.
 
 **New here?** Read [00-orientation/README.md](00-orientation/README.md), then
 [10-development/setup.md](10-development/setup.md). About an hour, and you will be able to work.
@@ -26,15 +31,15 @@ to change things, how to deploy it, and what to do when something breaks.
 | | |
 |---|---|
 | **Where does this live?** — start here | [10-development/where-to-change-things.md](10-development/where-to-change-things.md) |
-| Colours, spacing, typography | [10-development/frontend/css.md](10-development/frontend/css.md) |
-| Behaviour in the browser | [10-development/frontend/javascript.md](10-development/frontend/javascript.md) |
-| Animation, sliders, the reveal | [10-development/frontend/motion.md](10-development/frontend/motion.md) |
-| Icons | [10-development/frontend/icons.md](10-development/frontend/icons.md) |
-| The header or footer | [10-development/frontend/shared-markup.md](10-development/frontend/shared-markup.md) |
-| Add a whole new page | [10-development/frontend/adding-a-page.md](10-development/frontend/adding-a-page.md) |
-| Server-side code | [10-development/backend/libraries.md](10-development/backend/libraries.md) |
-| Make a page editable in `/admin` | [10-development/backend/adding-an-editor.md](10-development/backend/adding-an-editor.md) |
-| The sign-in, sessions, passwords | [10-development/backend/authentication.md](10-development/backend/authentication.md) |
+| Colours, spacing, typography | *10-development/frontend/css.md* (in tech4time-frontend) |
+| Behaviour in the browser | *10-development/frontend/javascript.md* (in tech4time-frontend) |
+| Animation, sliders, the reveal | *10-development/frontend/motion.md* (in tech4time-frontend) |
+| Icons | [10-development/server-side/icons.md](10-development/server-side/icons.md) |
+| The header or footer | *10-development/frontend/shared-markup.md* (in tech4time-frontend) |
+| Add a whole new page | *10-development/frontend/adding-a-page.md* (in tech4time-frontend) |
+| Server-side code | [10-development/server-side/libraries.md](10-development/server-side/libraries.md) |
+| Make a page editable in `/admin` | [10-development/server-side/adding-an-editor.md](10-development/server-side/adding-an-editor.md) |
+| The sign-in, sessions, passwords | [10-development/server-side/authentication.md](10-development/server-side/authentication.md) |
 | Run the tests | [10-development/testing.md](10-development/testing.md) |
 
 ### I am deploying
@@ -108,14 +113,14 @@ half that rots silently.
 | Change this | Update this |
 |---|---|
 | Add or remove a file in `tools/` | [40-reference/tools.md](40-reference/tools.md) |
-| Add or remove a `lib/*.php` | [10-development/backend/libraries.md](10-development/backend/libraries.md) |
-| Add a section to `ADMIN_SECTIONS` | [10-development/backend/adding-an-editor.md](10-development/backend/adding-an-editor.md) |
+| Add or remove a `lib/*.php` | [10-development/server-side/libraries.md](10-development/server-side/libraries.md) |
+| Add a section to `ADMIN_SECTIONS` | [10-development/server-side/adding-an-editor.md](10-development/server-side/adding-an-editor.md) |
 | Add or remove a page under `pages/` | [00-orientation/repository-map.md](00-orientation/repository-map.md) |
 | Change a field in `content/*.json` | [40-reference/content-schemas.md](40-reference/content-schemas.md) |
-| Change a constant in `lib/auth.php`, `lib/reset.php`, `lib/throttle.php` | [10-development/backend/authentication.md](10-development/backend/authentication.md) and [40-reference/security-model.md](40-reference/security-model.md) |
-| Change `.htaccess` | [40-reference/security-model.md](40-reference/security-model.md) |
+| Change a constant in `lib/auth.php`, `lib/reset.php`, `lib/throttle.php` | [10-development/server-side/authentication.md](10-development/server-side/authentication.md) and [40-reference/security-model.md](40-reference/security-model.md) |
+| Change `public/.htaccess` | [40-reference/security-model.md](40-reference/security-model.md) |
 | Change the deploy procedure | [20-deployment/](20-deployment/) |
-| Change a CSS or JS convention | [10-development/frontend/](10-development/frontend/) |
+| Change a CSS or JS convention | [10-development/server-side/](10-development/server-side/) |
 | Make a decision that constrains future work | a new file in [90-decisions/](90-decisions/) |
 | Discover a new failure mode | [30-operations/troubleshooting.md](30-operations/troubleshooting.md) |
 
@@ -123,10 +128,21 @@ half that rots silently.
 
 ## A note on the two repositories
 
-This project is being split into `tech4time-website-frontend` (the public site) and
-`tech4time-website-backend` (the admin). That has not happened yet — everything is in one repository
-today.
+The project is split. **`tech4time-backend`** is this one, serving `admin.tech4time.bd` and owning
+the content; **`tech4time-frontend`** serves `tech4time.bd` and renders a replica it is sent.
 
-Every document here opens with an **Applies to:** line — `frontend`, `backend`, or `both` — so that
-when the split happens the documents can be moved rather than rewritten. See
-[90-decisions/0011-two-repositories.md](90-decisions/0011-two-repositories.md).
+Every document opens with an **Applies to:** line — `frontend`, `backend`, or `both` — which is what
+made the split a move rather than a rewrite. A document marked `both` exists in both repositories
+and describes each half from its own side.
+
+**A path in backticks always means *this* repository.** A file in the other half is written with the
+repository name in front: `tech4time-frontend/pages/careers/index.php`. `tools/check_docs.py`
+enforces it, so the two can never be confused in prose.
+
+The decision records are numbered for the project, not for this repository, so
+[90-decisions/](90-decisions/) has gaps where a record belongs to the other half. Each gap names
+where it went.
+
+See [90-decisions/0011-two-repositories.md](90-decisions/0011-two-repositories.md),
+[0017](90-decisions/0017-two-private-stores.md) and
+[0018](90-decisions/0018-the-backend-serves-from-a-subdirectory.md).

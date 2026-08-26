@@ -103,7 +103,7 @@ which is the worst way to discover a mail problem.
 cPanel enforces an **hourly outbound mail limit**. The reset throttle is sized to stay under it:
 three per hour per account, five per address, **twenty overall**.
 
-That global cap is not about this site. Somebody hammering `/admin/forgot.php` could use the
+That global cap is not about this site. Somebody hammering `/forgot.php` could use the
 allowance up, which would stop the genuine reset from being delivered at the moment it was wanted.
 
 ---
@@ -113,7 +113,7 @@ allowance up, which would stop the genuine reset from being delivered at the mom
 | | |
 |---|---|
 | AutoSSL | for `tech4time.bd` and `www.tech4time.bd` |
-| HTTPS redirect | **active** in `.htaccess` |
+| HTTPS redirect | **active** in `public/.htaccess` |
 | HSTS | **staged, commented out** — enable after the site is live |
 | `includeSubDomains` | **off**, and must stay off until `admin.tech4time.bd` has its own certificate |
 
@@ -124,7 +124,7 @@ allowance up, which would stop the genuine reset from being delivered at the mom
 Currently protecting `/admin` as a temporary measure during setup. To be removed once the
 application's own sign-in is proven — [admin-activation.md](../20-deployment/admin-activation.md).
 
-> **Never add an `.htaccess` to `admin/` in the repository.** cPanel writes its own there for this
+> **Never add an `public/.htaccess` to `admin/` in the repository.** cPanel writes its own there for this
 > feature, and uploading over it silently removes the password.
 
 ---

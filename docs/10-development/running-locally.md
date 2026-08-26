@@ -2,8 +2,8 @@
 
 **Applies to:** both
 
-The dev server, signing in, editing content safely, and the two things that genuinely cannot work
-on a development machine.
+The dev server, signing in, running both halves side by side, and the one thing that genuinely
+cannot work on a development machine.
 
 ---
 
@@ -17,10 +17,10 @@ python3 tools/serve.py 8080       # a different port
 It prints a menu of the pages worth visiting, tells you whether an admin account exists, and reminds
 you how to undo content edits. `Ctrl-C` stops it.
 
-Under the hood it is `php -S localhost:8000 -t . tools/dev-router.php`. The router exists to make
-one machine behave like the other: it resolves `/pages/about/` to `pages/about/index.html` and
-`/pages/careers/` to `index.php` the way `.htaccess` does on Apache, so a URL that works here works
-there.
+Under the hood it is `php -S localhost:8001 -t public tools/dev-router.php`. **It serves `public/`,
+not the repository** — the same document root the host serves, so `lib/`, `sections/` and `content/`
+404 here exactly as they do there. A development machine on which `/../lib/auth.php` resolves would
+teach the wrong lesson. [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md)
 
 It binds to localhost only. It is still a real sign-in on a real port — do not run it on a public
 interface.
@@ -33,22 +33,29 @@ Nothing is faked. The editors used to be waved through locally, because on the h
 a password before any PHP ran — there was nothing to fake against. The admin has its own accounts
 now, so the local sign-in *is* the real one.
 
-**First time:** `/admin/setup.php` — see [setup.md](setup.md#4-create-an-admin-account).
+**First time:** `/setup.php` — see [setup.md](setup.md#4-create-an-admin-account).
 
-**After that:** `/admin/login.php`, with your password and a code from your authenticator app.
+**After that:** `/login.php`, with your password and a code from your authenticator app.
 
 Your account lives in `../t4t-private/`, beside the clone:
 
 ```
 CodeSpace/
-├── tech4time-website/     ← the repository
-└── t4t-private/           ← accounts, sessions, counters, audit log
-    ├── secret.key
-    ├── admins.json
-    ├── sessions/
-    ├── throttle.json
-    └── audit.log
+├── tech4time-backend/       ← this repository
+├── tech4time-frontend/      ← the other half
+├── t4t-private-admin/       ← this side
+│   ├── secret.key           peppers the password hashes
+│   ├── admins.json          accounts, TOTP secrets, recovery codes
+│   ├── sessions/
+│   ├── throttle.json
+│   ├── resets.json
+│   ├── audit.log
+│   └── publish.key          THE SAME BYTES as the frontend's copy
+└── t4t-private/             the frontend's: three files, no accounts
 ```
+
+**Two levels up from `public/`, not one.** One level up is the repository, which is what a deploy
+empties. [environments.md](../20-deployment/environments.md)
 
 Deliberately the same shape as `/home/USER/t4t-private` on the host, so nothing about the layout is
 different in development.
@@ -56,7 +63,7 @@ different in development.
 ### Starting over
 
 ```bash
-rm -rf ../t4t-private            # then visit /admin/setup.php again
+rm -rf ../t4t-private-admin      # then visit /setup.php again
 ```
 
 ### Locked yourself out
@@ -75,10 +82,33 @@ Locally `admin-cli.php` runs where it sits. On the host it is uploaded, run, and
 
 ---
 
+## Running both halves at once
+
+Every save publishes. With nothing to publish to, the editor says so on every save — which is
+correct, and is what it would do on the host.
+
+```bash
+# terminal 1 — tech4time-frontend
+python3 tools/serve.py                                          # :8000
+
+# terminal 2 — here
+T4T_PUBLIC_URL=http://localhost:8000 python3 tools/serve.py 8001
+```
+
+**Both stores need the same `publish.key`.** Without one, every publish is refused as
+`not-configured`; with two *different* keys, as `unknown-key`.
+
+```bash
+python3 tools/make_publish_key.py      # in either repository, once
+# then put the printed value in the other store's publish.key
+```
+
+---
+
 ## Editing content
 
-**Saving in `/admin/` writes `content/careers.json` and `content/contact.json` for real.** They are
-tracked files, so your edits show up in `git status`.
+**Saving writes `content/careers.json` and `content/contact.json` for real**, and then publishes
+them. They are tracked files, so your edits show up in `git status`.
 
 ```bash
 git checkout content/careers.json content/contact.json   # undo them
@@ -113,11 +143,11 @@ header-injection defences are proven to work rather than merely to look right.
 
 ### Apache
 
-The dev server is PHP's built-in one. `.htaccess` is not read, so locally you do not get the
+The dev server is PHP's built-in one. `public/.htaccess` is not read, so locally you do not get the
 security headers, the caching rules, the compression, or the blocking of `lib/`, `content/` and
 `tools/`. The dev router reproduces the URL shapes and nothing else.
 
-**What this means in practice:** a `.htaccess` change cannot be verified locally. Verify it on the
+**What this means in practice:** a `public/.htaccess` change cannot be verified locally. Verify it on the
 host, and read [security-model.md](../40-reference/security-model.md) before changing it.
 
 ---

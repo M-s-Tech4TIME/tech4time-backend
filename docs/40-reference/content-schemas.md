@@ -10,7 +10,7 @@ The two JSON files the dynamic pages render from, field by field.
 optional field that happens to be absent from it is still a field.
 
 Changing a shape means changing three things together — the model, the form and the renderer.
-[content-model.md](../10-development/backend/content-model.md).
+[content-model.md](../10-development/server-side/content-model.md).
 
 ---
 
@@ -74,7 +74,7 @@ structured data from these.
 | Field | |
 |---|---|
 | `updated` | ISO 8601, written on save. Bookkeeping |
-| `footer_synced` | the fingerprint of the contact details as last pushed into the pages' footers. Drives the drift banner — [shared-markup.md](../10-development/frontend/shared-markup.md) |
+| `footer_synced` | the fingerprint of the contact details as last pushed into the pages' footers. Drives the drift banner — *shared-markup.md* (in tech4time-frontend) |
 | `meta` | `<title>`, meta description, Open Graph title |
 | `hero` | the page's heading and subheading |
 | `form` | the enquiry form's copy, and `service_types` — the subject options offered |
@@ -129,7 +129,7 @@ both directions. Nothing renders them and the form does not write them.
 
 ## On the host, these files are the real data
 
-Written by people through `/admin/`. **Never upload them to a live server** —
+Written by people through the admin. **Never upload them to a live server** —
 [routine-deploys.md](../20-deployment/routine-deploys.md).
 
 The repository's copies are development data, kept deliberately rich because an empty file exercises
