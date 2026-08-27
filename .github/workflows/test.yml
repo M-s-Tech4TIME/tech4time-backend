@@ -49,6 +49,7 @@ jobs:
           php -v | head -1
 
       - run: python3 tools/check_contrast.py
+      - run: python3 tools/check_css.py
       - run: python3 tools/check_content_model.py
       - run: python3 tools/check_secrets.py
       - run: python3 tools/check_docs.py
@@ -139,6 +140,15 @@ jobs:
       # docs/10-development/testing.md rather than left to be discovered.
       - name: browser suite
         run: python3 tools/test_editor.py
+
+      # The accessibility crawl over the SIGNED-IN admin. It belongs in this
+      # job rather than "checks" because it needs the same Firefox, and it
+      # belongs in CI at all because what it found on its first run -- five
+      # rules writing a colour token into the `outline` shorthand, which resets
+      # outline-style to none -- is exactly the kind of thing that reads fine
+      # in a diff and is invisible until somebody presses Tab.
+      - name: admin accessibility
+        run: python3 tools/check_admin_a11y.py
 
       # These leave processes behind when a step is cancelled, and a runner
       # that hangs on to Firefox never finishes.

@@ -105,7 +105,7 @@ failures, and both say exactly what is wrong.
 ## Before committing
 
 ```bash
-python3 tools/check_contrast.py        python3 tools/check_content_model.py
+python3 tools/check_contrast.py        python3 tools/check_css.py        python3 tools/check_content_model.py
 python3 tools/check_secrets.py         python3 tools/check_docs.py
 python3 tools/build_deploy_set.py --check
 python3 tools/check_shared_lib.py
@@ -121,6 +121,10 @@ Touched `lib/qr.php` or authenticator enrolment? Also `test_qr.py` — it needs 
 Touched `lib/store.php`? Also `test_store.py`. Touched the rich-text editor? Also `test_editor.py`
 — needs Firefox and geckodriver, and leaves processes behind if interrupted
 (`pkill firefox geckodriver`).
+
+Touched CSS, an admin screen or anything a keyboard reaches? Also
+`python3 tools/check_admin_a11y.py` — the focus ring, 320px, dark mode and hover across all eight
+screens, signed in. Same Firefox and geckodriver, same clean-up.
 
 Touched `lib/contract.php`, `lib/publish.php`, `lib/html.php` or the sprite? Also
 **`check_shared_lib.py --update`, and copy the changed file and the manifest to the frontend.**

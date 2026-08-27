@@ -1,0 +1,691 @@
+#!/usr/bin/env python3
+"""
+Crawl the SIGNED-IN admin for the accessibility faults a static check cannot see.
+
+Development tool. NOT deployed to the web server (see tools/README.md).
+Run from the repo root:  python3 tools/check_admin_a11y.py
+
+Needs the PHP CLI, Firefox and geckodriver. Exits 0 with a notice if the
+browser pieces are missing, the way the other browser tools here do.
+
+WHY THIS EXISTS
+`check_focus.py`, `check_dark_mode.py`, `check_responsive.py` and
+`check_hover.py` crawl a list of PUBLIC pages and never sign in. They went to
+tech4time-website-frontend at the split, with the pages they were written for,
+and testing.md has said ever since -- in as many words -- that the admin "has
+never been checked for focus visibility, tap targets at 320px, or how it paints
+in dark mode".
+
+That was true, and it is the gap this closes. Everything here happens behind
+the sign-in, which is the half nobody has ever looked at.
+
+WHY ONE FILE AND NOT FOUR
+Over there, four files is right: sixteen public pages, and each tool carries a
+lot of crawl machinery for its own question. Here there are eight screens. Four
+copies of "start PHP, start geckodriver, sign in, walk the screens" would be
+four copies of the sign-in -- and the sign-in is the part most likely to need
+changing, because it is the part that depends on the login page's markup.
+
+So: one crawl, four families of assertion. The families are kept visibly
+separate below, and each names the success criterion it is about, so a failure
+says what is wrong rather than merely that something is.
+
+WHAT IT ASSERTS
+
+  focus       Tab through every screen. The focused element must have a
+              visible indicator (:focus-visible plus an outline or a shadow --
+              WCAG 2.2 SC 2.4.7) and must not be entirely hidden behind
+              something else (SC 2.4.11 Focus Not Obscured, Minimum).
+
+  reflow      At 320px the document must not scroll sideways (SC 1.4.10), and
+              every interactive control must be at least 24x24 CSS pixels
+              (SC 2.5.8 Target Size, Minimum). The inline-link exception is
+              honoured: a link inside a sentence is exempt, and the check knows
+              the difference by asking whether the anchor's parent holds text
+              either side of it.
+
+  dark        In dark mode the page must actually be dark -- body background
+              resolved and opaque, not inherited from whatever is behind it --
+              and no element may end up drawing its text in the colour it is
+              sitting on.
+
+  hover       Every kind of interactive control must react to a pointer.
+              Sampled by KIND rather than per element, because forty identical
+              rows react identically and forty findings about them would bury
+              the one that matters.
+
+WHY REDUCED MOTION IS REQUESTED
+The same reason check_focus.py gives, and it is worth repeating because it is
+the thing that would make this file lie rather than fail: the admin scrolls a
+focused element into view, and measuring mid-scroll reports positions the page
+is still travelling through. Reduced motion makes scrolling instant. It is
+proved at startup rather than assumed -- if it silently failed, the findings
+would look real.
+
+WHAT IT DELIBERATELY DOES NOT DO
+Contrast ratios. `check_contrast.py` already reads every pair in theme.css and
+is exact about it; sampling rendered pixels here would be a worse measurement
+of the same thing. This asks the questions that only a laid-out page can
+answer.
+"""
+
+import json
+import os
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DOCROOT = ROOT / "public"
+ROUTER = ROOT / "tools" / "dev-router.php"
+
+sys.path.insert(0, str(ROOT / "tools"))
+import admin_session  # noqa: E402
+
+# 1200 is the admin as it is used. 320 is the reflow bar -- the narrowest width
+# WCAG asks about, and the one the rail and the editor rows have never faced.
+WIDTHS = [(1200, "desktop"), (320, "narrow")]
+
+MAX_TABS = 60
+
+# Signed out first: these are reachable by anyone who finds the URL, and
+# reset.php is three screens that were rebuilt recently.
+PUBLIC_SCREENS = ["/login.php", "/forgot.php", "/reset.php"]
+
+SIGNED_IN_SCREENS = ["/", "/?s=careers", "/?s=contact", "/?s=account"]
+
+MIN_TARGET = 24          # SC 2.5.8, CSS pixels
+
+
+# --------------------------------------------------------------- the probes
+
+FOCUS = r"""
+var el = document.activeElement;
+if (!el || el === document.body || el === document.documentElement)
+  return {done: true};
+
+function name(e) {
+  var cls = (e.className && e.className.baseVal !== undefined
+               ? e.className.baseVal : e.className || '').toString().trim();
+  return e.tagName.toLowerCase() + (cls ? '.' + cls.split(/\s+/)[0] : '');
+}
+
+var cs = getComputedStyle(el);
+var r  = el.getBoundingClientRect();
+
+/* Is any of it actually reachable by a click? The centre and four inset
+   corners. If none of them hit the element or something inside it, the focus
+   ring is behind another layer and SC 2.4.11 is not met. */
+var pts = [[r.left + r.width / 2, r.top + r.height / 2],
+           [r.left + 2, r.top + 2], [r.right - 2, r.top + 2],
+           [r.left + 2, r.bottom - 2], [r.right - 2, r.bottom - 2]];
+
+var hits = 0, sampled = 0, coveredBy = '';
+for (var i = 0; i < pts.length; i++) {
+  var x = pts[i][0], y = pts[i][1];
+  if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) continue;
+  sampled++;
+  var top = document.elementFromPoint(x, y);
+  if (top && (top === el || el.contains(top) || top.contains(el))) hits++;
+  else if (top && !coveredBy) coveredBy = name(top);
+}
+
+var visible = true;
+try { visible = el.matches(':focus-visible'); } catch (e) { visible = null; }
+
+function drawn(style) {
+  /* outlineWidth is a length even when outlineStyle is none, and the shorthand
+     `outline: var(--focus-ring)` -- where the token is a COLOUR -- computes to
+     a colour and a width with style none. That combination draws nothing and
+     reads, in a dump, exactly like a ring. Style is the part that decides. */
+  return (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0)
+      || (style.boxShadow && style.boxShadow !== 'none');
+}
+
+/* The ring does not have to be on the focused element. .rte__surface takes
+   focus and says `outline: none` on purpose, because the ring belongs on the
+   wrapper -- otherwise the toolbar sits outside the highlighted area. That is
+   the right call and this asked the wrong question about it on its first run.
+   An ancestor's ring counts, PROVIDED the ancestor is drawing it because of
+   this element: :focus-within is what makes that true rather than assumed. */
+var ring = drawn(cs), ringOn = ring ? 'itself' : '';
+if (!ring) {
+  var up = el.parentElement;
+  for (var d = 0; d < 4 && up; d++, up = up.parentElement) {
+    var ups = getComputedStyle(up);
+    var within = false;
+    try { within = up.matches(':focus-within'); } catch (e) { within = false; }
+    if (within && drawn(ups)) { ring = true; ringOn = name(up); break; }
+  }
+}
+
+return {
+  name: name(el),
+  text: (el.textContent || el.value || '').trim().slice(0, 34),
+  top: Math.round(r.top), height: Math.round(r.height),
+  sampled: sampled, hits: hits, coveredBy: coveredBy,
+  focusVisible: visible, ring: !!ring, ringOn: ringOn, outline: cs.outline
+};
+"""
+
+REFLOW = r"""
+var doc = document.documentElement;
+var over = [];
+var all = doc.querySelectorAll('*');
+for (var i = 0; i < all.length; i++) {
+  var e = all[i], r = e.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) continue;
+  var cs = getComputedStyle(e);
+  if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+  /* Something inside its own scroller is fine -- that is what an
+     overflow-x: auto box is for. Only report what pushes the DOCUMENT wide. */
+  var p = e.parentElement, scrolled = false;
+  while (p) {
+    var pcs = getComputedStyle(p);
+    if (pcs.overflowX === 'auto' || pcs.overflowX === 'scroll') { scrolled = true; break; }
+    p = p.parentElement;
+  }
+  if (scrolled) continue;
+  if (r.right > innerWidth + 1) {
+    var cls = (e.className && e.className.baseVal !== undefined
+                 ? e.className.baseVal : e.className || '').toString().trim();
+    over.push(e.tagName.toLowerCase() + (cls ? '.' + cls.split(/\s+/)[0] : '')
+              + ' to ' + Math.round(r.right));
+  }
+}
+return {
+  scrollWidth: doc.scrollWidth,
+  inner: innerWidth,
+  overflowing: over.slice(0, 6)
+};
+"""
+
+TARGETS = r"""
+var small = [];
+var sel = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+var all = document.querySelectorAll(sel);
+
+for (var i = 0; i < all.length; i++) {
+  var e = all[i];
+  var cs = getComputedStyle(e);
+  if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+  if (e.type === 'hidden') continue;
+  var r = e.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) continue;
+
+  /* A visually-hidden control is not a target -- it is the no-JavaScript
+     fallback sitting behind an enhanced one, clipped to a pixel on purpose.
+     SC 2.5.8 is about things a finger has to hit; this is not one. Reported
+     as a 1x1 "Save" button on the first run, which was the check being wrong
+     rather than the admin. */
+  if (cs.clipPath && cs.clipPath !== 'none' && r.width <= 2 && r.height <= 2) continue;
+  if (/(^|\s)(visually-hidden|sr-only)(\s|$)/.test(
+        (e.className && e.className.baseVal !== undefined
+           ? e.className.baseVal : e.className || '').toString())) continue;
+
+  /* SC 2.5.8 exempts a link sitting in a run of text: making it 24px tall
+     would mean spacing out the sentence around it. The test for "in a
+     sentence" is whether the parent holds text on either side. */
+  if (e.tagName === 'A') {
+    var p = e.parentElement;
+    if (p) {
+      var t = p.textContent.trim();
+      var own = (e.textContent || '').trim();
+      if (t.length > own.length + 3) continue;
+    }
+  }
+
+  if (r.width < MIN || r.height < MIN) {
+    var cls = (e.className && e.className.baseVal !== undefined
+                 ? e.className.baseVal : e.className || '').toString().trim();
+    small.push(e.tagName.toLowerCase() + (cls ? '.' + cls.split(/\s+/)[0] : '')
+               + ' ' + Math.round(r.width) + 'x' + Math.round(r.height)
+               + ' "' + (e.textContent || e.value || e.getAttribute('aria-label') || '').trim().slice(0, 20) + '"');
+  }
+}
+return small.slice(0, 8);
+""".replace("MIN", str(MIN_TARGET))
+
+DARK = r"""
+function rgb(s) {
+  var m = /rgba?\(([^)]+)\)/.exec(s || '');
+  if (!m) return null;
+  var p = m[1].split(',').map(parseFloat);
+  return {r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1};
+}
+
+/* What is actually behind this element, walking up until something paints. */
+function behind(e) {
+  var n = e;
+  while (n && n !== document.documentElement) {
+    var c = rgb(getComputedStyle(n).backgroundColor);
+    if (c && c.a > 0.9) return c;
+    n = n.parentElement;
+  }
+  var c2 = rgb(getComputedStyle(document.documentElement).backgroundColor);
+  return c2 && c2.a > 0.9 ? c2 : null;
+}
+
+var body = rgb(getComputedStyle(document.body).backgroundColor);
+var invisible = [];
+
+var all = document.querySelectorAll('p, span, a, h1, h2, h3, h4, label, li, td, th, button, div');
+for (var i = 0; i < all.length && invisible.length < 6; i++) {
+  var e = all[i];
+  var own = (e.childNodes.length && [].filter.call(e.childNodes,
+      function (n) { return n.nodeType === 3 && n.textContent.trim(); }).length);
+  if (!own) continue;
+  var cs = getComputedStyle(e);
+  if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
+  var r = e.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) continue;
+
+  var fg = rgb(cs.color), bg = behind(e);
+  if (!fg || !bg) continue;
+  if (fg.a < 0.1) continue;
+  if (fg.r === bg.r && fg.g === bg.g && fg.b === bg.b) {
+    var cls = (e.className && e.className.baseVal !== undefined
+                 ? e.className.baseVal : e.className || '').toString().trim();
+    invisible.push(e.tagName.toLowerCase() + (cls ? '.' + cls.split(/\s+/)[0] : '')
+                   + ' "' + e.textContent.trim().slice(0, 24) + '"');
+  }
+}
+
+return {
+  theme: document.documentElement.getAttribute('data-theme'),
+  bodyBg: getComputedStyle(document.body).backgroundColor,
+  bodyOpaque: !!(body && body.a > 0.9),
+  invisible: invisible
+};
+"""
+
+# One representative of each KIND, and what counts as reacting.
+HOVER_KINDS = r"""
+var kinds = {};
+var sel = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+var all = document.querySelectorAll(sel);
+for (var i = 0; i < all.length; i++) {
+  var e = all[i];
+  var cs = getComputedStyle(e);
+  if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+  var r = e.getBoundingClientRect();
+  if (r.width < 4 || r.height < 4) continue;
+  if (r.top < 0 || r.bottom > innerHeight || r.left < 0 || r.right > innerWidth) continue;
+  var cls = (e.className && e.className.baseVal !== undefined
+               ? e.className.baseVal : e.className || '').toString().trim();
+  var kind = e.tagName.toLowerCase() + (cls ? '.' + cls.split(/\s+/)[0] : '');
+  /* Up to three of each kind, not one. The first .rail__item on the overview
+     is the CURRENT section, which already carries the elevated background its
+     own hover rule would apply -- so hovering it changes nothing and the rail
+     was reported dead when it is not. One sample of a kind is one sample of
+     whichever state happened to come first. */
+  if (!kinds[kind]) kinds[kind] = [];
+  if (kinds[kind].length >= 3) continue;
+  kinds[kind].push({x: Math.round(r.left + r.width / 2),
+                    y: Math.round(r.top + r.height / 2)});
+}
+return kinds;
+"""
+
+# elementFromPoint returns the INNERMOST element under the pointer, which for a
+# rail item is the <span> holding the label. If the hover style lives on the
+# anchor -- and it usually does, because that is what the pointer is over -- the
+# span's computed style does not move and the control is reported as dead.
+#
+# The first run said .rail__item and .admin__input do not react. The rail does;
+# this was reading the wrong node. So: read the element AND its ancestors, four
+# deep, and treat any change in the chain as the control reacting.
+STYLE_AT = r"""
+var e = document.elementFromPoint(arguments[0], arguments[1]);
+if (!e) return null;
+var out = [];
+for (var i = 0; i < 4 && e; i++, e = e.parentElement) {
+  var cs = getComputedStyle(e);
+  out.push([cs.backgroundColor, cs.color, cs.borderColor, cs.transform,
+            cs.boxShadow, cs.opacity, cs.textDecorationLine,
+            cs.filter, cs.outlineColor].join(','));
+}
+return out.join('|');
+"""
+
+REDUCED = r"""
+return {media: matchMedia('(prefers-reduced-motion: reduce)').matches,
+        scroll: getComputedStyle(document.documentElement).scrollBehavior};
+"""
+
+
+# ------------------------------------------------------------- the plumbing
+
+
+class Results:
+    def __init__(self):
+        self.passed = 0
+        self.failed = []
+
+    def section(self, title):
+        print(f"\n{title}")
+
+    def check(self, name, ok, detail=""):
+        if ok:
+            self.passed += 1
+        else:
+            self.failed.append(name)
+            print(f"  FAIL  {name}")
+            if detail:
+                print(f"        {detail}")
+
+
+def free_port() -> int:
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def rq(method, url, body=None):
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method,
+                                 headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read().decode())
+
+
+def wait_for(port, tries=120) -> bool:
+    for _ in range(tries):
+        try:
+            with socket.create_connection(("127.0.0.1", port), 0.2):
+                return True
+        except OSError:
+            time.sleep(0.1)
+    return False
+
+
+class Browser:
+    def __init__(self, drv_port):
+        self.base = f"http://127.0.0.1:{drv_port}"
+        r = rq("POST", self.base + "/session", {"capabilities": {"alwaysMatch": {
+            "browserName": "firefox",
+            "moz:firefoxOptions": {
+                "args": ["-headless"],
+                "prefs": {"ui.prefersReducedMotion": 1},
+            }}}})
+        self.s = f"{self.base}/session/{r['value']['sessionId']}"
+
+    def size(self, w, h=900):
+        rq("POST", self.s + "/window/rect", {"width": w, "height": h, "x": 0, "y": 0})
+        time.sleep(0.3)
+
+    def go(self, url):
+        rq("POST", self.s + "/url", {"url": url})
+        time.sleep(0.9)
+
+    def js(self, script, *args):
+        return rq("POST", self.s + "/execute/sync",
+                  {"script": script, "args": list(args)})["value"]
+
+    def tab(self):
+        rq("POST", self.s + "/actions", {"actions": [{
+            "type": "key", "id": "kb",
+            "actions": [{"type": "keyDown", "value": ""},
+                        {"type": "keyUp", "value": ""}]}]})
+
+    def point(self, x, y):
+        rq("POST", self.s + "/actions", {"actions": [{
+            "type": "pointer", "id": "mouse", "parameters": {"pointerType": "mouse"},
+            "actions": [{"type": "pointerMove", "duration": 0,
+                         "origin": "viewport", "x": x, "y": y}]}]})
+        time.sleep(0.35)
+
+    def sign_in(self, base, secret):
+        self.go(base + "/login.php")
+        self.js(
+            "var f = document.querySelector('.signin__form');"
+            f"f.querySelector('#user').value = {json.dumps(admin_session.USER)};"
+            f"f.querySelector('#password').value = {json.dumps(admin_session.PASSWORD)};"
+            "f.submit();"
+        )
+        time.sleep(1.5)
+        self.js(
+            "var f = document.querySelector('.signin__form');"
+            f"f.querySelector('#code').value = {json.dumps(admin_session.totp(secret))};"
+            "f.submit();"
+        )
+        time.sleep(1.5)
+
+    def set_theme(self, theme):
+        self.js("try { window.localStorage.setItem('tech4time-theme', arguments[0]); }"
+                "catch (e) {}", theme)
+
+    def quit(self):
+        try:
+            rq("DELETE", self.s)
+        except Exception:
+            pass
+
+
+# -------------------------------------------------------------- the crawl
+
+
+def prove_reduced_motion(b: Browser, base: str) -> None:
+    b.go(base + "/login.php")
+    state = b.js(REDUCED)
+    if not state["media"]:
+        raise SystemExit(
+            "Reduced motion did not take effect. Every focus position measured "
+            "here would then be read mid-scroll, and elements would be reported "
+            "as covered because the page had not finished moving. Refusing to "
+            "run -- see the note at the top of this file."
+        )
+    print("reduced motion is on; scrolling is instant")
+
+
+def walk_focus(b: Browser, base: str, screens, label, r: Results) -> None:
+    for screen in screens:
+        b.go(base + screen)
+        stops = 0
+        for _ in range(MAX_TABS):
+            b.tab()
+            seen = b.js(FOCUS)
+            if not seen or seen.get("done"):
+                break
+            stops += 1
+            where = f"{seen['name']} {seen['text']!r} at y={seen['top']}"
+
+            if seen["sampled"]:
+                r.check(
+                    f"{label} {screen} stop {stops}: focus is not hidden",
+                    seen["hits"] > 0,
+                    f"{where} — entirely covered by "
+                    f"{seen['coveredBy'] or 'something'} (SC 2.4.11)")
+
+            r.check(
+                f"{label} {screen} stop {stops}: focus can be seen",
+                seen["focusVisible"] is not False and seen["ring"],
+                f"{where} — :focus-visible={seen['focusVisible']}, "
+                f"outline={seen['outline']!r} (SC 2.4.7)")
+
+        ceiling = "  (hit the ceiling — raise MAX_TABS)" if stops >= MAX_TABS else ""
+        print(f"  {stops:>3} focus stops   {label} {screen}{ceiling}")
+
+
+def walk_reflow(b: Browser, base: str, screens, r: Results) -> None:
+    b.size(320, 720)
+    for screen in screens:
+        b.go(base + screen)
+
+        flow = b.js(REFLOW)
+        r.check(f"320px {screen}: the page does not scroll sideways",
+                flow["scrollWidth"] <= flow["inner"] + 1,
+                f"scrollWidth {flow['scrollWidth']} > viewport {flow['inner']}; "
+                f"widened by {', '.join(flow['overflowing']) or 'something'} "
+                f"(SC 1.4.10)")
+
+        small = b.js(TARGETS)
+        r.check(f"320px {screen}: every control is at least {MIN_TARGET}x{MIN_TARGET}",
+                not small,
+                "; ".join(small) + "  (SC 2.5.8)")
+
+        print(f"  {'ok  ' if not small else 'FAIL'}  320px {screen}")
+
+
+def walk_dark(b: Browser, base: str, screens, r: Results) -> None:
+    b.size(1200)
+    b.go(base + "/login.php")
+    b.set_theme("dark")
+
+    for screen in screens:
+        b.go(base + screen)
+        seen = b.js(DARK)
+
+        r.check(f"dark {screen}: the theme is applied",
+                seen["theme"] == "dark",
+                f"data-theme={seen['theme']!r} — theme-init.js did not run, or "
+                f"localStorage was not readable")
+
+        r.check(f"dark {screen}: the body paints its own background",
+                seen["bodyOpaque"],
+                f"body background is {seen['bodyBg']!r}; a transparent body "
+                f"borrows whatever is behind the page")
+
+        r.check(f"dark {screen}: no text is drawn in its own background colour",
+                not seen["invisible"],
+                "; ".join(seen["invisible"]))
+
+        print(f"  {'ok  ' if seen['bodyOpaque'] and not seen['invisible'] else 'FAIL'}"
+              f"  dark {screen}  body={seen['bodyBg']}")
+
+    b.go(base + "/login.php")
+    b.set_theme("light")
+
+
+def walk_hover(b: Browser, base: str, screens, r: Results) -> None:
+    b.size(1200)
+    seen_kinds: set[str] = set()
+
+    for screen in screens:
+        b.go(base + screen)
+        kinds = b.js(HOVER_KINDS) or {}
+
+        for kind, spots in kinds.items():
+            if kind in seen_kinds:
+                continue
+            seen_kinds.add(kind)
+
+            reacted, looked = False, 0
+            for at in spots:
+                b.point(5, 5)
+                before = b.js(STYLE_AT, at["x"], at["y"])
+                b.point(at["x"], at["y"])
+                after = b.js(STYLE_AT, at["x"], at["y"])
+
+                if before is None or after is None:
+                    continue
+                looked += 1
+                if before != after:
+                    reacted = True
+                    break
+
+            if not looked:
+                continue
+
+            r.check(f"hover: {kind} reacts to a pointer",
+                    reacted,
+                    f"on {screen}, {looked} of them looked at and nothing "
+                    f"computed changed under the pointer")
+
+    print(f"  {len(seen_kinds)} kinds of control sampled")
+
+
+def run(b: Browser, base: str, secret: str, r: Results) -> None:
+    prove_reduced_motion(b, base)
+
+    r.section("focus, signed out")
+    b.size(1200)
+    walk_focus(b, base, PUBLIC_SCREENS, "desktop", r)
+
+    b.sign_in(base, secret)
+
+    landed = b.js("return location.pathname + location.search;")
+    if "login.php" in (landed or ""):
+        raise SystemExit(
+            "The sign-in did not take, so every check below would be measuring "
+            "the login page eight times over. Refusing to report that as a pass."
+        )
+    print(f"\nsigned in; landed on {landed}")
+
+    r.section("focus, signed in")
+    b.size(1200)
+    walk_focus(b, base, SIGNED_IN_SCREENS, "desktop", r)
+
+    r.section("reflow and target size at 320px")
+    walk_reflow(b, base, SIGNED_IN_SCREENS, r)
+
+    r.section("dark mode")
+    walk_dark(b, base, SIGNED_IN_SCREENS, r)
+
+    r.section("hover")
+    walk_hover(b, base, SIGNED_IN_SCREENS, r)
+
+
+def main() -> None:
+    missing = [n for n in ("php", "geckodriver", "firefox") if not shutil.which(n)]
+    if missing:
+        print(f"Skipping: {', '.join(missing)} not installed.")
+        print("This check needs Firefox and geckodriver as well as the PHP CLI.")
+        return
+
+    web_port, drv_port = free_port(), free_port()
+    work = Path(tempfile.mkdtemp(prefix="t4t-admin-a11y-"))
+    private = work / "private"
+
+    php = subprocess.Popen(
+        ["php", "-S", f"127.0.0.1:{web_port}", "-t", str(DOCROOT), str(ROUTER)],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+        env=dict(os.environ, T4T_PRIVATE=str(private)))
+    drv = subprocess.Popen(
+        ["geckodriver", "--port", str(drv_port)],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+    if not (wait_for(web_port) and wait_for(drv_port)):
+        raise SystemExit("php or geckodriver did not start")
+
+    base = f"http://127.0.0.1:{web_port}"
+    print(f"firefox (headless) against {base}")
+
+    results = Results()
+    browser = None
+    try:
+        browser = Browser(drv_port)
+        run(browser, base, admin_session.make_account(private), results)
+    finally:
+        if browser:
+            browser.quit()
+        for proc in (drv, php):
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                proc.wait(timeout=5)
+            except Exception:
+                pass
+        shutil.rmtree(work, ignore_errors=True)
+
+    total = results.passed + len(results.failed)
+    print(f"\n{results.passed}/{total} checks passed")
+
+    if results.failed:
+        print("\nfailed:")
+        for name in results.failed:
+            print(f"  - {name}")
+        sys.exit(1)
+
+    print("\nThe admin is keyboard-reachable, survives 320px, paints in dark "
+          "mode and answers a pointer.")
+
+
+if __name__ == "__main__":
+    main()
