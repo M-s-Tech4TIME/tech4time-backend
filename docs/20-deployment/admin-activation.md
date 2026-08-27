@@ -96,7 +96,9 @@ in, and the day you find out it does not work should not be that day.
 
 - [ ] `/forgot.php` → enter the username
 - [ ] The code arrives at the mailbox on the account
-- [ ] Enter the code, then an authenticator code, then a new password
+- [ ] Enter the code
+- [ ] Choose a new password — the screen says it is not set yet, and it means it
+- [ ] Enter an authenticator code; **this** is the step that sets the password
 - [ ] Sign in with the new password
 
 If the code never arrives, `mail()` is the problem, not the admin. Re-run `tools/host-probe.php`.

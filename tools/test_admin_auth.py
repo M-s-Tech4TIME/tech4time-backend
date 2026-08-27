@@ -65,6 +65,10 @@ EMAIL = "testadmin@tech4time.bd"
 PASSWORD = "a long enough test passphrase"
 NEWPASSWORD = "another entirely different passphrase"
 
+# Mirrors RESET_2FA_TRIES in public/reset.php. If they drift, the loop below
+# stops one short or one long and the test says so rather than passing.
+RESET_2FA_TRIES = 5
+
 
 # --------------------------------------------------------------------- TOTP
 
@@ -579,29 +583,74 @@ def test_reset(c: Client, r: Results, mail: Mailbox, secret: str, private: Path)
     })
     r.check("the right code is accepted", status == 302)
 
+    # ---- step 2: the password, on a screen of its own -------------------
     _, _, page = c.get("/reset.php")
-    r.check("which asks for the app AND a new password",
-            "Authenticator code" in page and "New password" in page)
+    r.check("which asks for a new password, and nothing else",
+            "New password" in page and "Authenticator code" not in page)
+    r.check("and says where in the sequence it is", "Step 2 of 3" in page)
 
     _, _, page = c.post("/reset.php", {
-        "csrf": csrf_of(page), "do": "finish", "second": "000000",
-        "password": NEWPASSWORD, "password2": NEWPASSWORD,
-    })
-    r.check("an emailed code alone will NOT set a password",
-            "authenticator code is not right" in page.lower())
-
-    _, _, page = c.post("/reset.php", {
-        "csrf": csrf_of(page), "do": "finish", "second": totp(secret),
+        "csrf": csrf_of(page), "do": "password",
         "password": "short", "password2": "short",
     })
     r.check("a weak new password is refused", "at least 12" in page.lower())
 
-    mail.clear()
-    status, headers, page = c.post("/reset.php", {
-        "csrf": csrf_of(page), "do": "finish", "second": fresh_code(secret),
+    _, _, page = c.post("/reset.php", {
+        "csrf": csrf_of(page), "do": "password",
+        "password": NEWPASSWORD, "password2": NEWPASSWORD + " typo",
+    })
+    r.check("two that do not match are refused", "not the same" in page.lower())
+
+    status, _, _ = c.post("/reset.php", {
+        "csrf": csrf_of(page), "do": "password",
         "password": NEWPASSWORD, "password2": NEWPASSWORD,
     })
-    r.check("app plus code plus a good password does set it",
+    r.check("a good one is accepted", status == 302)
+
+    # ---- step 3: the app, and only now does anything change -------------
+    _, _, page = c.get("/reset.php")
+    r.check("which then asks for the app, and nothing else",
+            "Authenticator code" in page and "New password" not in page)
+    r.check("and says this is the step that sets it", "Step 3 of 3" in page)
+
+    r.check("the chosen password is not carried in the page",
+            NEWPASSWORD not in page)
+    r.check("nor written anywhere in the accounts file",
+            NEWPASSWORD not in (private / "admins.json").read_text())
+
+    # Going back is a post with a token, not a link: it changes state.
+    _, _, page = c.post("/reset.php", {"csrf": csrf_of(page), "do": "again"})
+    _, _, page = c.get("/reset.php")
+    r.check("\"choose a different password\" returns to step 2",
+            "Step 2 of 3" in page)
+
+    status, _, _ = c.post("/reset.php", {
+        "csrf": csrf_of(page), "do": "password",
+        "password": NEWPASSWORD, "password2": NEWPASSWORD,
+    })
+    r.check("and the password can be chosen again", status == 302)
+
+    _, _, page = c.get("/reset.php")
+
+    # THE property this whole sequence exists for. Everything up to here has
+    # been done: the mailbox was read, the code was accepted, a password was
+    # chosen and accepted. The account must still be untouched.
+    before = (private / "admins.json").read_text()
+
+    _, _, page = c.post("/reset.php", {
+        "csrf": csrf_of(page), "do": "second", "second": "000000",
+    })
+    r.check("a wrong authenticator code is refused",
+            "authenticator code is not right" in page.lower())
+    r.check("and says how many tries are left", "tries left" in page)
+    r.check("an emailed code plus a chosen password changes NOTHING",
+            (private / "admins.json").read_text() == before)
+
+    mail.clear()
+    status, headers, page = c.post("/reset.php", {
+        "csrf": csrf_of(page), "do": "second", "second": fresh_code(secret),
+    })
+    r.check("the app is what finally sets it",
             status == 302 and "reset=1" in headers.get("Location", ""))
     r.check("and a notice is emailed about it",
             "was changed" in mail.latest())
@@ -621,6 +670,69 @@ def test_reset(c: Client, r: Results, mail: Mailbox, secret: str, private: Path)
     (private / "throttle.json").unlink(missing_ok=True)
     status, _, _ = sign_in(c, secret, password=NEWPASSWORD)
     r.check("the new one does", status == 302)
+
+    test_reset_guess_limit(r, mail, secret, private, int(c.base.rsplit(":", 1)[1]))
+
+
+def test_reset_guess_limit(r: Results, mail: Mailbox, secret: str,
+                           private: Path, port: int):
+    """Five wrong authenticator codes tear up the whole reset.
+
+    A fresh browser, because the one that ran the reset above is signed in now,
+    and login.php sends a signed-in visitor straight on -- which would make the
+    last check here pass without proving anything.
+
+    Worth its own test rather than a line in the one above: the last step of the
+    reset asks a single six-digit question, and an unlimited number of guesses
+    at six digits is not a second factor. This is the counting.
+    """
+    r.section("guessing at the last step")
+
+    c = Client(port)
+
+    (private / "throttle.json").unlink(missing_ok=True)
+    mail.clear()
+
+    _, _, page = c.get("/forgot.php")
+    c.post("/forgot.php", {"csrf": csrf_of(page), "who": USER})
+    code = mail.code()
+    r.check("a second reset can be asked for", len(code) == 6)
+
+    _, _, page = c.get("/reset.php")
+    c.post("/reset.php", {"csrf": csrf_of(page), "do": "code", "code": code})
+
+    _, _, page = c.get("/reset.php")
+    # PASSWORD is the OLD one, chosen here on purpose: if this abandoned reset
+    # wrongly took effect, the sign-in at the end would succeed with it.
+    c.post("/reset.php", {"csrf": csrf_of(page), "do": "password",
+                          "password": PASSWORD, "password2": PASSWORD})
+
+    _, _, page = c.get("/reset.php")
+    r.check("the second reset reaches step 3", "Step 3 of 3" in page)
+
+    for _ in range(RESET_2FA_TRIES):
+        _, _, page = c.post("/reset.php", {
+            "csrf": csrf_of(page), "do": "second", "second": "000000",
+        })
+    r.check(f"{RESET_2FA_TRIES} wrong codes are each refused",
+            "not right" in page.lower())
+
+    _, _, page = c.post("/reset.php", {
+        "csrf": csrf_of(page), "do": "second", "second": "000000",
+    })
+    r.check("the next one tears the whole reset up", "start again" in page.lower())
+    r.check("and it is back to asking for an emailed code",
+            "Step 1 of 3" in page)
+
+    (private / "throttle.json").unlink(missing_ok=True)
+    status, _, _ = sign_in(c, secret, password=PASSWORD)
+    r.check("the password from the abandoned reset was never set",
+            status is None)
+
+    (private / "throttle.json").unlink(missing_ok=True)
+    status, _, _ = sign_in(c, secret, password=NEWPASSWORD)
+    r.check("and the one from the reset that finished still stands",
+            status == 302)
 
 
 def test_recovery_code(c: Client, r: Results, codes: list[str], private: Path):
@@ -655,7 +767,8 @@ def test_audit(r: Results, private: Path, codes: list[str], secret: str):
 
     for want in ["setup-complete", "login", "login-failed", "logout",
                  "login-throttled", "second-factor-failed", "reset-code-sent",
-                 "reset-request-unknown", "password-reset", "recovery-code-used"]:
+                 "reset-request-unknown", "password-reset", "recovery-code-used",
+                 "reset-second-factor-failed", "reset-second-factor-exhausted"]:
         r.check(f"records {want}", want in events, str(sorted(events)))
 
     raw = (private / "audit.log").read_text()

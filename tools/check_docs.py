@@ -410,19 +410,34 @@ def check_indexed() -> None:
 # ------------------------------------------------------------------ constants
 
 
+def const_sources() -> list[Path]:
+    """The PHP files whose constants the table is allowed to name.
+
+    lib/ AND the entry points beside it. It was lib/ alone once, which quietly
+    meant a constant living in a page could be quoted in the table with any
+    value at all and nothing would compare it -- the row simply failed to match
+    the pattern and was skipped. A row that is silently not checked is worse
+    than no row, because it reads exactly like a checked one.
+
+    On the frontend there is no public/, and the glob yields nothing.
+    """
+    return (sorted(ROOT.joinpath("lib").glob("*.php"))
+            + sorted(ROOT.joinpath("public").glob("*.php")))
+
+
 def php_constants() -> dict[str, int]:
-    """Every integer `const NAME = 123;` across lib/."""
+    """Every integer `const NAME = 123;` in those files."""
     found: dict[str, int] = {}
-    for php in sorted(ROOT.joinpath("lib").glob("*.php")):
+    for php in const_sources():
         for name, value in re.findall(r"^const (\w+)\s*=\s*(\d+);", text(php), re.M):
             found[name] = int(value)
     return found
 
 
 def php_constant_names() -> set[str]:
-    """Every `const NAME =` in lib/, whatever its type -- arrays included."""
+    """Every `const NAME =` in those files, whatever its type -- arrays too."""
     names: set[str] = set()
-    for php in sorted(ROOT.joinpath("lib").glob("*.php")):
+    for php in const_sources():
         names.update(re.findall(r"^const (\w+)\s*=", text(php), re.M))
     return names
 
@@ -447,7 +462,8 @@ def check_constant_table() -> None:
     code = php_constants()
     defined = php_constant_names()
     rows = re.findall(
-        r"^\| `(\w+)`[^|]*\| `(lib/\w+\.php)` \| ([^|]+?) \|", text(AUTH_DOC), re.M
+        r"^\| `(\w+)`[^|]*\| `((?:lib|public)/\w+\.php)` \| ([^|]+?) \|",
+        text(AUTH_DOC), re.M
     )
     if not rows:
         fail("constants", "no constants table found in authentication.md")
@@ -456,7 +472,8 @@ def check_constant_table() -> None:
     wrong = []
     for name, _source, stated in rows:
         if name not in defined:
-            wrong.append(f"{name} is documented but not defined in lib/")
+            wrong.append(f"{name} is documented but is defined in neither "
+                         f"lib/ nor an entry point")
             continue
         stated = stated.strip()
         if name not in code:

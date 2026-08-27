@@ -37,10 +37,13 @@ cannot be forgotten, expire, or be thrown away with an old phone.
 1. `/forgot.php`
 2. Enter the username or the account email
 3. A six-digit code arrives at the address **on the account** — never one typed into the form
-4. Enter the code, then an authenticator code, then the new password
+4. Enter the code
+5. Choose the new password, twice — **it is not set yet**
+6. Enter an authenticator code, or a recovery code. **This is the step that sets it**
 
 The code lasts ten minutes, allows five guesses, works once, and only in the browser that asked for
-it.
+it. Step 6 allows five guesses too, and running out tears up the whole reset — you would ask for a
+new emailed code and start at 1.
 
 > **The emailed code alone will not set a password.** The authenticator or a recovery code is still
 > required. If six digits sent to a mailbox were enough, that mailbox would *be* the admin password.
