@@ -193,6 +193,31 @@ def main() -> None:
         print("\nfailed:")
         for kind, key in failed:
             print(f"  - {key[0]}" + ("" if kind == "path" else f" {key[1]}"))
+        # Before blaming the deploy: if a URL that should not exist at all came
+        # back 200, and the headers we always set are missing, then whatever
+        # answered was not this application. A misconfigured document root
+        # cannot do that -- a nonsense path would still 404. A host security
+        # layer challenging the caller can, and it returns the same 200 page
+        # for every request with none of our headers on it.
+        #
+        # This happened on 2026-08-27 and the message below sent somebody to
+        # check the document root, which was correct all along.
+        decoys = [key for kind, key in failed
+                  if kind == "path" and "no-such-page" in key[0]]
+        headers_gone = sum(1 for kind, key in failed if kind == "header")
+        if decoys and headers_gone:
+            print("\nREAD THIS FIRST: a path that should not exist answered anyway,\n"
+                  "and the headers this site always sets are absent. That is not a\n"
+                  "broken deploy -- a wrong document root would still 404 a nonsense\n"
+                  "URL. Something other than the application replied: a host security\n"
+                  "layer or WAF challenging this caller, a parking page, or a proxy.\n"
+                  "\n"
+                  "Check by hand from somewhere else before changing anything:\n"
+                  f"    python3 tools/verify_live.py {origin}\n"
+                  "\n"
+                  "If it passes from your machine and fails only from CI, the deploy\n"
+                  "is fine and the host is filtering the runner.")
+            sys.exit(1)
         print("\nThe deploy reached the server; what it left there is not right.\n"
               "A 404 that became a 403 means lib/, sections/ and content/ are INSIDE\n"
               "the document root and merely blocked — point the subdomain at\n"
