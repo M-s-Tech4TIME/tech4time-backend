@@ -42,19 +42,26 @@ it or writes down why the two differ.
 
 WHICH COPY OF THE SIBLING IT COMPARES AGAINST
 Beside this one, if it is there -- your working tree, uncommitted changes and
-all, which is what you want while working. With --clone it is the sibling's
-DEFAULT BRANCH on GitHub, which is what CI wants.
+all, which is what you want while working. With --clone it is THE SAME BRANCH
+in the sibling: a dev build compares against the sibling's dev, a main build
+against its main.
 
-That second one has a consequence worth knowing before it surprises you: a
-change touching both halves will fail here until **both** are pushed. Change
-lib/contract.php in the frontend, push, and this run compares your new file
-against the backend's old one and says so. That is not a false alarm -- at that
+That is not what the first version of this file did, and the difference cost a
+red run. It cloned without naming a branch, which gets the repository's DEFAULT
+branch -- main here -- so a push to dev compared new work against the last
+RELEASED state of the other half and reported drift that was not drift. Two
+branches that are supposed to differ are not evidence of anything.
+
+If the sibling has no branch of that name, this falls back to its default and
+says so in the output. A comparison against a different branch is worth having
+and is worth not mistaking for the real one.
+
+There is still an ordering consequence, and it is the honest one: a change
+touching both halves fails here until BOTH are pushed to that branch. At that
 moment the two halves genuinely disagree, and a publish between them would be
-refused by CONTRACT_VERSION. Push the other half and it goes green.
-
-The ordering discipline it imposes is the point. If a two-repo change could go
-green with one half landed, the check would be telling you the halves match
-when what it means is "I only looked at one of them".
+refused by CONTRACT_VERSION. Push the other half and it goes green. If a
+two-repo change could pass with one half landed, this check would be saying the
+halves match when it means "I only looked at one of them".
 
 WHEN THE SIBLING IS NOT THERE
 Exits 0 with a notice, the way the browser tests and test_qr.py do. This has to
@@ -63,6 +70,7 @@ both, and CI is where the answer matters.
 """
 
 import argparse
+import os
 import subprocess
 import sys
 import tempfile
@@ -123,6 +131,16 @@ def locate(root: Path, places) -> Path | None:
     return next((root / p for p in places if (root / p).is_file()), None)
 
 
+def branch() -> str:
+    """The branch being tested. GitHub Actions says so; git knows otherwise."""
+    ref = os.environ.get("GITHUB_REF_NAME", "").strip()
+    if ref:
+        return ref
+    r = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                       capture_output=True, cwd=ROOT)
+    return r.stdout.decode().strip() or "HEAD"
+
+
 def sibling(other: str, clone: bool) -> tuple[Path, str] | None:
     """The other repository: beside this one, or cloned into a temp directory."""
     name = f"tech4time-website-{other}"
@@ -136,6 +154,23 @@ def sibling(other: str, clone: bool) -> tuple[Path, str] | None:
 
     tmp = Path(tempfile.mkdtemp(prefix="t4t-sibling-"))
     url = f"{ORG}/{name}.git"
+    want = branch()
+
+    # The SAME branch, named explicitly. Cloning without --branch gets the
+    # repository's default, which is main -- so a dev build would compare its
+    # new work against the other half's last release and call the difference
+    # drift. That is the bug this argument exists to prevent.
+    r = subprocess.run(
+        ["git", "clone", "--depth", "1", "--quiet", "--branch", want,
+         url, str(tmp / name)],
+        capture_output=True,
+    )
+    if r.returncode == 0:
+        return tmp / name, f"{url} ({want})"
+
+    # No such branch over there. Falling back to its default is still worth
+    # something, but it is a different comparison and must not read like the
+    # one that was asked for.
     r = subprocess.run(
         ["git", "clone", "--depth", "1", "--quiet", url, str(tmp / name)],
         capture_output=True,
@@ -143,7 +178,11 @@ def sibling(other: str, clone: bool) -> tuple[Path, str] | None:
     if r.returncode != 0:
         print(f"could not clone {url}:\n{r.stderr.decode()[:400]}")
         return None
-    return tmp / name, url
+
+    print(f"NOTE: the {other} has no branch {want!r}; comparing against its")
+    print("      default branch instead. This is a weaker check than the one")
+    print("      asked for -- two different branches may differ legitimately.\n")
+    return tmp / name, f"{url} (default branch, {want!r} not found)"
 
 
 def main() -> int:
