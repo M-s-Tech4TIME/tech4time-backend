@@ -1,9 +1,16 @@
 # The first deploy
 
-**Applies to:** both
+**Applies to:** backend
 
-From a cPanel account with nothing on it to a working website with a working admin. Follow it in
-order — several steps exist to close a window that opens if you do them in a different sequence.
+From a cPanel account with no editor on it to a working, signed-in admin at `admin.tech4time.bd`.
+Follow it in order — several steps exist to close a window that opens if you do them in a different
+sequence.
+
+> **This page used to describe the public site.** Before the split it was one document for one host:
+> it zipped `index.html`, `pages/` and `contact-handler.php` into `~/public_html/` and checked
+> `https://tech4time.bd/`. None of that is this repository, and `~/public_html/` is now the **public
+> site's** document root — extracting the editor there would bury the live website. The public
+> site's own first deploy is `tech4time-website-frontend/docs/20-deployment/first-deploy.md`.
 
 Allow two hours, most of it waiting for DNS and SSL.
 
@@ -13,7 +20,7 @@ Allow two hours, most of it waiting for DNS and SSL.
 
 - [ ] cPanel access — username, password, and the login URL
 - [ ] SSH access, or cPanel's Terminal
-- [ ] The domain pointing at the host
+- [ ] `admin.tech4time.bd` created as a subdomain, pointing at `admin.tech4time.bd/public/`
 - [ ] An authenticator app on your phone
 - [ ] Somewhere safe to write down ten recovery codes
 - [ ] Every check passing locally: see [testing.md](../10-development/testing.md)
@@ -25,84 +32,75 @@ Allow two hours, most of it waiting for DNS and SSL.
 Full detail in [cpanel-host-setup.md](cpanel-host-setup.md). The short version:
 
 - [ ] PHP **8.1 or newer** selected in MultiPHP Manager (8.3 preferred)
-- [ ] The document root confirmed — normally `/home/USER/public_html`
-- [ ] AutoSSL issued for `tech4time.bd` and `www.tech4time.bd`
-- [ ] `info@tech4time.bd` exists as a mailbox
-- [ ] **`admin@tech4time.bd` exists as a mailbox you can open** — a password reset code goes there
+- [ ] **The document root is `admin.tech4time.bd/public`, not `admin.tech4time.bd`** — one level too
+      high and `lib/`, `sections/` and `content/` become web-reachable
+- [ ] AutoSSL issued for `admin.tech4time.bd`
+- [ ] `admin@tech4time.bd` exists as a mailbox **you can open** — a password reset code goes there
       and nowhere else
 
-## 2. Upload the site
+## 2. Upload the editor
 
-```
-public_html/
-├── index.html   404.html
-├── pages/  assets/  lib/  admin/  content/
-├── contact-handler.php
-├── .htaccess    robots.txt   sitemap.xml   site.webmanifest
-```
-
-Everything else stays here: `tools/`, `docs/`, `references/`, `.git/`, `.claude/`, `.gitignore`,
-`.gitattributes` and every Markdown file.
-
-Rather than pick those out by hand, build the upload set and check it:
+The upload set is built, not typed:
 
 ```bash
-zip -r /tmp/tech4time-deploy.zip \
-  index.html 404.html contact-handler.php \
-  .htaccess robots.txt sitemap.xml site.webmanifest \
-  pages assets lib admin content \
-  -x '*/.DS_Store' -x '*.bak'
-
-# Nothing on this list may appear. Every line should print 0.
-for bad in tools/ docs/ references/ .git/ .claude/ .md admin/.htaccess .key; do
-  printf '%-18s %s\n' "$bad" "$(unzip -Z1 /tmp/tech4time-deploy.zip | grep -c -- "$bad")"
-done
+python3 tools/build_deploy_set.py --check     # what would go, and what must not
+python3 tools/build_deploy_set.py --out _deploy
 ```
 
-Upload the zip through cPanel's File Manager and extract it in `public_html`, which also preserves
-the directory structure — every asset path is root-relative, so a flattened upload breaks the site.
+```
+~/admin.tech4time.bd/
+├── public/          ← DOCUMENT ROOT. Its .htaccess, the six entry points, the assets
+├── lib/             ← BESIDE it, never inside
+├── sections/        ← likewise
+└── content/         ← likewise. Uploaded this once to seed; never again
+```
 
-> `public/.htaccess` is a dotfile. Some FTP clients hide it and some zip tools drop it. Confirm it arrived:
-> the checks in step 3 all fail without it.
+`tools/`, `docs/`, `.git/`, every Markdown file, every `*.key`, `admins.json` and `setup-token.txt`
+stay here. The allow list in `tools/build_deploy_set.py` is what decides, so nothing new ships by
+accident.
 
 **`content/` is uploaded this once**, to seed the two JSON files. Never again — from now on the
-host's copy is the real one.
+host's copy is the real one and it is the system of record for the whole project.
 
-**`public/.htaccess` must be uploaded.** It carries the real security headers. `X-Frame-Options` and
-`X-Content-Type-Options` are ignored by browsers when set via `<meta>`, so the `public/.htaccess` copy is
-the one that counts.
+> `public/.htaccess` is a dotfile. Some FTP clients hide it and some zip tools drop it. Confirm it
+> arrived: it carries the real security headers, and `X-Frame-Options` and `X-Content-Type-Options`
+> are ignored by browsers when set via `<meta>`.
 
 ## 3. Check it serves
 
-- [ ] `https://tech4time.bd/` loads and is styled
-- [ ] `https://tech4time.bd/pages/about/` resolves **without** `.html`
-- [ ] `https://tech4time.bd/pages/careers/` renders job posts
-- [ ] `https://tech4time.bd/pages/contact/` renders offices
-- [ ] A nonsense URL renders `tech4time-website-frontend/404.html`
-- [ ] `https://tech4time.bd/lib/auth.php` is **403**
-- [ ] `https://tech4time.bd/content/careers.json` is **403**
-- [ ] `https://tech4time.bd/tools/` is **403**
+```bash
+python3 tools/verify_live.py https://admin.tech4time.bd
+```
+
+- [ ] `https://admin.tech4time.bd/` shows the sign-in
+- [ ] `https://admin.tech4time.bd/lib/auth.php` is **404**
+- [ ] `https://admin.tech4time.bd/sections/careers.php` is **404**
+- [ ] `https://admin.tech4time.bd/content/careers.json` is **404**
 - [ ] `http://` redirects to `https://`
 
-Any of those failing means `public/.htaccess` is not being read. Stop and fix it — several protections
-depend on it.
+**Those are 404, and a 403 is a failure, not a pass.** A 403 means the directory is inside the
+document root and merely blocked by a rule — the document root is one level too high. Go back to
+step 1. [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md)
 
 ## 4. Probe the host
 
 Two things can only be answered on the server, and both fail quietly.
 
-1. Upload `tools/host-probe.php` to `public_html/` **by hand**
+1. Upload `tools/host-probe.php` to `admin.tech4time.bd/public/` **by hand** — it is not in the
+   deploy set, deliberately
 2. Open it, set `PROBE_TOKEN` as its header instructs
 3. Load it once and read the report
-4. **Delete it**
+4. **Delete it.** `tools/verify_live.py` asserts it is gone on every deploy, because it was once
+   left behind and was reachable
 
 It reports the PHP version, whether argon2id is available and how long a hash takes, where the
 private store resolves to and whether it is outside the web root, and whether `mail()` works.
 
 - [ ] argon2id available (bcrypt is an acceptable fallback)
+- [ ] Private store resolves to `/home/USER/t4t-private-admin` — **two** levels up from the document
+      root, beside the repository, not inside it
 - [ ] Private store: **"Inside the web root — no, good"**
-- [ ] `mail()` available
-- [ ] The test message arrives at `info@tech4time.bd`
+- [ ] `mail()` available, and the test message arrives
 - [ ] **`host-probe.php` deleted**
 
 ## 5. Turn the admin on
@@ -115,41 +113,35 @@ recovery codes → prove a full password reset works → only then remove Direct
 
 - [ ] The account exists and you can sign in
 - [ ] The ten recovery codes are written down somewhere safe
-- [ ] A full password recovery has been run end to end
+- [ ] A full password recovery has been run end to end — including a real code read in
+      `admin@tech4time.bd`
 
-## 6. Test the contact form
+## 6. Prove the publish reaches the public site
 
-- [ ] Submit it with JavaScript on → arrives at `info@tech4time.bd`
-- [ ] Submit it with JavaScript off → arrives, and shows the plain HTML response
-- [ ] Pressing reply reaches the visitor, not `no-reply@`
+The editor is not finished until a save travels. Both halves need the **same** `publish.key` —
+`tools/make_publish_key.py`.
 
-## 7. Enable HSTS
+- [ ] Save a job post; the public careers page shows the change
+- [ ] Save a contact detail; the public contact page shows it
+- [ ] With the key removed, a save reports `not-configured`; with a different key, `unknown-key`
 
-**Only now**, after the site has been served over HTTPS a few times.
+Both of those failures are intended, and both say exactly what is wrong.
+[publish-api.md](../10-development/server-side/publish-api.md)
 
-In `public/.htaccess`, find `HSTS — READY TO ENABLE` and delete the `# ` in front of its `Header`
-directive.
+## 7. Confirm it stays out of search results
 
-It tells browsers never to request this site over plain http again, which closes the one
-unencrypted request that happens before the redirect. That matters more than it used to: the admin
-sets a session cookie, and a cookie that travels once over plain http is a cookie that has been
-seen.
+The editor is covered by a blanket `X-Robots-Tag: noindex, nofollow, noarchive` in
+`public/.htaccess:43` rather than by a `robots.txt` entry — deliberately, because listing it in a
+`robots.txt` advertises it.
 
-`includeSubDomains` and `preload` stay off deliberately — the reasoning is written above the line
-itself, and `includeSubDomains` in particular must wait until `admin.tech4time.bd` has its own
-certificate.
+- [ ] `curl -sI https://admin.tech4time.bd/ | grep -i x-robots-tag` returns the header
 
-## 8. Search engines
-
-- [ ] Submit `tech4time-website-frontend/sitemap.xml` in Google Search Console
-- [ ] Confirm the admin is **not** indexed — it is covered by an `X-Robots-Tag` rule in `public/.htaccess`
-      rather than by `tech4time-website-frontend/robots.txt`, deliberately: listing it in `tech4time-website-frontend/robots.txt` advertises it
-
-## 9. Write down what you did
+## 8. Write down what you did
 
 Update [40-reference/host-facts.md](../40-reference/host-facts.md) with anything you discovered —
 the PHP version, whether argon2id was there, the hash time, mailboxes created, DNS as it stands.
-That file is the record of the live host, and it is only useful if it is current.
+That file is the record of the live host, and it is only useful if it is current. Put the date at
+the top.
 
 ---
 
@@ -157,31 +149,33 @@ That file is the record of the live host, and it is only useful if it is current
 
 ```
 HOST
-[ ] PHP 8.1+          [ ] SSL issued        [ ] info@ mailbox
-[ ] docroot confirmed [ ] admin@ mailbox you can open
+[ ] PHP 8.1+                    [ ] SSL issued for admin.tech4time.bd
+[ ] docroot = admin.tech4time.bd/public     [ ] admin@ mailbox you can open
 
 UPLOAD
-[ ] Site files        [ ] .htaccess         [ ] content/ (this once only)
-[ ] NOT tools/        [ ] NOT docs/         [ ] NO admin/.htaccess
+[ ] build_deploy_set.py --check passes      [ ] public/.htaccess arrived
+[ ] content/ seeded (this once only)        [ ] NOT tools/   NOT docs/   NO *.key
 
 VERIFY
-[ ] Pages load        [ ] Clean URLs        [ ] 404 works
-[ ] lib/ 403          [ ] content/ 403      [ ] tools/ 403
-[ ] http → https
+[ ] Sign-in loads               [ ] http → https
+[ ] lib/ 404                    [ ] sections/ 404       [ ] content/ 404
+    (a 403 is a FAILURE — the document root is one level too high)
 
 PROBE
-[ ] argon2id          [ ] store outside web root
-[ ] mail() works      [ ] host-probe.php DELETED
+[ ] argon2id                    [ ] store at /home/USER/t4t-private-admin
+[ ] store outside web root      [ ] mail() works
+[ ] host-probe.php DELETED
 
 ADMIN
-[ ] Account created   [ ] Authenticator paired
-[ ] Recovery codes saved                    [ ] Full reset proven
-[ ] Directory Privacy removed (last)
+[ ] Account created             [ ] Authenticator paired
+[ ] Recovery codes saved        [ ] Full reset proven, code read in admin@
+[ ] Directory Privacy off public/ (last)
+
+PUBLISH
+[ ] Same publish.key both halves            [ ] A save reaches tech4time.bd
 
 FINISH
-[ ] Contact form, both ways                 [ ] HSTS enabled
-[ ] Sitemap submitted [ ] /admin not indexed
-[ ] host-facts.md updated
+[ ] X-Robots-Tag confirmed      [ ] host-facts.md updated
 ```
 
 ---

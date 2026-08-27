@@ -127,9 +127,9 @@ build      python3 tools/build_deploy_set.py --out _deploy
 ssh        write the deploy key, pin the host key, prove the connection
 dry run    rsync --delete --itemize-changes --dry-run  →  /tmp/plan.txt
 gate       read /tmp/plan.txt; fail the job if it deletes anything protected
-sync       rsync --delete             _deploy/site/  →  ~/public_html/
-seed       rsync --ignore-existing    _deploy/seed/  →  ~/public_html/content/
-verify     python3 tools/verify_live.py https://tech4time.bd
+sync       rsync --delete             _deploy/site/  →  ~/admin.tech4time.bd/
+seed       rsync --ignore-existing    _deploy/seed/  →  ~/admin.tech4time.bd/content/
+verify     python3 tools/verify_live.py https://admin.tech4time.bd
 ```
 
 Transport is **rsync over SSH**, using a deploy-only key. The host key is pinned in
