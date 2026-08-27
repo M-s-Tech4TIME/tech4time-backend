@@ -132,7 +132,28 @@ def locate(root: Path, places) -> Path | None:
 
 
 def branch() -> str:
-    """The branch being tested. GitHub Actions says so; git knows otherwise."""
+    """The branch whose work this is, which is not always the ref being built.
+
+    On a pull request GITHUB_REF_NAME is "<number>/merge" -- a synthetic ref
+    that exists in no other repository. Cloning it from the sibling fails, the
+    fallback fetches the sibling's default branch, and a PR from dev into main
+    ends up comparing new work against the other half's last RELEASE. That is
+    the same mistake as cloning without a branch at all, arriving by a
+    different road.
+
+    GITHUB_HEAD_REF is the branch the pull request came FROM, and it is the one
+    that carries the matching change on the other side. So:
+
+        push to dev            -> the sibling's dev
+        push to main           -> the sibling's main
+        pull request dev->main -> the sibling's dev
+
+    The third is the useful one: at that moment the sibling's main has not been
+    merged yet by definition, and comparing against it could only ever fail.
+    """
+    head = os.environ.get("GITHUB_HEAD_REF", "").strip()
+    if head:
+        return head
     ref = os.environ.get("GITHUB_REF_NAME", "").strip()
     if ref:
         return ref
