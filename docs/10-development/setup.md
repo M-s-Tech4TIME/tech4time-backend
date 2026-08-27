@@ -102,14 +102,14 @@ against any more.
 4. **Save the ten recovery codes.** They are shown once. Locally they matter more than on the host,
    because a password reset email cannot be delivered on a machine with no mail server.
 
-You now have `../t4t-private/` beside your clone, holding your account.
+You now have `../t4t-private-admin/` beside your clone, holding your account.
 
 ```
 CodeSpace/
 ├── tech4time-website-backend/       ← your clone
 ├── tech4time-website-frontend/      ← the other half, worth cloning beside it
 └── t4t-private-admin/       ← created on first run. NEVER commit it
-└── t4t-private/           ← your local secrets, never committed
+└── t4t-private-admin/           ← your local secrets, never committed
 ```
 
 Delete that directory to start over.

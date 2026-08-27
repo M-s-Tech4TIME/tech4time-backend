@@ -41,7 +41,7 @@ the replacement is proven.
 ### 2. Read the setup key off the server
 
 ```bash
-cat ~/t4t-private/setup-token.txt
+cat ~/t4t-private-admin/setup-token.txt
 ```
 
 Or open that file in cPanel's File Manager. It is created the first time `/setup.php` is
@@ -113,7 +113,7 @@ Keep the old Directory Privacy credentials until step 6 has passed once.
 
 ```
 [ ] Deployed with Directory Privacy ON
-[ ] Setup key read from ~/t4t-private/setup-token.txt
+[ ] Setup key read from ~/t4t-private-admin/setup-token.txt
 [ ] Account created; setup key auto-deleted
 [ ] Authenticator paired and proven
 [ ] TEN RECOVERY CODES SAVED SOMEWHERE REAL
@@ -130,7 +130,7 @@ Keep the old Directory Privacy credentials until step 6 has passed once.
 **Back up `secret.key`.** It is 65 bytes and it is the one file whose loss forces every password to
 be reset and every recovery code to be reissued. A password manager is fine.
 
-**Check the backup covers the home directory.** `t4t-private` lives at `/home/USER/`, so a
+**Check the backup covers the home directory.** `t4t-private-admin` lives at `/home/USER/`, so a
 `public_html`-only backup silently omits it — a backup that restores your whole site except the
 ability to log into it. [backups.md](../30-operations/backups.md)
 

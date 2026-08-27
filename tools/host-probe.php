@@ -111,7 +111,13 @@ echo "THE PRIVATE STORE\n";
 echo "  This must sit BESIDE the document root, not inside it.\n";
 
 $docroot = rtrim((string)($_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
-$guess   = ($docroot !== '' ? dirname($docroot) : '/home/USER') . '/t4t-private';
+
+/* TWO levels up, matching lib/private.php exactly. The document root is
+   <repo>/public, so one level up is <repo> — the rsync target, which --delete
+   empties on every deploy. This probe exists to say where the store IS; a
+   guess that disagreed with the application by one directory would send
+   somebody looking in the wrong place on a host they do not know. */
+$guess   = ($docroot !== '' ? dirname(dirname($docroot)) : '/home/USER') . '/t4t-private-admin';
 $env     = trim((string)(getenv('T4T_PRIVATE') ?: ''));
 $where   = $env !== '' ? $env : $guess;
 

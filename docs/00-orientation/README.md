@@ -70,7 +70,7 @@ Accounts are a JSON file too. If you are looking for a schema migration, there i
 
 **Secrets are not in this repository, and not on the website.** Password hashes, the key they are
 peppered with, authenticator secrets and sessions live in a directory *beside* the document root at
-`/home/USER/t4t-private/`. Locally that is `../t4t-private`, beside your clone. Nothing there is
+`/home/USER/t4t-private-admin/`. Locally that is `../t4t-private-admin`, beside your clone. Nothing there is
 ever committed. See [security-model.md](../40-reference/security-model.md).
 
 **The admin has its own sign-in.** Password, then an authenticator app, with lockout, an audit log,

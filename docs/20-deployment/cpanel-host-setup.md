@@ -92,7 +92,7 @@ recovered from. cPanel's Terminal works too if SSH is unavailable.
 
 ```bash
 ssh user@tech4time.bd
-cat ~/t4t-private/setup-token.txt
+cat ~/t4t-private-admin/setup-token.txt
 ```
 
 ## 7. Directory Privacy — temporary
@@ -105,8 +105,9 @@ between the files landing and the first account existing.
 Not required — the application is the lock — but there is no reason to remove it before the
 replacement is proven. [admin-activation.md](admin-activation.md)
 
-> **Never put an `public/.htaccess` in `admin/` in the repository.** cPanel writes its own file there for
-> this feature; uploading over it silently removes the password.
+> **Do not leave it on `public/`.** That directory's `.htaccess` is a file this repository ships, so
+> a deploy uploads ours over cPanel's and silently removes the password. If you want the extra lock
+> during setup, put it on a directory the deploy does not write to.
 
 ## 8. Backups
 
@@ -114,7 +115,7 @@ replacement is proven. [admin-activation.md](admin-activation.md)
 
 Confirm the backup covers the **home directory**, not only `public_html`.
 
-`t4t-private/` lives at `/home/USER/`. A `public_html`-only backup restores your whole site except
+`t4t-private-admin/` lives at `/home/USER/`. A `public_html`-only backup restores your whole site except
 the ability to log into it. [backups.md](../30-operations/backups.md)
 
 ---

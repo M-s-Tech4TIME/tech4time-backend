@@ -197,21 +197,32 @@ because nothing asked them to. `tools/reconcile.py` covers the case where nobody
 └── t4t-private-admin/      0700       the backend's. Accounts, sessions, audit log
 ```
 
-**Three entries in this side's store, and that is the point.** There are no password hashes here,
-and no *name* for a file that could hold one — `T4T_PRIVATE_FILES` lists three things and
-`t4t_private_path()` throws on a name it does not know. `tools/check_secrets.py` asserts it on every
-run. [0017](../90-decisions/0017-two-private-stores.md)
+**Eight entries in this side's store, three in the other, and the asymmetry is the point.** Every
+password hash, authenticator secret, recovery code and session on this project is in
+`t4t-private-admin/` and nowhere else. The public site's store has three entries and no *name* for a
+file that could hold an account — `T4T_PRIVATE_FILES` over there lists three things and
+`t4t_private_path()` throws on a name it does not know, so there is no path on that host for a
+credential to be written to at all. [0017](../90-decisions/0017-two-private-stores.md)
 
-Two different protections, for two different classes of data, and the difference is the point:
+The two master keys are unrelated, deliberately: the halves are meant to end up on different
+machines, and on that day the frontend must run with no access to any of this.
+
+**On this host, protection is the layout rather than a rule:**
 
 | | Protected by | If that fails |
 |---|---|---|
-| `content/` | an `.htaccess` rule | a stranger reads the office addresses the contact page already shows them |
-| `t4t-private/` | **not being inside the website** | — there is no request that reaches it |
+| `content/` — the system of record | **not being inside the document root** | — there is no request that reaches it |
+| `t4t-private-admin/` | **not being inside the website, or the repository** | — likewise |
 
-An `.htaccess` rule is a policy the server chooses to apply. It is exactly right for site copy and
-not good enough for a key that signs what the live site is allowed to publish. See
-[0008-private-store-outside-docroot.md](../90-decisions/0008-private-store-outside-docroot.md).
+The document root is `public/`, so neither has a URL. That is stronger than an `.htaccess` rule,
+which is a policy the server chooses to apply and stops applying silently if `mod_rewrite` is off or
+an upload replaces the file. See
+[0008](../90-decisions/0008-private-store-outside-docroot.md) and
+[0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md).
+
+> The public site is the half that does rely on `.htaccess` rules, for its `content/` replica and
+> its `lib/`. That is the right protection for site copy — if it failed, a stranger would read the
+> office addresses the contact page already shows them.
 
 The backend goes one step further and puts `lib/`, `sections/` and `content/` outside its document
 root too, so none of them depends on a rule at all —

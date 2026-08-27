@@ -12,7 +12,7 @@ What to back up, what the defaults miss, and how to prove a restore works.
 |---|---|---|
 | **Code** | git, and `public_html/` | git — already safe |
 | **Content** | `public_html/content/*.json` on the host | the host only — **not in git after launch** |
-| **Secrets** | `/home/USER/t4t-private/` | the host only — **never in git** |
+| **Secrets** | `/home/USER/t4t-private-admin/` | the host only — **never in git** |
 
 Only the first is safe by default. The other two exist in exactly one place.
 
@@ -20,7 +20,7 @@ Only the first is safe by default. The other two exist in exactly one place.
 
 ## The one that catches people out
 
-> **`t4t-private/` lives at `/home/USER/`, not inside `public_html/`.**
+> **`t4t-private-admin/` lives at `/home/USER/`, not inside `public_html/`.**
 
 A backup scoped to `public_html` therefore restores your entire website **except the ability to log
 into it**. Everything looks fine until the day you need to sign in.
@@ -46,7 +46,7 @@ Check this now rather than discovering it during a restore.
 | Every authenticator re-paired | — |
 
 ```bash
-cat ~/t4t-private/secret.key
+cat ~/t4t-private-admin/secret.key
 ```
 
 Put the line in a password manager. It is a secret — anyone holding it plus `admins.json` can attack
@@ -60,7 +60,7 @@ repository.
 | | How often | Why |
 |---|---|---|
 | `content/*.json` | weekly, and before any deploy | live job posts and contact details exist nowhere else |
-| `t4t-private/` whole | weekly | accounts, authenticator secrets, the audit log |
+| `t4t-private-admin/` whole | weekly | accounts, authenticator secrets, the audit log |
 | `secret.key` alone | once, and again if it ever changes | the cheapest insurance here |
 | Full cPanel account | monthly | everything, including mail and DNS |
 
@@ -97,9 +97,9 @@ for "I just deleted the wrong post", not for anything older.
 ```bash
 # from a backup, into a scratch location
 mkdir -p /tmp/restore-test
-tar xzf backup.tar.gz -C /tmp/restore-test --strip-components=1 t4t-private
+tar xzf backup.tar.gz -C /tmp/restore-test --strip-components=1 t4t-private-admin
 
-T4T_PRIVATE=/tmp/restore-test/t4t-private php ~/admin-cli.php list
+T4T_PRIVATE=/tmp/restore-test/t4t-private-admin php ~/admin-cli.php list
 ```
 
 If that prints your account, the backup is real. Then `rm -rf /tmp/restore-test` — it contains
@@ -112,7 +112,7 @@ password hashes and authenticator secrets.
 `.gitignore` covers these, and `check_secrets.py` fails the build if one appears:
 
 ```
-t4t-private/    .dev-private/    *.key    setup-token.txt
+t4t-private-admin/    .dev-private/    *.key    setup-token.txt
 content/*.json.bak
 ```
 

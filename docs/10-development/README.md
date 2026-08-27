@@ -32,8 +32,8 @@ the admin, and the contact form's handler. Use `python3 tools/serve.py`.
 **The admin sign-in is real, locally too.** Nothing is faked. Visit `/setup.php` once, create
 an account, pair an authenticator app. See [running-locally.md](running-locally.md).
 
-**Your secrets live outside the repository**, at `../t4t-private`, beside your clone — the same
-shape as `/home/USER/t4t-private` on the host, so nothing about the layout differs in development.
+**Your secrets live outside the repository**, at `../t4t-private-admin`, beside your clone — the same
+shape as `/home/USER/t4t-private-admin` on the host, so nothing about the layout differs in development.
 
 **The header and footer are copied into every page**, not included at runtime. Edit
 `tools/templates/`, then propagate. Never hand-edit one page's header.

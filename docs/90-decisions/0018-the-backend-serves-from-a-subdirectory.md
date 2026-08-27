@@ -44,7 +44,7 @@ It is also where this is going. On a self-hosted nginx there is no `public/.htac
 ## Consequences
 
 **Good.** `lib/`, `sections/` and `content/` are unreachable by construction. The backend still
-ships an `public/.htaccess`, but only for headers — the CSP, HSTS and the blanket `X-Robots-Tag` that
+ships a `public/.htaccess`, but only for headers — the CSP, HSTS and the blanket `X-Robots-Tag` that
 [0011](0011-two-repositories.md) says the subdomain needs, since the frontend's rule matches
 `^/admin(/|$)` and the subdomain's URI is `/`. **Nothing depends on it for secrecy.** Delete it and
 the admin becomes indexable and unhardened; it does not become readable.

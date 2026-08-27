@@ -137,7 +137,7 @@ A truncated or malformed file — an interrupted write, a bad restore.
 > which would enrol a new authenticator and discard the account you already have.
 
 ```bash
-cd ~/t4t-private
+cd ~/t4t-private-admin
 cp admins.json admins.json.broken        # keep the evidence
 cp admins.json.bak admins.json           # one generation, written on every save
 chmod 600 admins.json
@@ -154,7 +154,7 @@ A rebuilt server, a restore that missed the home directory, a deleted folder.
 which **still demands the setup key**, so a stranger cannot walk in during your rebuild.
 
 ```bash
-cat ~/t4t-private/setup-token.txt      # load /setup.php first; that writes it
+cat ~/t4t-private-admin/setup-token.txt      # load /setup.php first; that writes it
 ```
 
 Then work through [admin-activation.md](../20-deployment/admin-activation.md) again: create the
@@ -175,7 +175,7 @@ Rotate everything, in this order:
 
 ```bash
 # 1. force a new master key — this invalidates every password hash
-mv ~/t4t-private/secret.key ~/secret.key.old
+mv ~/t4t-private-admin/secret.key ~/secret.key.old
 
 # 2. new password under the new key; ends every session
 php ~/admin-cli.php passwd
@@ -238,7 +238,7 @@ second factor for no gain.
 
 ```bash
 # 1. retire the exposed key. The next PHP run mints a new one automatically.
-mv ~/t4t-private/secret.key ~/secret.key.old
+mv ~/t4t-private-admin/secret.key ~/secret.key.old
 
 # 2. a new password hash under the new key. Ends every session.
 php ~/admin-cli.php passwd
@@ -277,7 +277,7 @@ rm ~/secret.key.old ~/admin-cli.php
 ### Checking a key without reading it
 
 The reason this rung exists is that somebody wanted to confirm a key was present or matched a backup,
-and reached for `cat`. `ls -la ~/t4t-private/` answers "is it there". For "is it the same one",
+and reached for `cat`. `ls -la ~/t4t-private-admin/` answers "is it there". For "is it the same one",
 compare fingerprints — `t4t_key_fingerprint()` in `lib/private.php` exists for exactly this, and is
 an HMAC of a fixed label under the key, truncated:
 
@@ -325,7 +325,7 @@ already read the accounts file. Requiring one would add no security and would re
 on the day it is needed. That is what makes it a floor and not a hole.
 
 If SSH is unavailable, cPanel's **Terminal** runs the same commands, and **File Manager** can read
-`~/t4t-private/setup-token.txt`.
+`~/t4t-private-admin/setup-token.txt`.
 
 ---
 
