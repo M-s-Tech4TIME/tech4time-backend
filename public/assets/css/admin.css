@@ -1169,6 +1169,48 @@
 
 .signin__steps li::marker { color: var(--silver-accent-mid); }
 
+/* Pairing offers two routes to the same secret: scan the code, or type the
+   key. They sit side by side on a wide screen and stack on a narrow one, with
+   the code first in both — scanning is what most people will do. */
+.signin__pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: flex-start;
+  margin-block-end: var(--space-md);
+}
+
+.signin__pair > * {
+  flex: 1 1 14rem;
+  margin-block-end: 0;
+}
+
+/* The quiet zone is inside the SVG's viewBox, so the white padding a scanner
+   needs is part of the image rather than something the layout has to remember.
+   A fixed max-width stops it filling a wide column: past about 12rem a QR code
+   is not easier to scan, only larger. */
+.signin__qr {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-sm);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+/* fill="currentColor" in the markup, so the modules follow the text colour and
+   dark mode needs no rule of its own. The white behind them is the panel's,
+   which is why the panel is --bg-elevated rather than transparent: a scanner
+   needs the contrast, and an SVG with no background of its own would show
+   whatever is underneath. */
+.qr {
+  display: block;
+  width: 100%;
+  max-width: 12rem;
+  height: auto;
+  color: var(--text-primary);
+}
+
 /* The setup key and the recovery codes are transcribed by hand, so both are
    monospaced and given room. Nothing here is ever selected accidentally and
    retyped wrongly if the characters cannot be confused. */

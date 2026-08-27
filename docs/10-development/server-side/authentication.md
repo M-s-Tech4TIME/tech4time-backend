@@ -85,8 +85,10 @@ phone clock that is slightly out.
 **A code is accepted once.** The counter it matched is stored on the account and anything at or
 below it is refused, so a code cannot be replayed inside the thirty seconds it stays valid.
 
-No QR code. An encoder is several hundred lines for a picture of a string that every authenticator
-app will also accept typed in, and `img-src 'self' data:` would allow it if that ever changes.
+**Pairing offers both routes.** A QR code to scan — `lib/qr.php`, server-rendered SVG, no
+JavaScript — and the same secret as a typed setup key beside it, grouped in fours because somebody
+is going to read it aloud. The two enrolment screens are `public/setup.php` (the first account) and
+`sections/account.php` (re-pairing a replacement phone).
 
 **Ten recovery codes** (`AUTH_RECOVERY`), shown once at enrolment and stored hashed. Each signs you
 in once in place of the app. They are hashed under `t4t_key('recovery')` — a key derived from
@@ -110,7 +112,7 @@ on their digest alone — a different key would not have produced that digest ei
 | | |
 |---|---|
 | `session_name` | `t4tadm` (`AUTH_COOKIE`) |
-| save path | `t4t-private/sessions/` — never a shared `/tmp` |
+| save path | `t4t-private-admin/sessions/` — never a shared `/tmp` |
 | `httponly` | true |
 | `secure` | when the request is HTTPS |
 | `samesite` | `Lax` |
@@ -178,7 +180,7 @@ Between deploying and creating an account, a page that creates the administrator
 between an upload finishing and somebody getting round to setup can be days.
 
 `public/setup.php` therefore asks for a value that exists only in the private directory on the
-server's own disk — `t4t-private/setup-token.txt`. Reading it takes SSH, cPanel's Terminal or its
+server's own disk — `t4t-private-admin/setup-token.txt`. Reading it takes SSH, cPanel's Terminal or its
 File Manager: the access whoever is setting this up has and a stranger does not.
 
 It is created **by the page that asks for it** and **destroyed the moment an account exists**, so
@@ -216,7 +218,7 @@ This is the same principle the old Directory Privacy check followed; only its tr
 
 ## The audit log
 
-`t4t-private/audit.log`, one JSON line per event: sign-ins successful and not, sign-outs, password
+`t4t-private-admin/audit.log`, one JSON line per event: sign-ins successful and not, sign-outs, password
 changes, recovery codes spent, reset requests, setup attempts. The Account page shows the last
 fifteen; `admin-cli.php log 25` shows more.
 

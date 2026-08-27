@@ -109,10 +109,14 @@ python3 tools/check_contrast.py        python3 tools/check_content_model.py
 python3 tools/check_secrets.py         python3 tools/check_docs.py
 python3 tools/build_deploy_set.py --check
 python3 tools/check_shared_lib.py
+python3 tools/check_shared_repos.py
 ```
 
 Touched the admin, auth or an editor? Also `test_admin_auth.py`, `test_careers_admin.py`,
 `test_contact_admin.py`, `test_publish_client.py`.
+
+Touched `lib/qr.php` or authenticator enrolment? Also `test_qr.py` — it needs `qrencode`
+(`sudo apt install qrencode`) and skips with a notice without it.
 
 Touched `lib/store.php`? Also `test_store.py`. Touched the rich-text editor? Also `test_editor.py`
 — needs Firefox and geckodriver, and leaves processes behind if interrupted

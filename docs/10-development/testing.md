@@ -22,7 +22,8 @@ python3 tools/check_secrets.py         # nothing secret committed; no protection
 python3 tools/check_docs.py            # the docs still describe the code
 python3 tools/audit_pages.py           # SEO, accessibility, structure, internal links
 python3 tools/build_deploy_set.py --check   # nothing secret or local is bound for the server
-python3 tools/check_shared_lib.py      # the four files both halves hold identically
+python3 tools/check_shared_lib.py
+python3 tools/check_shared_repos.py      # the four files both halves hold identically
 ```
 
 > **Half the suite is in the other repository.** The public site's pages, its markup auditors, its
@@ -38,7 +39,12 @@ python3 tools/test_publish_client.py    # the push, and the save that calls it
 python3 tools/test_careers_admin.py     # the job post editor
 python3 tools/test_contact_admin.py     # the contact page editor
 python3 tools/test_store.py             # the JSON store itself
+python3 tools/test_qr.py                # the pairing code, against libqrencode
 ```
+
+`test_qr.py` needs `qrencode` installed (`sudo apt install qrencode`) and exits 0 with a notice if
+it is not. It is not a dependency of anything that ships — it is the second implementation
+`lib/qr.php` is checked against, and a QR encoder checked only against itself is not checked.
 
 Touched `lib/contract.php`, `lib/publish.php`, `lib/html.php` or the icon sprite? Then also:
 
@@ -92,6 +98,7 @@ These start a real PHP server on a spare port and drive it over HTTP.
 | Script | Proves |
 |---|---|
 | `test_admin_auth.py` | first-run setup; **the setup key demanded of a request from off the machine**; signing in and out; a code works once; the lockout; the emailed reset cycle; recovery codes; the audit log; the refusal to run unsafely. Includes the RFC 6238 test vectors, so the TOTP implementation is checked against the specification rather than against itself |
+| `test_qr.py` | `lib/qr.php` against **libqrencode**, module for module at a matched mask; then our own symbol decoded back to what went in; then the SVG parsed to confirm it draws that symbol and carries no inline style or script. The two encoders choose different masks and that is allowed — the ISO 18004 penalty rule for the 1:1:3:1:1 pattern is not what libqrencode implements — so the comparison is made at a mask both were told to use |
 | `test_publish_client.py` | `publish_push()` and the save that calls it: a payload an **independent** verifier accepts, and every way it can fail arriving as something the editor can show |
 | `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write — and that **every field the model declares reaches the live site**, by pushing a marker through each one and reading it out of the published document |
 | `test_contact_admin.py` | the contact page editor, and the icon rail |

@@ -164,6 +164,100 @@ def check_libraries() -> None:
         ok("libraries", f"{len(on_disk)} libraries documented")
 
 
+def check_assets() -> None:
+    """Every stylesheet and script is documented somewhere, and nothing
+    documented is gone.
+
+    BOTH DIRECTIONS, AND THE SECOND ONE IS THE POINT. This check exists because
+    css.md went on describing admin.css, and javascript.md went on listing
+    admin-init.js, admin-nav.js and editor.js as "the last four load only under
+    /admin/", for the whole time after the split moved all four to the other
+    repository. Every path those docs cited still existed -- in the backend --
+    so check_cited_paths() was satisfied, and nothing else looked at assets at
+    all. A doc naming three files that are not here reads exactly like a doc
+    naming three files that are.
+
+    Modelled on check_tools() rather than check_libraries() deliberately: the
+    latter only asks whether everything on disk is written down, which would
+    not have caught any of it.
+
+    WHY IT SEARCHES ALL OF docs/ RATHER THAN ONE OWNING FILE
+    check_tools() can point at tools.md because tools.md exists in both
+    repositories and owns the whole subject. Assets have no such file: the
+    frontend describes them in frontend/css.md and frontend/javascript.md, and
+    the backend -- which has no frontend/ directory at all -- describes its five
+    in repository-map.md and where-to-change-things.md. Naming a file per repo
+    would make this the only check here that knows which half it is running in
+    by hard-coded path rather than by looking.
+    """
+    root = next(
+        (d for d in (ROOT / "assets", ROOT / "public" / "assets") if d.is_dir()),
+        None,
+    )
+    if root is None:
+        fail("assets", "no assets/ or public/assets/ -- this is not one of the two repositories")
+        return
+
+    body = all_docs_text()
+
+    # Only the top level of each. assets/css/pages/ holds one stylesheet per
+    # page, documented collectively as `pages/<name>.css` rather than by name,
+    # and enumerating them in prose would be a list nobody maintains.
+    #
+    # css and js only. Fonts, icons and images are not things the prose names
+    # one by one, and asserting that they are would make this noise.
+    documented = 0
+    trouble = False
+
+    for sub in ("css", "js"):
+        directory = root / sub
+        if not directory.is_dir():
+            continue
+
+        on_disk = {p.name for p in directory.glob(f"*.{sub}")}
+
+        missing = sorted(n for n in on_disk if n not in body)
+        if missing:
+            fail("assets", f"{directory.relative_to(ROOT)}/ undocumented anywhere "
+                           f"in docs/: " + ", ".join(missing))
+            trouble = True
+
+        # The other direction: a file named in the prose that is not here.
+        # The lookahead is not decoration: without it `\.js` matches inside
+        # every `admins.json`, `careers.json` and `throttle.json` in the prose,
+        # and the check reports six scripts that were never anything but the
+        # first half of a filename.
+        named = set(re.findall(rf"`?([a-z0-9_-]+\.{sub})(?![a-z0-9])", body))
+
+        # A file that belongs to the OTHER repository is not a ghost, PROVIDED
+        # some document says so in full:
+        # `tech4time-website-backend/public/assets/js/editor.js`. Requiring the
+        # whole path is what stops "it is in the other one" from becoming a way
+        # to keep a dead name in the prose forever -- the same bargain
+        # check_tools() strikes.
+        attributed = set(re.findall(
+            rf"tech4time-website-(?:frontend|backend)/(?:public/)?assets/{sub}/"
+            rf"([a-z0-9_-]+\.{sub})(?![a-z0-9])",
+            body,
+        ))
+
+        # Nor is one that lives deeper in this repository under the same name --
+        # assets/css/pages/home.css, for instance.
+        elsewhere = {p.name for p in directory.rglob(f"*.{sub}")} - on_disk
+
+        ghosts = sorted(n for n in named
+                        if n not in on_disk and n not in attributed and n not in elsewhere)
+        if ghosts:
+            fail("assets", f"named in docs/ but not in {directory.relative_to(ROOT)}/: "
+                           + ", ".join(ghosts))
+            trouble = True
+
+        documented += len(on_disk)
+
+    if not trouble:
+        ok("assets", f"{documented} stylesheets and scripts documented")
+
+
 def check_admin_sections() -> None:
     """Every ADMIN_SECTIONS entry, and every section file, is documented.
 
@@ -460,6 +554,7 @@ def main() -> int:
     for check in (
         check_tools,
         check_libraries,
+        check_assets,
         check_admin_sections,
         check_pages,
         check_internal_links,

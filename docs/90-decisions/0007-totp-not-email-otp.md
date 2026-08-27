@@ -31,5 +31,8 @@ fixed.
 mailbox were sufficient, that mailbox would **be** the admin password, and the second factor would
 be protecting nothing at the one moment it matters most.
 
-**Not done.** No QR code. An encoder is several hundred lines for a picture of a string every
-authenticator app also accepts typed in. `img-src 'self' data:` would permit it if that changes.
+**Built since, 2026-08-27.** Enrolment offers a QR code as well as the typed key — `lib/qr.php`,
+rendered as SVG on the server, so it needs no JavaScript and nothing the CSP refuses. This record
+previously said an encoder was "several hundred lines for a picture of a string every authenticator
+app also accepts typed in", and deferred it. The line count was right and the conclusion was not:
+scanning is how people pair a phone, and a 32-character key typed by hand is the fallback.
