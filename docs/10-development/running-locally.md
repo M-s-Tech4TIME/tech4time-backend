@@ -37,7 +37,7 @@ now, so the local sign-in *is* the real one.
 
 **After that:** `/login.php`, with your password and a code from your authenticator app.
 
-Your account lives in `../t4t-private/`, beside the clone:
+Your account lives in `../t4t-private-admin/`, beside the clone:
 
 ```
 CodeSpace/
@@ -57,7 +57,7 @@ CodeSpace/
 **Two levels up from `public/`, not one.** One level up is the repository, which is what a deploy
 empties. [environments.md](../20-deployment/environments.md)
 
-Deliberately the same shape as `/home/USER/t4t-private` on the host, so nothing about the layout is
+Deliberately the same shape as `/home/USER/t4t-private-admin` on the host, so nothing about the layout is
 different in development.
 
 ### Starting over

@@ -293,13 +293,20 @@ admin_notices($errors);
 <?php if (isset($shown['totp'])): ?>
 
     <p class="admin__blurb">
-      Add this key to your app, then type what it shows. Nothing changes until
-      you do — the app you have now goes on working until this is confirmed.
+      Scan this with your app, or add the key by hand, then type what it shows.
+      Nothing changes until you do — the app you have now goes on working until
+      this is confirmed.
     </p>
 
-    <div class="signin__secret">
-      <p class="signin__secret-label">Setup key</p>
-      <p class="signin__secret-value"><?= h(totp_format((string)$shown['totp'])) ?></p>
+    <div class="signin__pair">
+      <div class="signin__qr">
+        <?= totp_qr_svg('Tech4TIME', $account['user'] . '@tech4time.bd', (string)$shown['totp'], 'new-setup-key') ?>
+      </div>
+
+      <div class="signin__secret" id="new-setup-key">
+        <p class="signin__secret-label">Or type the setup key</p>
+        <p class="signin__secret-value"><?= h(totp_format((string)$shown['totp'])) ?></p>
+      </div>
     </div>
 
     <details class="admin__details">

@@ -14,15 +14,19 @@
  * vectors published in the RFC by tools/test_admin_auth.py, which is the only
  * reason to trust an implementation like this one.
  *
- * WHAT IT DELIBERATELY DOES NOT DO
- * No QR code. Encoding one is several hundred lines for a picture of a string
- * every authenticator app will also accept typed in, so enrolment shows the
- * setup key instead. Worth revisiting; not worth blocking on.
+ * PAIRING BY QR CODE
+ * This file used to say a QR code was several hundred lines for a picture of a
+ * string every app would also accept typed in, and left it out. It is still
+ * several hundred lines — lib/qr.php — and they are written now, because
+ * scanning is how people expect to pair a phone and typing a 32-character key
+ * is the fallback, not the method. Both are offered; neither needs JavaScript.
  *
- * Not reachable over HTTP: .htaccess forbids /lib/.
+ * Not reachable over HTTP: lib/ is outside the document root.
  */
 
 declare(strict_types=1);
+
+require_once __DIR__ . '/qr.php';
 
 /** RFC 4648 base32. The alphabet avoids 0/1/8 so it can be read aloud. */
 const TOTP_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -172,6 +176,19 @@ function totp_uri(string $issuer, string $account, string $secret): string
         'digits'    => TOTP_DIGITS,
         'period'    => TOTP_STEP,
     ], '', '&', PHP_QUERY_RFC3986);
+}
+
+/**
+ * The same URI as a scannable SVG, for the enrolment screens.
+ *
+ * A thin wrapper on purpose: the thing worth naming is "the QR code for this
+ * account", and a call site should not have to know that it is qr_svg() of
+ * totp_uri(). $describedBy points the image at the element holding the typed
+ * key, so a screen reader is told where the same information is in text.
+ */
+function totp_qr_svg(string $issuer, string $account, string $secret, string $describedBy = ''): string
+{
+    return qr_svg(totp_uri($issuer, $account, $secret), $describedBy);
 }
 
 /** The key in groups of four, because it is going to be typed by a person. */

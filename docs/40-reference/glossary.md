@@ -12,7 +12,7 @@ hungry, so guessing costs an attacker real hardware. bcrypt at cost 12 is the fa
 lacks it.
 
 ### audit log
-`t4t-private/audit.log`. One JSON line per event — sign-ins successful and not, password changes,
+`t4t-private-admin/audit.log`. One JSON line per event — sign-ins successful and not, password changes,
 recovery codes spent. Records; nothing watches it.
 
 ### bootstrap window
@@ -37,7 +37,7 @@ admin refuses to run without its store. **Convenience fails open** — the conta
 its rate-limit counter is unreadable.
 
 ### master key
-`t4t-private/secret.key`. 32 random bytes from which every other key is derived by purpose. Losing
+`t4t-private-admin/secret.key`. 32 random bytes from which every other key is derived by purpose. Losing
 it invalidates every password hash and every recovery code.
 
 ### pepper
@@ -46,7 +46,7 @@ a salt it is not per-password and not stored alongside — which is the point: a
 cannot be attacked without also stealing `secret.key`.
 
 ### private store
-`/home/USER/t4t-private/`, `../t4t-private` locally. Password hashes, the master key, authenticator
+`/home/USER/t4t-private-admin/`, `../t4t-private-admin` locally. Password hashes, the master key, authenticator
 secrets, sessions, counters and the audit log. Never committed, never deployed, never inside the
 document root.
 
@@ -75,7 +75,7 @@ One editable page in the admin — a row in `ADMIN_SECTIONS` plus a file in `adm
 at `/?s=<name>`.
 
 ### setup token
-A value written to `t4t-private/setup-token.txt` that `public/setup.php` demands. Readable only with
+A value written to `t4t-private-admin/setup-token.txt` that `public/setup.php` demands. Readable only with
 server access; destroyed the moment an account exists.
 
 ### shared markup
@@ -96,9 +96,15 @@ RFC 6238. The six digits an authenticator app shows, derived from a shared secre
 vectors.
 
 ### throttle
-The counters in `t4t-private/throttle.json` that make guessing cost something. Applied **before** the
+The counters in `t4t-private-admin/throttle.json` that make guessing cost something. Applied **before** the
 password is verified, so a lockout cannot be used as an oracle.
 
 ### watchdog
 The fallback in `theme-init.js` that lifts the scroll-reveal's hidden state at the load event, in
-case `animations.js` never arrives. The reason a failed script cannot leave content invisible.
+case the scroll-reveal script never arrives. The reason a failed script cannot leave content
+invisible.
+
+That script is `tech4time-website-frontend/assets/js/animations.js`, and it is not on this host —
+the editor has no scroll reveal. `theme-init.js` is near enough the same file on both sides, so the
+watchdog comes along with it and finds nothing to lift here, which costs one event listener and
+keeps the two copies from diverging.

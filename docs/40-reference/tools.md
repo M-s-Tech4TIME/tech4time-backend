@@ -42,9 +42,10 @@ Both private stores need the **same** `publish.key`, or every publish is refused
 | `check_contrast.py` | the palette meets WCAG 2.1 AA in both modes |
 | `check_content_model.py` | the model and the editor still describe the same thing, and no editor is unchecked |
 | `check_secrets.py` | nothing protecting the admin has quietly stopped protecting it — including that `lib/`, `sections/` and `content/` are still outside the document root |
-| `check_docs.py` | the documentation still describes the code |
+| `check_docs.py` | the documentation still describes the code: undocumented tools, libraries and **assets**; dead links; cited paths that have gone; constants whose documented values drifted. The asset and tool checks run **both** ways — a stylesheet or script named in the prose but absent from disk fails too, unless some document says in full which repository it moved to |
 | `build_deploy_set.py --check` | the set of files bound for the server holds nothing it must not, and nothing is missing |
 | `check_shared_lib.py` | the four files both repositories hold identically have not been edited here |
+| `check_shared_repos.py` | the same files, compared against **the other repository** rather than a local digest — plus every same-named tool, which must match unless `DIVERGENT` says why not. This is the only check anywhere that can see the two halves drift apart; `check_shared_lib.py` structurally cannot. Needs both repos present, or `--clone` |
 
 **Half the suite is in the other repository.** The public site's pages, its markup auditors, its
 icon injection and the browser crawls over it went with the pages they were written for.
@@ -63,6 +64,7 @@ that does the other, rather than quietly checking less than they used to.
 | `test_publish_client.py` | `publish_push()` and the save that calls it: a payload an independent verifier accepts, and every way it can fail arriving as something the editor can show |
 | `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write — and that **every field the model declares reaches the live site**, by pushing a marker through each one and reading it out of the published document |
 | `test_contact_admin.py` | the contact page editor, its row buttons, and the same field round trip |
+| `test_qr.py` | `lib/qr.php`, against **libqrencode** — every module compared at a matched mask, then our own symbol read back and checked to say what went in, then the SVG parsed to confirm it draws that symbol and carries nothing the CSP refuses. Skips with a notice if `qrencode` is not installed |
 | `test_store.py` | `lib/store.php`: telling apart missing, unreadable and corrupt; the atomic write; and the rule that a damaged file is never copied over a good `.bak`, because the backup is what damage is recovered from |
 | `admin_session.py` | *(not run directly)* gives a test an admin account and signs it in |
 | `publish_stub.py` | *(not run directly)* the far side, implemented a second time in Python |

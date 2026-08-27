@@ -5,14 +5,14 @@
 ## Decision
 
 Password hashes, the master key, authenticator secrets, sessions, counters and the audit log live at
-`/home/USER/t4t-private/` — a **sibling** of `public_html`, not a directory inside it.
+`/home/USER/t4t-private-admin/` — a **sibling** of `public_html`, not a directory inside it.
 `lib/private.php` refuses to start if it finds itself inside the web root.
 
 ## Context
 
 The obvious place was `content/`, which is already blocked by `RewriteRule ^content/ - [F,L]`.
 
-But an `public/.htaccess` rule is a policy the server *chooses* to apply. If `mod_rewrite` is off, or an
+But a `public/.htaccess` rule is a policy the server *chooses* to apply. If `mod_rewrite` is off, or an
 upload replaces the file, it silently stops applying — and the failure is invisible.
 
 That risk is acceptable for site copy: if `content/` were ever served, a stranger would read the
@@ -27,7 +27,7 @@ directory, and the reason is sharper than the password hash:
 
 **Good.** No URL maps to the directory, which is stronger than any rule. Plus 0700 and single
 ownership, which handles the other tenants on a shared box. The layout is identical in development
-(`../t4t-private`), so nothing about it is special-cased.
+(`../t4t-private-admin`), so nothing about it is special-cased.
 
 **Costs.** It cannot be in the repository, so it must be backed up separately — and a
 `public_html`-only backup silently omits it. Path arithmetic is needed to find it, which has one

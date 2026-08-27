@@ -199,18 +199,24 @@ admin_shell_error($error);
 <ol class="signin__steps">
   <li>Install an authenticator app if you have none — Google Authenticator,
       Authy, Microsoft Authenticator and 1Password all work.</li>
-  <li>Add an account by <strong>entering a setup key</strong>, and type the key
-      below.</li>
+  <li><strong>Scan the code below</strong>, or add the account by entering the
+      setup key by hand.</li>
   <li>Type the six digits it shows, to prove the pairing worked.</li>
 </ol>
 
-<div class="signin__secret">
-  <p class="signin__secret-label">Setup key</p>
-  <p class="signin__secret-value"><?= h(totp_format((string)$state['totp'])) ?></p>
-  <p class="admin__hint">
-    Account name: <strong><?= h((string)$state['user']) ?>@tech4time.bd</strong>,
-    issuer <strong>Tech4TIME</strong>, time-based, six digits.
-  </p>
+<div class="signin__pair">
+  <div class="signin__qr">
+    <?= totp_qr_svg('Tech4TIME', (string)$state['user'] . '@tech4time.bd', (string)$state['totp'], 'setup-key') ?>
+  </div>
+
+  <div class="signin__secret" id="setup-key">
+    <p class="signin__secret-label">Or type the setup key</p>
+    <p class="signin__secret-value"><?= h(totp_format((string)$state['totp'])) ?></p>
+    <p class="admin__hint">
+      Account name: <strong><?= h((string)$state['user']) ?>@tech4time.bd</strong>,
+      issuer <strong>Tech4TIME</strong>, time-based, six digits.
+    </p>
+  </div>
 </div>
 
 <details class="admin__details signin__details">
@@ -269,7 +275,7 @@ admin_shell_error($error);
            autocomplete="off" spellcheck="false" required autofocus>
     <p class="admin__hint">
       On the server, read it with<br>
-      <code>cat ~/t4t-private/setup-token.txt</code><br>
+      <code>cat ~/t4t-private-admin/setup-token.txt</code><br>
       over SSH, or open that file in cPanel's File Manager. It proves you are
       the person who runs this server rather than somebody who found this page.
     </p>

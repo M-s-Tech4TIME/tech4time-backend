@@ -235,8 +235,9 @@ function admin_refuse(string $problem): never
        . '<p class="admin__fineprint">The private directory holds the password '
        . 'hashes and the sign-in sessions, and must sit beside the document root '
        . 'rather than inside it, writable by PHP. Set <code>T4T_PRIVATE</code> to '
-       . 'its full path if it is anywhere other than <code>t4t-private</code> next '
-       . 'to <code>public_html</code>. Upload <code>tools/host-probe.php</code>, '
+       . 'its full path if it is anywhere other than <code>t4t-private-admin</code> '
+       . 'beside the repository, two levels up from the document root. '
+       . 'Upload <code>tools/host-probe.php</code>, '
        . 'load it once and delete it to see what this host reports.</p>'
        . '</div></div></main></body></html>';
 

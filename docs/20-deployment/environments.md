@@ -76,12 +76,12 @@ them later.
 
 ```apache
 # .htaccess
-SetEnv T4T_PRIVATE /home/USER/t4t-private
+SetEnv T4T_PRIVATE /home/USER/t4t-private-admin
 ```
 
 ```ini
 ; PHP-FPM pool, via cPanel's "Additional Configuration"
-env[T4T_PRIVATE] = /home/USER/t4t-private
+env[T4T_PRIVATE] = /home/USER/t4t-private-admin
 ```
 
 Under FPM the value may arrive in `$_SERVER` rather than the process environment depending on how
@@ -105,25 +105,25 @@ them is safe with the default path arithmetic.
 /home/USER/
 ├── public_html/                 tech4time.bd
 ├── admin.tech4time.bd/          the backend
-└── t4t-private/                 ← one level up from both. Correct.
+└── t4t-private-admin/                 ← one level up from both. Correct.
 ```
 
-**Not safe** — `/home/USER/the backend's document root_sub/`
+**Not safe** — the backend's document root nested inside `public_html/`
 
 ```
 /home/USER/
 └── public_html/                 tech4time.bd  ← document root
     ├── admin_sub/               the backend   ← its document root
-    └── t4t-private/             ← REACHABLE at https://tech4time.bd/t4t-private/
+    └── t4t-private-admin/             ← REACHABLE at https://tech4time.bd/t4t-private-admin/
 ```
 
 Up one level from `admin_sub` is `public_html`, so the store would be created **inside the public
 site's document root**.
 
 **The containment check would not catch it.** It compares against the *requesting* document root,
-which for the subdomain is `admin_sub` — and `t4t-private` is not inside that. It would pass, and
+which for the subdomain is `admin_sub` — and `t4t-private-admin` is not inside that. It would pass, and
 the only thing between the internet and the authenticator secrets would be the
-`RewriteRule ^t4t-private/ - [F,L]` in `.htaccess`, which is exactly the kind of protection the
+`RewriteRule ^t4t-private-admin/ - [F,L]` in `.htaccess`, which is exactly the kind of protection the
 store was placed outside the web root to avoid depending on.
 
 **Do both of these:**

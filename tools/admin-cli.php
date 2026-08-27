@@ -192,7 +192,7 @@ function cmd_list(): void
         say('  never be verified again. The password cannot be either, for the');
         say('  same reason.');
         say('');
-        say('  Restore the original ~/t4t-private/secret.key from backup if you');
+        say('  Restore the original ~/t4t-private-admin/secret.key from backup if you');
         say('  still have it. If it is gone for good, set a new password and');
         say('  issue new codes, both of which are made under the key you have now:');
         say('');

@@ -50,8 +50,8 @@ public/
 ├── reset.php               the code, then the app, then the new password
 ├── setup.php               creates the first account; refuses ever after
 └── assets/
-    ├── css/                base, theme, layout, components, admin
-    ├── js/                 theme-init, theme-toggle, admin-init, admin-nav, editor
+    ├── css/                base.css theme.css layout.css components.css admin.css
+    ├── js/                 theme-init.js theme-toggle.js admin-init.js admin-nav.js editor.js
     ├── fonts/              Inter, self-hosted
     ├── icons/sprite.svg    read from disk by lib/admin.php and inlined
     └── images/             favicon, the logo, and the office flags

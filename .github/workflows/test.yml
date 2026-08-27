@@ -60,6 +60,12 @@ jobs:
       # this half posts to.
       - run: python3 tools/check_shared_lib.py
 
+      # And the thing the line above structurally cannot see: whether the OTHER
+      # half still holds the same bytes. A per-repo digest passes happily while
+      # the two sanitisers differ. This clones the sibling and compares them.
+      # It is the only place that check happens anywhere.
+      - run: python3 tools/check_shared_repos.py --clone
+
   server:
     name: php
     runs-on: ubuntu-24.04

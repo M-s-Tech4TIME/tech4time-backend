@@ -81,7 +81,7 @@ The message names the path. Usually:
 
 | | |
 |---|---|
-| Not writable | `chmod 700 ~/t4t-private` |
+| Not writable | `chmod 700 ~/t4t-private-admin` |
 | Cannot be created | the directory **above** the document root is not writable |
 | "inside the document root" | it is in the wrong place — [environments.md](../20-deployment/environments.md) |
 
@@ -91,7 +91,7 @@ Retype rather than paste. It is compared case- and punctuation-insensitively, so
 an invisible character.
 
 ```bash
-cat ~/t4t-private/setup-token.txt
+cat ~/t4t-private-admin/setup-token.txt
 ```
 
 **If `cat` shows a different key each time you run it**, the file is not being recognised on
@@ -120,7 +120,7 @@ copy the damage over `admins.json.bak`, which may be the only intact copy left.
 A good backup is sitting beside the broken file. Restore it:
 
 ```bash
-cd ~/t4t-private
+cd ~/t4t-private-admin
 cp admins.json admins.json.broken        # keep the evidence
 cp admins.json.bak admins.json
 ```
@@ -186,7 +186,7 @@ worth attention; the same failure from your own is worth none.
 not writable, so no session is persisting:
 
 ```bash
-ls -la ~/t4t-private/sessions/
+ls -la ~/t4t-private-admin/sessions/
 ```
 
 ### The reset code never arrives

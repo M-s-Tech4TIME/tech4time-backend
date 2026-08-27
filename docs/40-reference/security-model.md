@@ -11,12 +11,18 @@ What is protected, by what, and what is deliberately not protected. Read this be
 
 | | Protected by | If that protection fails |
 |---|---|---|
-| Public pages, assets | nothing — they are public | nothing |
-| `content/*.json` | an `public/.htaccess` rule | a stranger reads the office addresses the contact page already shows them |
-| `lib/*.php` | an `public/.htaccess` rule | source disclosure — bad, not catastrophic |
-| **`t4t-private/`** | **not being inside the website** | — there is no request that reaches it |
+| `public/` — the editor's own assets | nothing — a browser must fetch them | nothing |
+| `content/*.json` | **not being inside the document root** | — there is no request that reaches it |
+| `lib/*.php`, `sections/*.php` | **not being inside the document root** | — likewise |
+| **`t4t-private-admin/`** | **not being inside the website** | — likewise, and it is not in the repository either |
 
-The distinction is the design. **An `public/.htaccess` rule is a policy the server chooses to apply.** If
+**On this host almost nothing is protected by a rule.** The document root is `public/`, so `lib/`,
+`sections/` and `content/` sit beside it rather than inside it and have no URL at all —
+[0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md). That is why
+`tools/verify_live.py` asserts they answer **404** and treats a 403 as a *failure*: a 403 would mean
+they are inside the web root after all, protected only by a rule.
+
+The distinction is the design. **A `public/.htaccess` rule is a policy the server chooses to apply.** If
 `mod_rewrite` is off, or an upload replaces the file, it silently stops applying. That is an
 acceptable risk for site copy and not for a password hash.
 
@@ -29,7 +35,7 @@ rule.
 ## What is in the private store, and how each part is protected
 
 ```
-/home/USER/t4t-private/        0700, owned by the cPanel user
+/home/USER/t4t-private-admin/        0700, owned by the cPanel user
 ├── secret.key      0600   32 bytes; every other key derives from it
 ├── admins.json     0600   hashes, TOTP secrets, recovery hashes
 ├── sessions/              session.save_path
@@ -116,8 +122,9 @@ fixed list.
 
 ### Other headers
 
-`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, and HSTS
-(staged, commented until the site is live).
+`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS
+(**active** — `max-age=31536000`, `public/.htaccess:55`), and a blanket
+`X-Robots-Tag: noindex, nofollow, noarchive` — the editor must never appear in a search result.
 
 > `X-Frame-Options` and `X-Content-Type-Options` are **ignored by browsers when set via `<meta>`**.
 > The `public/.htaccess` copy is the one that counts; the `<meta>` equivalents are defence in depth for
@@ -126,17 +133,19 @@ fixed list.
 ### Blocking
 
 ```apache
-<FilesMatch "^\.">                          Require all denied
-<FilesMatch "\.(md|py|sh|json|lock|yml|yaml)$">  Require all denied
-<Files "site.webmanifest">                  Require all granted   # the one public .json
-RewriteRule ^tools/       - [F,L]
-RewriteRule ^lib/         - [F,L]
-RewriteRule ^content/     - [F,L]
-RewriteRule ^t4t-private/ - [F,L]
+RewriteCond %{REQUEST_URI} !^/\.well-known/
+RewriteRule "(^|/)\."     - [F,L]          # any dotted path segment; .well-known exempt
+<FilesMatch "\.(md|py|sh|json|lock|yml|yaml|zip|tar|gz|sql|bak|log|env|ini)$">  Require all denied
+<Files "error_log">                         Require all denied
 ```
 
-The last is for the one case the containment check cannot help with: somebody restoring a backup and
-dropping the folder into the web root by hand.
+**There is deliberately no `RewriteRule ^lib/` here, and adding one would be a mistake.**
+`public/.htaccess:12` says so in the file itself: a rule blocking `lib/` would suggest `lib/` is
+reachable and merely refused, which is the arrangement ADR 0018 exists to avoid. It is not
+reachable. There is no path to it to block.
+
+What is left is belt and braces — an archive or a note left in `public/` by hand. Nothing matching
+those extensions is ever deployed, because the upload set is an allow list.
 
 ### Keeping the admin out of search results
 

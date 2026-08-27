@@ -6,6 +6,7 @@ The live state of the hosting account. **This file is a record, not a design** �
 something on the host changes, or it stops being useful.
 
 Last confirmed: **2026-08-23**, from `tools/host-probe.php` run on the live host.
+Last reviewed against the repository: **2026-08-27**.
 
 ---
 
@@ -19,7 +20,7 @@ Last confirmed: **2026-08-23**, from `tools/host-probe.php` run on the live host
 | Server IP | `103.138.189.25` |
 | Account | `techtime` |
 | Document root | `/home/techtime/public_html` |
-| Private store | `/home/techtime/t4t-private` — 0700, writable, **outside the web root** |
+| Private store | `/home/techtime/t4t-private-admin` — 0700, writable, **outside the web root** |
 | HTTPS | on, AutoSSL |
 | SSH | **enabled** on port 22, with Terminal and Git Version Control also available |
 | SSH host key | `SHA256:bSJs6qWqhlP3gLNzXrKClg5uP0zQoOYypucJH6fOF0U` (ED25519) |
@@ -114,43 +115,55 @@ allowance up, which would stop the genuine reset from being delivered at the mom
 |---|---|
 | AutoSSL | for `tech4time.bd` and `www.tech4time.bd` |
 | HTTPS redirect | **active** in `public/.htaccess` |
-| HSTS | **staged, commented out** — enable after the site is live |
+| HSTS | **active** — `max-age=31536000`, `public/.htaccess:55`. No `preload`, deliberately |
 | `includeSubDomains` | **off**, and must stay off until `admin.tech4time.bd` has its own certificate |
 
 ---
 
 ## Directory Privacy
 
-Currently protecting `/admin` as a temporary measure during setup. To be removed once the
-application's own sign-in is proven — [admin-activation.md](../20-deployment/admin-activation.md).
+There is no `/admin` directory on this host any more — the editor is a document root of its own,
+`admin.tech4time.bd/public/`. Directory Privacy is optional here, and was only ever a temporary lock
+while the application's own sign-in was being proven —
+[admin-activation.md](../20-deployment/admin-activation.md).
 
-> **Never add an `public/.htaccess` to `admin/` in the repository.** cPanel writes its own there for this
-> feature, and uploading over it silently removes the password.
+> **Do not leave it on `public/`.** cPanel writes its own `.htaccess` into whatever directory it
+> protects, and `public/.htaccess` is a file this repository ships — so the next deploy uploads ours
+> over cPanel's and removes the password silently.
 
 ---
 
 ## Outstanding on the host
 
-1. **Prove `admin@tech4time.bd` receives** what the site sends it — the mailbox exists as of
-   2026-08-23; delivery is confirmed at activation step 6
-2. **Run `tools/host-probe.php`** — upload, set the token, load once, read, **delete** — and record
-   the PHP version, argon2id availability and hash time here
-3. **Submit the real contact form twice**, once with JavaScript and once without; confirm both
-   arrive and that replying reaches the visitor rather than `no-reply@`
-4. **Enable HSTS** once the site has served over HTTPS a few times
-5. **Consider `p=quarantine`** for DMARC once mail is proven
-6. If `mail()` proves unreliable, the fix is authenticated SMTP against the host's own mail server —
+1. **Prove `admin@tech4time.bd` receives** what this host sends it — the mailbox exists as of
+   2026-08-23, and delivery is confirmed at [admin-activation.md](../20-deployment/admin-activation.md)
+   step 6, by a real reset code read in that mailbox. Existing and receiving are different facts,
+   and only the second one matters on the day you cannot sign in
+2. **Prove a reply reaches the visitor.** Both contact-form paths were confirmed arriving at
+   `info@tech4time.bd` on 2026-08-23, with JavaScript and without. Pressing Reply on one of those
+   mails and seeing it addressed to the visitor rather than `no-reply@` has not been checked — that
+   form is `tech4time-website-frontend/contact-handler.php`, not this half
+3. **Consider `p=quarantine`** for DMARC once reset delivery is proven — not before, because at
+   `p=none` a failure is visible and at `p=quarantine` it is silently binned
+4. If `mail()` proves unreliable, the fix is authenticated SMTP against the host's own mail server —
    not more `mail()` retries
+
+Two items that stood here are done and are recorded above rather than pending: `tools/host-probe.php`
+ran on 2026-08-23 (its figures are the PHP and signing rows at the top of this file, and the probe
+itself was deleted from the host), and HSTS is active.
 
 ---
 
-## Planned
+## Built since this file first named them as planned
 
 | | |
 |---|---|
-| `admin.tech4time.bd` | the backend, its own document root **outside `public_html`** — [environments.md](../20-deployment/environments.md) |
-| Deploy key | for rsync over SSH from GitHub Actions |
-| Pinned `known_hosts` | for the same |
+| `admin.tech4time.bd` | this half, serving from `admin.tech4time.bd/public/` — its own document root, outside `public_html` — [environments.md](../20-deployment/environments.md) · [0018](../90-decisions/0018-the-backend-serves-from-a-subdirectory.md) |
+| Deploy key | rsync over SSH from GitHub Actions, in place for both halves — [ci-cd.md](../20-deployment/ci-cd.md) |
+| Pinned `known_hosts` | the host key comes from a secret rather than `ssh-keyscan` on each run |
+
+Nothing on the host is planned-but-absent today. What is left is the list above this one — things
+to *prove*, not things to build.
 
 ---
 

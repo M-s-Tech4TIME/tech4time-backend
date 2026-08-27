@@ -71,10 +71,12 @@ most often searched for by name.
 `admins.json` hands over the authenticator secrets, which cannot be hashed and so cannot be
 protected any other way.
 
-### Never add an `public/.htaccess` to `admin/`
+### Never leave cPanel's Directory Privacy on `public/`
 
-**Why:** cPanel writes its own file there when Directory Privacy is used. Uploading over it silently
-removes whatever protection it was applying.
+**Why:** there is no `admin/` on this host — `public/` *is* the document root. When Directory
+Privacy protects a directory, cPanel writes its own `.htaccess` into it; `public/.htaccess` is a
+file this repository ships, so every deploy uploads ours over cPanel's and silently removes the
+password. Nothing in the output says so. [admin-activation.md](../20-deployment/admin-activation.md)
 
 ### Never overwrite `content/` on a live server
 
@@ -113,8 +115,9 @@ by people who are not you, and a deploy that includes `content/` destroys their 
 ### JavaScript
 
 - Each module registers itself on `window.Tech4Time` and exposes an `init()`.
-- `main.js` runs last and calls each `init()` inside a try/catch, so one broken feature cannot take
-  the page down.
+- `admin-init.js` runs last and calls each `init()` inside a try/catch, so one broken feature
+  cannot take the page down. The public site's equivalent is
+  `tech4time-website-frontend/assets/js/main.js`; same pattern, different list.
 - `theme-init.js` is the only synchronous script, and only because two decisions have to be made
   before the first frame is painted.
 - Everything else is deferred, at the end of `<body>`.

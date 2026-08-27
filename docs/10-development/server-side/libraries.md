@@ -22,7 +22,8 @@ store they read from is outside the document root entirely.
 | [`publish_client.php`](#publish_clientphp) *(backend)* | sending one | `publish` |
 | [`footer-fingerprint.php`](#footer-fingerprintphp) *(frontend, generated)* | what this site's footers currently say | — |
 | [`private.php`](#privatephp) | where the secrets are, and key derivation | — |
-| [`totp.php`](#totpphp) | RFC 6238 authenticator codes | — |
+| [`totp.php`](#totpphp) | RFC 6238 authenticator codes | `qr` |
+| [`qr.php`](#qrphp) | the pairing code, as SVG | — |
 | [`throttle.php`](#throttlephp) | counting attempts | `private`, `store` |
 | [`mailer.php`](#mailerphp) | the one place mail leaves this site | — |
 | [`auth.php`](#authphp) | accounts, hashing, sessions, the audit log | `private`, `totp`, `store` |
@@ -228,7 +229,7 @@ how one is used cannot be carried into another.
 
 ### `totp.php`
 
-`totp_secret()` · `totp_code()` · `totp_verify()` · `totp_uri()` · `totp_format()` · base32 both ways
+`totp_secret()` · `totp_code()` · `totp_verify()` · `totp_uri()` · `totp_qr_svg()` · `totp_format()` · base32 both ways
 
 RFC 6238, about ninety lines: base32, HMAC-SHA1 dynamic truncation, a 30-second step, 6 digits, and
 one step of drift either side for a phone clock that is slightly out.
@@ -237,6 +238,33 @@ Hand-written for the same reason `html.php` is — there is nothing to install o
 build step to install it with. **It is checked against all six test vectors published in the RFC**,
 including the one past 2^32 that catches a 32-bit counter. That is the only reason to trust an
 implementation like this one.
+
+### `qr.php`
+
+`qr_matrix()` · `qr_svg()` · and the pieces underneath, which the test drives directly
+
+A QR encoder: byte mode, error-correction level M, versions 1 to 10 — up to 213 bytes, where an
+`otpauth://` URI is about 130. Longer than that and it throws, rather than emitting a code that
+looks right and scans as nothing.
+
+It exists because pairing an authenticator meant typing a 32-character key into a phone. `totp.php`
+carried a note for months saying a QR code was "several hundred lines for a picture of a string
+every app will also accept typed in". It is still several hundred lines; scanning is simply how
+people pair a phone, and the typed key is the fallback.
+
+Written here for the same reason `totp.php` and `html.php` are: nothing to install, and no build
+step to install it with.
+
+**Output is SVG with `fill="currentColor"` and no `<style>` block** — the CSP is `style-src 'self'`,
+and the transformed markup would be refused otherwise. Following `currentColor` also means dark mode
+needs no rule of its own. The quiet zone is inside the `viewBox`, so the white margin a scanner
+needs travels with the image instead of depending on the layout.
+
+**It is checked against libqrencode, module for module, at a matched mask** —
+`tools/test_qr.py`. A QR code that is subtly wrong still looks exactly like a QR code, so the only
+useful test is a second implementation disagreeing. The two do disagree about *which* mask to
+choose, which is allowed: the penalty rule for the 1:1:3:1:1 finder-lookalike is implemented here as
+ISO 18004 describes it and in libqrencode as libqrencode does. Every mask yields a valid symbol.
 
 ### `auth.php`
 
