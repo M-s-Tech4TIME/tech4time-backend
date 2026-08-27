@@ -308,6 +308,11 @@ asked for it. Rationed three times an hour per account, five per address, twenty
 because cPanel caps outbound mail per hour and somebody hammering the page could use the allowance
 up, stopping the genuine reset from being delivered.
 
+`reset_finish()` takes the **hash**, not the password. `public/reset.php` asks for the new password
+at one step and the authenticator at the next, so the choice has to survive the gap — it survives as
+argon2id output, computed the moment it was accepted. Anything that calls this has already hashed.
+[authentication.md](authentication.md#forgetting-the-password)
+
 ### `mailer.php`
 
 `mail_send()` · `mail_problem()` · `mail_header_safe()`

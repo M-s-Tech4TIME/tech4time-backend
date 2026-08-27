@@ -14,9 +14,10 @@
  *      same answer for a real username and an invented one. Otherwise this page
  *      becomes a way to enumerate the accounts worth attacking.
  *
- *   2. THE CODE ALONE IS NOT ENOUGH. After the emailed code is accepted, the
- *      authenticator app — or a recovery code — is still required before a new
- *      password is taken. A mailbox is a thing that gets breached, and if six
+ *   2. THE CODE ALONE IS NOT ENOUGH. After the emailed code is accepted, a new
+ *      password can be CHOSEN, but it does not take effect until the
+ *      authenticator app — or a recovery code — has been accepted too, on a
+ *      screen of its own. A mailbox is a thing that gets breached, and if six
  *      digits sent to it were sufficient, the mailbox would BE the admin
  *      password. The second factor is what stops that.
  *
@@ -169,7 +170,8 @@ function reset_message(array $account, string $code): string
         . "    Code:     {$code}\n\n"
         . "Type it into the page you asked from, in the same browser. It stops\n"
         . "working in {$minutes} minutes, or as soon as it has been used once.\n\n"
-        . "You will also be asked for the six digits from your authenticator app.\n"
+        . "You will then choose a new password, and last of all be asked for the\n"
+        . "six digits from your authenticator app — that is the step that sets it.\n"
         . "The code above on its own cannot change your password.\n\n"
         . str_repeat('-', 60) . "\n"
         . 'Requested: ' . gmdate('Y-m-d H:i:s') . " UTC\n"
@@ -258,15 +260,23 @@ function reset_forget(): void
 /* -------------------------------------------------------------- finishing */
 
 /**
- * Set the new password.
+ * Set the new password, from a hash prepared a step earlier.
+ *
+ * It takes the HASH and not the password, which is the one surprising thing in
+ * this file and is deliberate. The password is chosen at step two of reset.php
+ * and committed at step three, so something has to carry it across the gap.
+ * Hashing it the moment it is accepted means what waits in the session is
+ * already one-way: a session file read off the disk inside that window yields
+ * an argon2id digest, not a password that would very likely also open the
+ * person's email.
  *
  * Only reached once the emailed code AND the second factor have both been
  * accepted. Signs out every session belonging to the account, including any the
  * person doing this does not know about — which is the point of a reset.
  */
-function reset_finish(array $account, string $password): bool
+function reset_finish(array $account, string $hash): bool
 {
-    $account['hash']             = auth_password_hash($password);
+    $account['hash']             = $hash;
     $account['password_changed'] = gmdate('c');
     auth_invalidate_sessions($account);
 

@@ -159,11 +159,35 @@ So: it answers identically whether or not the account exists, sends only to the 
 — never to one typed into the form — and the code is `random_int(0, 999999)`, stored only as an
 HMAC, good for `RESET_TTL` (ten minutes), five guesses, once, and only in the browser that asked.
 
+### Three steps, in this order
+
+| | Screen asks for | What it does |
+|---|---|---|
+| 1 | the six emailed digits | proves the mailbox. Nothing is set |
+| 2 | a new password, twice | checks and **hashes** it. Nothing is set |
+| 3 | the authenticator app | **this is the write.** Both factors are now in |
+
 **The emailed code alone will not set a password.** The authenticator, or a recovery code, is still
-required.
+required, and it is asked for last — on a screen of its own, after the password has been chosen.
 
 > If six digits sent to a mailbox were sufficient, that mailbox would *be* the admin password, and
 > the second factor would be protecting nothing at the one moment it matters most.
+
+The order is not what makes it safe — both factors were required when the two shared one form, and
+the write still happens only after both. What the order buys is that the last screen asks **one**
+question, and answering it *is* the moment the password changes. A screen that says so is a screen
+that can be trusted about what it did.
+
+**What carries the password from step 2 to step 3 is a hash, not the password.** `auth_password_hash()`
+runs the instant it is accepted and the digest goes in the session; `reset_finish()` takes that hash
+and never sees a password. So a session file read off the disk inside the window yields argon2id
+output, not a passphrase that would very likely also open the person's email. Nothing reversible is
+ever at rest, and no hidden field carries anything.
+
+**Step 3 is counted.** `RESET_2FA_TRIES` (5) wrong codes tear up the whole reset — the emailed code
+and the chosen password together — and the emailed code was spent when it was accepted, so starting
+again means asking for a new one, which is rationed. Without the count, a stolen mailbox would buy
+unlimited guesses at six digits behind a screen that no longer asks for anything else.
 
 Rationed three per hour per account, five per address, twenty overall. The last is not about this
 site: cPanel caps outbound mail per hour, and somebody hammering the page could use the allowance
@@ -241,6 +265,10 @@ breaking it.
 | `RESET_TTL` | `lib/reset.php` | 600 | ten minutes |
 | `RESET_ATTEMPTS` | `lib/reset.php` | 5 | guesses at a reset code |
 | `RESET_PER_ACCOUNT` / `_PER_IP` / `_GLOBAL` | `lib/reset.php` | 3 / 5 / 20 | resets per hour |
+| `RESET_FINISH_TTL` | `public/reset.php` | 900 | fifteen minutes for steps 2 and 3, from the emailed code |
+| `RESET_2FA_TRIES` | `public/reset.php` | 5 | guesses at the app before the whole reset is torn up |
+| `LOGIN_PENDING_TTL` | `public/login.php` | 300 | five minutes to answer the second question |
+| `LOGIN_2FA_TRIES` | `public/login.php` | 5 | guesses at the app during sign-in |
 | `AUTH_SETUP_BYTES` | `lib/auth.php` | 6 | random bytes behind a setup key |
 | `AUTH_SETUP_CHARS` | `lib/auth.php` | twice that | the length a stored key must have to be recognised |
 | `TOTP_STEP` / `_DIGITS` / `_DRIFT` | `lib/totp.php` | 30 / 6 / 1 | the authenticator |

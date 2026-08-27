@@ -47,7 +47,7 @@ public/
 ├── login.php               password, then six digits from an authenticator app
 ├── logout.php              POST only, with a token
 ├── forgot.php              asks for a reset code
-├── reset.php               the code, then the app, then the new password
+├── reset.php               the emailed code, then a new password, then the app
 ├── setup.php               creates the first account; refuses ever after
 └── assets/
     ├── css/                base.css theme.css layout.css components.css admin.css
