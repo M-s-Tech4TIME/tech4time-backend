@@ -62,14 +62,27 @@ Needs Firefox and geckodriver. Slower.
 python3 tools/test_editor.py           # the toolbar, driven as a person drives it
 ```
 
-**What is not here, and never was.** `check_focus.py`, `check_dark_mode.py`,
-`check_responsive.py` and `check_hover.py` crawl a list of *public* pages and never sign in, so
-they never covered these screens — before the split as well as after it. They went to
-`tech4time-website-frontend` with the pages they were written for.
+```bash
+python3 tools/check_admin_a11y.py     # the signed-in admin, keyboard and pointer
+```
 
-That is a real gap, and it is named here rather than left to be discovered: **the admin has never
-been checked for focus visibility, tap targets at 320px, or how it paints in dark mode.** Adapting
-those four to a signed-in host is outstanding work.
+**This is the gap that used to be named here.** `check_focus.py`, `check_dark_mode.py`,
+`check_responsive.py` and `check_hover.py` crawl a list of *public* pages and never sign in, so they
+never covered these screens — before the split as well as after it. They went to
+`tech4time-website-frontend` with the pages they were written for, and for a while this paragraph
+said the admin had never been checked for focus visibility, tap targets at 320px, or dark mode.
+
+It has now. `check_admin_a11y.py` signs in the way `test_editor.py` does and walks all eight
+screens — the three anyone can reach and the four behind the sign-in — asserting four families of
+thing at 1200px and 320px. It is one file rather than four because there are eight screens here and
+four copies of the sign-in would be four things to fix when the login markup moves.
+
+**It was not a formality.** The first run found that five `admin.css` rules wrote
+`outline: var(--focus-ring)` — a shorthand taking a colour token, which resets `outline-style` to
+`none` — so the rail, every input, the accordions and every editor button drew **no focus ring**,
+each having overridden the correct rule in `base.css`. It also found the sticky save bar sitting on
+top of any field tabbed to near the foot of the contact form. Both are fixed; the check is what
+keeps them fixed.
 
 > Interrupted browser runs leave processes behind. `pkill firefox geckodriver` clears them.
 

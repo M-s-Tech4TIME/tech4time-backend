@@ -40,6 +40,7 @@ Both private stores need the **same** `publish.key`, or every publish is refused
 | Script | Proves |
 |---|---|
 | `check_contrast.py` | the palette meets WCAG 2.1 AA in both modes |
+| `check_css.py` | every stylesheet's comments and braces balance, and no shorthand (`outline`, `border`) is handed a bare colour token — which parses, computes to a colour and a width, and draws nothing, because the shorthand reset the style to `none`. Five rules in `admin.css` had exactly that, and the admin had no focus ring because of it |
 | `check_content_model.py` | the model and the editor still describe the same thing, and no editor is unchecked |
 | `check_secrets.py` | nothing protecting the admin has quietly stopped protecting it — including that `lib/`, `sections/` and `content/` are still outside the document root |
 | `check_docs.py` | the documentation still describes the code: undocumented tools, libraries and **assets**; dead links; cited paths that have gone; constants whose documented values drifted. The asset and tool checks run **both** ways — a stylesheet or script named in the prose but absent from disk fails too, unless some document says in full which repository it moved to |
@@ -83,13 +84,23 @@ passes or fails, and against a private store in a throwaway directory under `/tm
 | Script | Proves |
 |---|---|
 | `test_editor.py` | the rich-text editor driven as a person drives it, including a real sign-in: the toolbar, the selection, and that alignment is a class and never an inline style |
+| `check_admin_a11y.py` | the **signed-in** admin: that a focus ring can be seen at every tab stop and is not hidden behind the sticky save bar (SC 2.4.7, 2.4.11), that 320px neither scrolls sideways nor leaves a control under 24×24 (SC 1.4.10, 2.5.8), that dark mode paints, and that every kind of control answers a pointer |
 
-**What is not here, and never was.** `tech4time-website-frontend/tools/check_focus.py`,
+**This used to say the admin had never been checked.** `tech4time-website-frontend/tools/check_focus.py`,
 `tech4time-website-frontend/tools/check_dark_mode.py`, `tech4time-website-frontend/tools/check_responsive.py` and
-`tech4time-website-frontend/tools/check_hover.py` crawl a list of public pages and never signed in, so they never covered the
-editor even before the split. They went to `tech4time-website-frontend` with the pages they were written
-for. Adapting them to the admin's signed-in screens is outstanding work, named here rather than
-left to be discovered — see [testing.md](../10-development/testing.md).
+`tech4time-website-frontend/tools/check_hover.py` crawl a list of public pages and never sign in, so
+they never covered the editor — before the split as well as after it. They went to
+`tech4time-website-frontend` with the pages they were written for.
+
+`check_admin_a11y.py` closes that gap. It is one file rather than four because there are eight
+screens here, not sixteen pages, and four copies of "start PHP, sign in, walk the screens" would be
+four copies of the sign-in — the part most likely to need changing.
+
+It found, on its first run, that five rules in `admin.css` wrote `outline: var(--focus-ring)` where
+the token is a *colour*: the shorthand resets `outline-style` to `none`, so the rail, every text
+input, the accordions and every editor button had **no focus ring at all**, having overridden the
+correct one in `base.css`. And that the sticky save bar covered any field tabbed to near the bottom
+of the contact form. Both are fixed.
 
 ---
 

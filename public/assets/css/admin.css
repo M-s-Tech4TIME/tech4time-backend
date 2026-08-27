@@ -167,7 +167,7 @@
 
 .rail__item:focus-visible,
 .rail__link:focus-visible {
-  outline: var(--focus-ring);
+  outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
 
@@ -588,8 +588,20 @@
   border-radius: var(--radius-sm);
 }
 
+/* A text field with no hover state reads as decoration until you click it.
+   The lift is the same one .rail__item uses, so the admin answers a pointer
+   the same way everywhere.
+
+   Not the border: the border is ALREADY --border-strong at rest, so setting it
+   to --border-strong on hover is a rule that computes to no change at all. It
+   read as a fix and was not one, and the check went on failing until the
+   colour was compared rather than assumed. */
+.admin__input:hover:not(:disabled):not(:focus) {
+  background-color: var(--bg-elevated);
+}
+
 .admin__input:focus-visible {
-  outline: var(--focus-ring);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
   border-color: var(--accent-text);
 }
@@ -842,7 +854,7 @@
 }
 
 .admin__summary:focus-visible {
-  outline: var(--focus-ring);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -864,6 +876,36 @@
   border-block-start: var(--border-width) solid var(--border-subtle);
 }
 
+/* A sticky bar pinned to an edge of the viewport and a keyboard are a bad
+   pair, and the pairing is invisible until somebody tabs. The browser scrolls
+   a focused field just far enough to be "in view" -- and "in view" means
+   inside the viewport, which .admin-bar and .admin__actions--sticky are both
+   sitting on top of. So tab into the lower half of the contact form and the
+   field you have just reached is behind the save bar. WCAG 2.2 SC 2.4.11
+   Focus Not Obscured (Minimum), Level AA.
+
+   scroll-padding on the SCROLLER is the fix, rather than scroll-margin on the
+   fields: it shrinks the scrollport's optimal viewing region, so a field under
+   a bar stops counting as in view and gets scrolled clear. html is the
+   scroller -- nothing sets overflow on .admin-shell -- and this file is loaded
+   by admin pages only, so no public page sees it. It overrides the narrower
+   scroll-padding-top in base.css, which is sized for the public site's header
+   and not for this one.
+
+   THE NUMBERS ARE MEASURED, NOT CHOSEN. Guessing 5rem for the header made
+   things worse: too small to clear it, and large enough to change which edge
+   the browser aligned to. Measured in the browser at 1200x900: .admin-bar is
+   208px and .admin__actions--sticky is 101px, so 13rem and 6.31rem at a 16px
+   root. Rounded up below. If either bar is restyled, measure again -- a stale
+   number here is silent, and tools/check_admin_a11y.py is what will say so.
+
+   Found by that tool, which reported seven fields on the contact editor
+   "entirely covered by div.admin__actions". */
+html {
+  scroll-padding-block-start: 13.5rem;
+  scroll-padding-block-end: 7rem;
+}
+
 /* --------------------------------------------------------------------------
    Rich text editor
    editor.js replaces each body textarea with these. Without it the textarea
@@ -880,7 +922,7 @@
    on the wrapper and triggered by focus inside it, or the toolbar would sit
    outside the highlighted area. */
 .rte:focus-within {
-  outline: var(--focus-ring);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
   border-color: var(--accent-text);
 }
@@ -930,7 +972,7 @@
 }
 
 .rte__btn:focus-visible {
-  outline: var(--focus-ring);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
 }
 
