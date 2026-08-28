@@ -287,6 +287,103 @@ def run(client, r, site):
             all(o["status"] == "shown" for o in offices_sent(site)),
             str([o["status"] for o in offices_sent(site)]))
 
+    # ------------------------------------------------- hiding a reach row
+    print("\nhiding a reach row, and a whole band")
+    _, html = client.get(ADMIN)
+    fields = dict(form_fields(html), csrf=token)
+
+    r.check("every reach row has a visibility control",
+            all(f"reach[items][{i}][status]" in fields
+                for i in range(len(reach_sent(site)))),
+            str([k for k in fields if k.startswith("reach[items]")])[:200])
+
+    fields["reach[items][0][status]"] = "hidden"
+    client.post(ADMIN, fields)
+    sent = reach_sent(site)
+    r.check("a hidden reach row is published carrying its status",
+            sent and sent[0]["status"] == "hidden",
+            str([x.get("status") for x in sent]))
+    r.check("the rows beside it are untouched",
+            all(x["status"] == "shown" for x in sent[1:]),
+            str([x.get("status") for x in sent]))
+
+    _, html = client.get(ADMIN)
+    r.check("and it is still in the editor, marked hidden",
+            re.search(r"admin-row__status--draft[^>]*>\s*Hidden", html) is not None)
+
+    fields["reach[items][0][status]"] = "shown"
+    client.post(ADMIN, fields)
+    r.check("showing it again publishes it as shown",
+            all(x["status"] == "shown" for x in reach_sent(site)),
+            str([x.get("status") for x in reach_sent(site)]))
+
+    # A band's own switch. Separate from a row's: hiding every row one at a
+    # time is not the same instruction as switching the section off, and only
+    # one of them survives somebody adding a row later.
+    for band in ("reach", "offices"):
+        fields[f"{band}[status]"] = "hidden"
+        client.post(ADMIN, fields)
+        doc = published(site)
+        r.check(f"the {band} band publishes its own hidden status",
+                doc[band]["status"] == "hidden", str(doc[band].get("status")))
+        r.check(f"and its rows are kept, not deleted",
+                len(doc[band]["items"]) > 0, str(len(doc[band]["items"])))
+
+        fields[f"{band}[status]"] = "shown"
+        client.post(ADMIN, fields)
+        r.check(f"switching the {band} band back on publishes it as shown",
+                published(site)[band]["status"] == "shown")
+
+    # ------------------------------------------------ an office's own flag
+    print("\nthe flag an office can be given")
+    _, html = client.get(ADMIN)
+
+    # A host without GD cannot accept a picture and says so instead of offering
+    # a control that could not work. That is the behaviour, not a gap in it --
+    # upload_problem() is checked before the input is drawn -- so the assertion
+    # follows the host rather than insisting on one shape of it.
+    no_gd = "GD image library" in html
+    if no_gd:
+        r.check("an office says why it cannot take a flag, on a host without GD",
+                'name="upload[offices][0]"' not in html,
+                "a file input was offered on a host that cannot store one")
+    else:
+        r.check("every office offers a file input for a flag",
+                'name="upload[offices][0]"' in html,
+                "no upload control on the first office")
+    r.check("and carries the four fields a stored picture needs",
+            all(f'name="offices[items][0][image][{k}]"' in html
+                for k in ("src", "webp", "width", "height")))
+
+    fields = dict(form_fields(html), csrf=token)
+    fields["offices[items][0][image][src]"] = "/uploads/abcdef0123456789.png"
+    fields["offices[items][0][image][webp]"] = "/uploads/abcdef0123456789.webp"
+    fields["offices[items][0][image][width]"] = "120"
+    fields["offices[items][0][image][height]"] = "80"
+    client.post(ADMIN, fields)
+
+    first = offices_sent(site)[0]
+    r.check("an uploaded flag is published with the office",
+            first.get("image", {}).get("src") == "/uploads/abcdef0123456789.png",
+            str(first.get("image")))
+    r.check("with the size the file reported, so the card cannot jump",
+            (first["image"]["width"], first["image"]["height"]) == (120, 80),
+            str(first.get("image")))
+
+    # The path is re-checked against CONTRACT_IMAGE_ROOTS on the way in: a
+    # hidden input is a text field with the label taken off.
+    fields["offices[items][0][image][src]"] = "https://evil.example/x.png"
+    client.post(ADMIN, fields)
+    r.check("a flag path pointing off this site is refused",
+            offices_sent(site)[0]["image"]["src"] == "",
+            str(offices_sent(site)[0]["image"]))
+
+    fields["offices[items][0][image][src]"] = ""
+    fields["offices[items][0][image][webp]"] = ""
+    fields["offices[items][0][image][width]"] = "0"
+    fields["offices[items][0][image][height]"] = "0"
+    client.post(ADMIN, fields)
+
     # ------------------------------------------------------------- reorder
     print("\nreordering and removing")
     _, html = client.get(ADMIN)

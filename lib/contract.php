@@ -335,10 +335,12 @@ function contact_defaults(): array
             'service_types' => [],
         ],
         'reach' => [
-            'title' => 'Reach Us Directly',
-            'items' => [],
+            'status' => 'shown',
+            'title'  => 'Reach Us Directly',
+            'items'  => [],
         ],
         'offices' => [
+            'status'  => 'shown',
             'eyebrow' => 'Where We Are',
             'title'   => 'Our Offices',
             'lead'    => '',
@@ -367,6 +369,14 @@ function contact_normalise(array $data): array
             continue;
         }
         $data[$key] = is_array($data[$key] ?? null) ? $data[$key] + $value : $value;
+    }
+
+    /* Clamped the same way COMPANY_BANDS are, and for the same reason: this
+       arrives from a file as often as from a form, and "banana" is not a
+       visibility. Anything that is not the word 'hidden' shows. */
+    foreach (CONTACT_BANDS as $band) {
+        $data[$band]['status'] =
+            ($data[$band]['status'] ?? 'shown') === 'hidden' ? 'hidden' : 'shown';
     }
 
     $data['form']['service_types'] = contact_string_list($data['form']['service_types'] ?? []);
@@ -407,7 +417,13 @@ function contact_reach_defaults(array $item): array
         'type'   => 'text',
         'values' => [],
         'text'   => '',
+        'status' => 'shown',
     ];
+
+    /* Anything that is not the word 'hidden' is shown. A row that arrives from
+       an older document has no status at all and must not vanish because of
+       it -- which is the whole reason this defaults the way round it does. */
+    $item['status'] = $item['status'] === 'hidden' ? 'hidden' : 'shown';
 
     if (!$item['values'] && isset($item['value'])) {
         $item['values'] = [(string)$item['value']];
@@ -431,7 +447,25 @@ function contact_office_defaults(array $office): array
         'hours'   => '',
         'status'  => 'shown',
         'languages' => [],
+        'image'   => [],
     ];
+
+    $office['status'] = $office['status'] === 'hidden' ? 'hidden' : 'shown';
+
+    /* THE FLAG, TWICE OVER, AND BOTH ARE NEEDED.
+
+       'flag' is a slug -- 'bangladesh', 'belgium' -- naming a file that ships
+       with the public site in assets/images/flags/. It works, and it is why
+       the three offices that exist have flags at all. What it cannot do is let
+       somebody add a fourth office: there is no file for their country and no
+       way to put one there without a developer and a deploy.
+
+       'image' is an uploaded picture, the same record shape the company
+       profile's logos use, travelling the same signed asset channel. When it
+       is set it wins; when it is not, the slug still renders. So nothing that
+       works today stops working, and a new office is no longer a request to
+       somebody with a git remote. */
+    $office['image'] = contract_image_defaults($office['image']);
 
     $office['phones'] = contact_string_list($office['phones']);
     $office['languages'] = contact_string_list($office['languages']);
@@ -449,6 +483,16 @@ function contact_office_defaults(array $office): array
 
     return $office;
 }
+
+/**
+ * The bands of the contact page a visitor can be shown or not shown.
+ *
+ * The banner and the enquiry form are not here on purpose: a contact page with
+ * no way to make contact is not a page anybody meant to publish, and a switch
+ * that can produce one is a switch somebody will eventually flip by accident.
+ * Everything below the form is optional; the form is the page.
+ */
+const CONTACT_BANDS = ['reach', 'offices'];
 
 /** Trim a list of strings and drop the blanks, whatever shape it arrived in. */
 function contact_string_list(mixed $value): array
@@ -469,9 +513,35 @@ function contact_string_list(mixed $value): array
 /** Only the offices a visitor should see. */
 function contact_shown_offices(array $data): array
 {
+    if (($data['offices']['status'] ?? 'shown') === 'hidden') {
+        return [];
+    }
+
     return array_values(array_filter(
         $data['offices']['items'],
         static fn(array $o): bool => ($o['status'] ?? 'shown') === 'shown'
+    ));
+}
+
+/**
+ * The reach rows a visitor should see, and none when the band is switched off.
+ *
+ * The band's own switch is checked HERE rather than only where the markup is
+ * written, because a hidden band must also be absent from the structured data
+ * — and the JSON-LD is built from a different function in a different file. A
+ * band that disappears visually and goes on being advertised to search engines
+ * is not hidden, it is only invisible. contact_shown_offices() above answers
+ * for the same reason.
+ */
+function contact_shown_reach(array $data): array
+{
+    if (($data['reach']['status'] ?? 'shown') === 'hidden') {
+        return [];
+    }
+
+    return array_values(array_filter(
+        $data['reach']['items'] ?? [],
+        static fn(array $r): bool => ($r['status'] ?? 'shown') === 'shown'
     ));
 }
 
@@ -861,7 +931,7 @@ function company_stat_defaults(array $row): array
 function company_logo_defaults(array $row): array
 {
     $row += ['id' => '', 'name' => '', 'status' => 'shown'];
-    $row['image'] = company_image_defaults($row['image'] ?? []);
+    $row['image'] = contract_image_defaults($row['image'] ?? []);
 
     return $row;
 }
@@ -869,7 +939,7 @@ function company_logo_defaults(array $row): array
 function company_photo_defaults(array $row): array
 {
     $row += ['id' => '', 'alt' => '', 'status' => 'shown'];
-    $row['image'] = company_image_defaults($row['image'] ?? []);
+    $row['image'] = contract_image_defaults($row['image'] ?? []);
 
     return $row;
 }
@@ -896,7 +966,10 @@ function company_principle_defaults(array $row): array
  * else would put a third party's server into every visitor's page load, and
  * tell them who is reading the page.
  */
-const COMPANY_IMAGE_ROOTS = ['/assets/images/', '/uploads/'];
+/* Named for the contract rather than for the company profile, because the
+   contact page's offices carry a picture too now. A picture record is one
+   shape, checked one way, wherever it hangs. */
+const CONTRACT_IMAGE_ROOTS = ['/assets/images/', '/uploads/'];
 
 /* What a row is called before it is called anything. See company_identify(). */
 const COMPANY_ID_PLACEHOLDER = 'row';
@@ -908,7 +981,7 @@ const COMPANY_ID_PLACEHOLDER = 'row';
  * prefix test rather than after: "/assets/images/../../etc/passwd" starts with
  * an allowed prefix and is not an allowed path.
  */
-function company_safe_image_path(string $path): string
+function contract_safe_image_path(string $path): string
 {
     $path = trim($path);
 
@@ -916,7 +989,7 @@ function company_safe_image_path(string $path): string
         return '';
     }
 
-    foreach (COMPANY_IMAGE_ROOTS as $root) {
+    foreach (CONTRACT_IMAGE_ROOTS as $root) {
         if (str_starts_with($path, $root) && strlen($path) > strlen($root)) {
             return $path;
         }
@@ -938,13 +1011,13 @@ function company_safe_image_path(string $path): string
  * emit a bare <img> and no <picture> wrapper". That is how the SVG and AVIF
  * entries have always rendered.
  */
-function company_image_defaults(mixed $image): array
+function contract_image_defaults(mixed $image): array
 {
     $image = is_array($image) ? $image : [];
     $image += ['src' => '', 'webp' => '', 'width' => 0, 'height' => 0];
 
-    $image['src']    = company_safe_image_path((string)$image['src']);
-    $image['webp']   = company_safe_image_path((string)$image['webp']);
+    $image['src']    = contract_safe_image_path((string)$image['src']);
+    $image['webp']   = contract_safe_image_path((string)$image['webp']);
     $image['width']  = max(0, (int)$image['width']);
     $image['height'] = max(0, (int)$image['height']);
 

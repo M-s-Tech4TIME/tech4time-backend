@@ -66,8 +66,9 @@ structured data from these.
   "hero":    { "title": "…", "subtitle": "…" },
   "form":    { "title": "…", "lead": "…", "subject_hint": "…", "note": "…",
                "service_types": [] },
-  "reach":   { "title": "…", "items": [] },
-  "offices": { "eyebrow": "…", "title": "…", "lead": "…", "items": [] }
+  "reach":   { "status": "shown", "title": "…", "items": [] },
+  "offices": { "status": "shown", "eyebrow": "…", "title": "…", "lead": "…",
+               "items": [] }
 }
 ```
 
@@ -78,8 +79,14 @@ structured data from these.
 | `meta` | `<title>`, meta description, Open Graph title |
 | `hero` | the page's heading and subheading |
 | `form` | the enquiry form's copy, and `service_types` — the subject options offered |
-| `reach` | direct contact methods |
-| `offices` | the office list |
+| `reach` | direct contact methods. `status` switches the whole band off |
+| `offices` | the office list. `status` switches the whole band off |
+
+**A band's `status` and a row's are separate switches, and both are honoured.**
+`contact_shown_reach()` and `contact_shown_offices()` answer for both, which is why the structured
+data cannot advertise a band the page does not draw. Only these two bands have a switch: the banner
+and the enquiry form do not, because a contact page with no way to make contact is not a page
+anybody meant to publish.
 
 ### A reach item
 
@@ -90,6 +97,7 @@ structured data from these.
 | `type` | `phone`, `email`, `url` or `text` — decides how `contact_reach_href()` links it |
 | `values` | array of strings; several numbers under one label |
 | `text` | free text, when `type` is `text` |
+| `status` | `shown` or `hidden` — `contact_shown_reach()` filters on it |
 
 ### An office
 
@@ -97,7 +105,8 @@ structured data from these.
 |---|---|
 | `id` | generated on creation, never typed |
 | `name` | the city or office name |
-| `flag` | a country code, rendered by `contact_flag_picture()` |
+| `flag` | a slug naming a flag that ships with the public site — `bangladesh`, `belgium`, `malaysia`. Cannot grow without a deploy, which is what `image` is for |
+| `image` | an uploaded flag: `src`, `webp`, `width`, `height`, the same record a company logo uses. **Wins over `flag` when set.** Paths are checked against `CONTRACT_IMAGE_ROOTS` |
 | `address` | |
 | `phones` | array of strings |
 | `hours` | opening hours |
@@ -105,7 +114,12 @@ structured data from these.
 | `status` | `shown` or hidden — `contact_shown_offices()` filters on it |
 | `schema` | `street`, `locality`, `region`, `postal_code`, `country` — for `PostalAddress` structured data |
 
-`contact_page_schema()` emits `ContactPage` and `PostalAddress` from these.
+`contact_page_schema()` emits `ContactPage` and `PostalAddress` from these, and so does the
+`Organization` graph at the top of `tech4time-website-frontend/pages/contact/index.php` — `contact_addresses()` and
+`contact_points()` are spliced into it. That block used to write the three offices out by hand,
+which meant hiding an office took its card off the page and left its address being advertised to
+Google. `contact_points()` emits one point per **phone**, not per office: an office listing three
+numbers had two of them reachable on the page and invisible to a search engine.
 
 ---
 

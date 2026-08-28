@@ -31,6 +31,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/html.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/publish_client.php';
+require_once __DIR__ . '/upload.php';
 
 /**
  * What the rail lists, in the order it lists them.
@@ -452,7 +453,187 @@ function admin_asset(string $path): string
     return $stamp === false ? $path : $path . '?v=' . dechex($stamp);
 }
 
+/* ------------------------------------------------------- pictures on rows */
+
+/**
+ * Where the editor previews a stored picture from.
+ *
+ * An uploaded picture is served by THIS host, which holds the canonical copy
+ * (ADR 0010) — the preview must not depend on a publish having succeeded, or
+ * the operator cannot see what they just chose until the other half agrees.
+ * Everything else is artwork that ships with the public site and exists only
+ * there, so it is fetched from there.
+ */
+function admin_preview_src(string $path): string
+{
+    return str_starts_with($path, UPLOAD_URL_ROOT) ? $path : public_url($path);
+}
+
+/**
+ * The picture on one row: what is there, and how to replace it.
+ *
+ * $field is the name prefix — "clients[items][3][image]" — and $upload is the
+ * name of the file input, which admin_uploaded_files() reads back. They are
+ * separate arguments because they are separate shapes: one is where the record
+ * lives in the document, the other is where the browser puts the bytes.
+ */
+function admin_image_fields(string $field, string $upload, array $image,
+                            string $noun = 'picture', string $empty = ''): void
+{
+    $image += ['src' => '', 'webp' => '', 'width' => 0, 'height' => 0];
+    ?>
+        <div class="admin-card__media">
+<?php if ($image['src'] !== ''): ?>
+          <img class="admin-card__thumb" src="<?= h(admin_preview_src((string)$image['src'])) ?>"
+               alt="" width="<?= (int)$image['width'] ?>" height="<?= (int)$image['height'] ?>"
+               loading="lazy" decoding="async">
+          <p class="admin__fineprint">
+            <code><?= h(basename((string)$image['src'])) ?></code>
+            &middot; <?= (int)$image['width'] ?>&times;<?= (int)$image['height'] ?>
+<?php if ($image['webp'] !== ''): ?>
+            &middot; with a WebP version
+<?php endif; ?>
+          </p>
+<?php else: ?>
+          <?php /* $empty is for a row that HAS a picture from somewhere this
+                   record does not know about — an office still using one of
+                   the flags built into the site. "No flag yet." would be a
+                   plain lie there, and the sort that gets acted on. */ ?>
+          <p class="admin__hint">
+            <?= $empty !== '' ? h($empty) : 'No ' . h($noun) . ' yet.' ?>
+          </p>
+<?php endif; ?>
+        </div>
+        <?php /* Carried rather than edited. The paths and the size come from
+                 the file itself when it is uploaded, and a size typed by hand
+                 is a size that is wrong — which moves the page as it loads.
+                 The model re-checks all four against CONTRACT_IMAGE_ROOTS
+                 anyway, because a hidden input is a text field with the label
+                 taken off. */ ?>
+        <input type="hidden" name="<?= h($field) ?>[src]" value="<?= h((string)$image['src']) ?>">
+        <input type="hidden" name="<?= h($field) ?>[webp]" value="<?= h((string)$image['webp']) ?>">
+        <input type="hidden" name="<?= h($field) ?>[width]" value="<?= (int)$image['width'] ?>">
+        <input type="hidden" name="<?= h($field) ?>[height]" value="<?= (int)$image['height'] ?>">
+
+<?php $problem = upload_problem(); ?>
+<?php if ($problem !== ''): ?>
+        <p class="admin__hint"><?= admin_icon('info-circle', 'icon icon--sm') ?>
+           <?= h($problem) ?></p>
+<?php else: ?>
+        <label class="admin__field admin__field--wide">
+          <span class="admin__label">
+            <?= $image['src'] === '' ? 'Choose a ' . h($noun) : 'Replace it' ?>
+          </span>
+          <input class="admin__input admin__file" type="file"
+                 name="<?= h($upload) ?>"
+                 accept="image/jpeg,image/png,image/webp">
+          <span class="admin__hint">
+            JPEG, PNG or WebP, up to <?= (int)(UPLOAD_MAX_BYTES / 1048576) ?> MB.
+            It is re-encoded here — which is what removes the location and the
+            camera details a photograph carries — reduced to
+            <?= UPLOAD_MAX_DIMENSION ?> pixels on its longest side, given a WebP
+            version, and sent to the live site straight away.
+          </span>
+        </label>
+<?php endif; ?>
+    <?php
+}
+
+/**
+ * $_FILES, flattened.
+ *
+ * PHP turns upload[clients][3] inside out: rather than one entry per file it
+ * gives $_FILES['upload']['name']['clients'][3] and four more arrays shaped
+ * the same way. This puts each file back together.
+ *
+ * @return list<array{0:string,1:int,2:array}>  list name, row index, one $_FILES entry
+ */
+function admin_uploaded_files(): array
+{
+    $found = [];
+    $upload = $_FILES['upload'] ?? null;
+
+    if (!is_array($upload) || !isset($upload['name']) || !is_array($upload['name'])) {
+        return $found;
+    }
+
+    foreach ($upload['name'] as $band => $rows) {
+        if (!is_array($rows)) {
+            continue;
+        }
+        foreach (array_keys($rows) as $index) {
+            $file = [];
+            foreach (['name', 'type', 'tmp_name', 'error', 'size'] as $key) {
+                $file[$key] = $upload[$key][$band][$index] ?? null;
+            }
+            /* An untouched file input still posts, with error NO_FILE. */
+            if ((int)($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $found[] = [(string)$band, (int)$index, $file];
+        }
+    }
+
+    return $found;
+}
+
+/**
+ * Send a stored picture and its WebP sibling to the live site.
+ *
+ * Returns '' or a sentence. Both files go, because the page names both and a
+ * <source> pointing at a picture the other host does not have is a broken
+ * image for everybody whose browser prefers WebP — which is nearly everybody.
+ */
+function admin_send_picture(array $stored): string
+{
+    foreach (['src', 'webp'] as $which) {
+        $name = basename((string)($stored[$which] ?? ''));
+        if ($name === '') {
+            continue;
+        }
+
+        $path = UPLOAD_DIR . '/' . $name;
+        $bytes = @file_get_contents($path);
+
+        if ($bytes === false) {
+            return 'The picture was not where it had just been written.';
+        }
+
+        $kind = publish_asset_type($bytes);
+        $result = publish_asset($bytes, $kind[1] ?? 'application/octet-stream');
+
+        if (($result['ok'] ?? false) !== true) {
+            return 'Saved here, but the live site did not take the picture: '
+                 . (string)($result['error'] ?? 'it refused.');
+        }
+    }
+
+    return '';
+}
+
 /* -------------------------------------------------------- repeatable rows */
+
+/**
+ * The shown/hidden control every band and every row carries.
+ *
+ * A <select> and not a checkbox, and the reason is not taste: an unticked
+ * checkbox is not posted at all, so "switched off" and "the field never
+ * reached the server" arrive identically — and PHP's max_input_vars silently
+ * drops the tail of a long form, which is the second of those. A <select>
+ * always posts a value.
+ */
+function admin_status_field(string $name, string $status, string $noun): void
+{
+    ?>
+        <label class="admin__field">
+          <span class="admin__label">Shown on the page</span>
+          <select class="admin__input" name="<?= h($name) ?>">
+            <option value="shown"<?= $status !== 'hidden' ? ' selected' : '' ?>>Shown — visitors see <?= h($noun) ?></option>
+            <option value="hidden"<?= $status === 'hidden' ? ' selected' : '' ?>>Hidden — kept, not shown</option>
+          </select>
+        </label>
+    <?php
+}
 
 /**
  * The head of one repeatable row: what it is, whether it shows, and the
