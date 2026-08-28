@@ -307,6 +307,9 @@ const PUBLISH_REASONS = [
     'revision-mismatch'     => 'The envelope and the document disagree about the revision.',
     'not-newer'             => 'The live site already holds this revision or a later one. '
                              . 'Nothing was changed there.',
+    'no-destination'        => 'The live site implements that document but has nowhere to '
+                             . 'put it. Its api/publish.php is behind the shared contract — '
+                             . 'deploy the frontend.',
     'write-failed'          => 'The live site could not write the file. Check that its '
                              . 'content directory is writable.',
     'not-configured'        => 'Publishing is not set up on the live site.',

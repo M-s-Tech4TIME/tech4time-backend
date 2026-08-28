@@ -66,6 +66,12 @@ const ADMIN_SECTIONS = [
         'desc'  => 'Offices, numbers, the form',
         'view'  => '/pages/contact/',
     ],
+    'company' => [
+        'label' => 'Company Profile',
+        'icon'  => 'building',
+        'desc'  => 'Milestones, clients, technology',
+        'view'  => '/pages/company-profile/',
+    ],
     'account' => [
         'label' => 'Account',
         'icon'  => 'user-shield',
@@ -81,10 +87,11 @@ const ADMIN_SECTIONS = [
  * account — so anything counting or listing "the pages you can edit" asks here
  * rather than filtering the registry by hand in three places.
  */
-const ADMIN_PAGE_SECTIONS = ['careers', 'contact'];
+const ADMIN_PAGE_SECTIONS = ['careers', 'contact', 'company'];
 
 /* Symbols inlined into every admin page: the rail, the controls, and every
-   icon the contact editor offers, since it renders a live preview of them. */
+   icon the contact and company editors offer, since both render a live
+   preview of them. */
 const ADMIN_ICONS = [
     'home', 'briefcase', 'envelope', 'sun', 'moon', 'chevron-left',
     'chevron-right', 'arrow-up', 'arrow-down', 'arrow-right', 'link', 'user',
@@ -96,6 +103,11 @@ const ADMIN_ICONS = [
        enrolment and recovery panels on the account page. */
     'user-shield', 'user-lock', 'shield-alt', 'check-circle',
     'exclamation-circle', 'question-circle',
+    /* The company profile: the icons a principle card may carry, plus the one
+       its picture rows use for "upload". Kept in step with COMPANY_ICONS —
+       every name there must be inlined here, or the editor's live preview
+       draws an empty box for it. */
+    'lightbulb', 'handshake', 'calendar-check', 'cloud-upload-alt',
 ];
 
 /* ------------------------------------------------------------------- auth */

@@ -56,6 +56,20 @@ ADMIN = "/?s=contact"
 ROUTER = ROOT / "tools" / "dev-router.php"
 
 
+def registered_sections() -> list[str]:
+    """The rail's contents, read out of lib/admin.php rather than counted here.
+
+    A number written into this file is a second copy of the registry, and it is
+    the copy that goes stale: adding an editor would fail this test in the
+    editor that was not touched, which reads as a regression in the wrong
+    place. Parsed rather than run through PHP, the way publish_stub.py reads
+    CONTRACT_DOCUMENTS.
+    """
+    text = (ROOT / "lib" / "admin.php").read_text()
+    m = re.search(r"const ADMIN_SECTIONS\s*=\s*\[(.*?)\n\];", text, re.S)
+    return re.findall(r"^\s{4}'([a-z_]+)'\s*=>", m.group(1), re.M) if m else []
+
+
 class Results:
     def __init__(self):
         self.passed = 0
@@ -127,6 +141,13 @@ def form_fields(html: str) -> dict:
         name = re.search(r'name="([^"]+)"', tag)
         if not name or 'type="submit"' in tag:
             continue
+        # The failed-publish notice is a SEPARATE form on the same page, and
+        # its only field is action=republish. A browser would never send it
+        # with the editor's form; scraping the whole document would, and then
+        # every save after a failed publish would silently become a republish
+        # instead -- redirecting, changing nothing, and looking like a pass.
+        if name.group(1) == "action":
+            continue
         value = re.search(r'value="([^"]*)"', tag)
         fields[name.group(1)] = unescape(value.group(1) if value else "")
 
@@ -180,9 +201,11 @@ def run(client, r, site):
     # Overview, Careers, Contact, Account. The count is asserted rather than
     # the names so that adding a section without adding it to the rail — which
     # would leave it unreachable — shows up here.
+    sections = registered_sections()
     r.check("the rail lists every section",
-            html.count('class="rail__item"') == 4,
-            f'found {html.count(chr(34) + "rail__item")}')
+            html.count('class="rail__item"') == len(sections),
+            f'{len(sections)} in ADMIN_SECTIONS, '
+            f'{html.count(chr(34) + "rail__item")} in the rail')
     r.check("and marks the one showing",
             html.count('aria-current="page"') == 1)
 

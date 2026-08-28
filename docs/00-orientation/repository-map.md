@@ -81,6 +81,7 @@ sections/
 ├── overview.php        what can be edited, and plainly what cannot
 ├── careers.php         the job post editor      → content/careers.json
 ├── contact.php         the contact page editor  → content/contact.json
+├── company.php         the company profile      → content/company.json
 └── account.php         password, second factor, recovery codes, the log
 ```
 
@@ -91,6 +92,7 @@ The rail draws itself from `ADMIN_SECTIONS` in `lib/admin.php`:
 | `/` | `overview` | nothing — it says what can and cannot be changed |
 | `/?s=careers` | `careers` | `content/careers.json`, then publishes |
 | `/?s=contact` | `contact` | `content/contact.json`, then publishes |
+| `/?s=company` | `company` | `content/company.json`, then publishes |
 | `/?s=account` | `account` | your own password, second factor and recovery codes |
 
 `ADMIN_PAGE_SECTIONS` names the subset that edits a page of the public website
@@ -118,6 +120,7 @@ Never reachable over HTTP: it is outside the document root.
 | `store.php` | reading and writing a JSON file atomically, with a lock |
 | `careers.php` | validation, and the save that publishes |
 | `contact.php` | the same, plus the flag picker |
+| `company.php` | the same again, for six repeatable lists and their artwork |
 | `private.php` | where the secrets are, and the keys derived from them |
 | `auth.php` | accounts, hashing, sessions, the audit log |
 | `totp.php` | RFC 6238, hand-written, checked against its published vectors |

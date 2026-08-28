@@ -149,6 +149,26 @@ details now held against `footer_synced` — which after the split is **what the
 the last publish response**, not something this side computed. See
 [`footer-fingerprint.php`](#footer-fingerprintphp).
 
+### `company.php`
+
+`company_load()` · `company_save()` · `company_validate()`
+
+The same division again, for the company profile — the largest of the three shapes, and the only
+one carrying artwork. Six repeatable lists live in `contract.php`: milestones, figures, clients,
+photographs, technology and principles, each row with a `status` so it can be **hidden without
+being deleted**.
+
+Two rules in `company_validate()` are worth knowing before changing either half:
+
+**A figure must start with a digit.** `animations.js` counts it up by reading the number off the
+front, so `"Over 100"` silently never animates. The editor says so rather than letting somebody
+find out.
+
+**A picture may only point inside this site** — `company_safe_image_path()` in `contract.php`,
+against `COMPANY_IMAGE_ROOTS`. The editor checks it because a hidden input is a text field with the
+label taken off; the frontend checks it again on receipt, because a signature proves where a
+document came from and not what is in it.
+
 ### `publish.php`
 
 **Shared — byte-identical in both repositories.**

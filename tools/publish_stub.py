@@ -30,14 +30,35 @@ did not take it" path is exercised without unplugging anything.
 import hashlib
 import hmac
 import json
+import re
 import threading
 import time
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 SKEW = 300
 MAX_BYTES = 1048576
 CONTRACT_VERSION = 1
-DOCUMENTS = ("careers", "contact")
+def _documents() -> tuple[str, ...]:
+    """The document names, read out of lib/contract.php rather than copied.
+
+    A tuple written here is a second list of documents, and the copy that is
+    not the contract is the one that goes stale: a new document would be
+    refused by this stub with 'unknown-document' while the real endpoint
+    accepted it, and the test would report a failure in the wrong half.
+
+    Parsed rather than imported, the way check_shared_repos.py reads
+    check_shared_lib.py's SHARED — no PHP process, and a contract mid-edit
+    cannot stop this file loading.
+    """
+    text = (Path(__file__).resolve().parent.parent / "lib" / "contract.php").read_text()
+    m = re.search(r"const CONTRACT_DOCUMENTS\s*=\s*\[(.*?)\];", text, re.S)
+    if not m:
+        raise SystemExit("publish_stub: could not find CONTRACT_DOCUMENTS in lib/contract.php")
+    return tuple(re.findall(r"'([a-z_-]+)'", m.group(1)))
+
+
+DOCUMENTS = _documents()
 
 
 def fingerprint(key: bytes) -> str:

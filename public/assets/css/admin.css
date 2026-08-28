@@ -777,6 +777,61 @@
   border-radius: var(--radius);
 }
 
+/* A hidden row is kept, not deleted, so it has to look kept — present and
+   plainly switched off. Opacity alone would say "disabled"; the dashed edge
+   says "this one is not on the page". Not display:none, obviously: you cannot
+   edit what you cannot see, and switching it back on is the point. */
+.admin-card--hidden {
+  border-style: dashed;
+  background-color: var(--bg-surface);
+}
+
+.admin-card--hidden .admin-card__thumb,
+.admin-card--hidden .admin-card__icon { opacity: 0.55; }
+
+/* The picture a row holds, at the size it will be judged at rather than the
+   size it was uploaded at. --artwork-plate and not --bg-elevated for the same
+   reason the public page uses it: a dark-ink logo on the dark theme's
+   elevated surface falls to about 1.4:1. */
+.admin-card__media {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  margin-block-end: var(--space-md);
+  background-color: var(--artwork-plate);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.admin-card__thumb {
+  width: auto;
+  max-width: 8rem;
+  height: auto;
+  max-height: 4rem;
+  object-fit: contain;
+}
+
+.admin-card__media p { margin: 0; }
+
+.admin-card__icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.admin-card__icon .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: var(--silver-accent-mid);
+}
+
 .admin-card__head {
   display: flex;
   flex-wrap: wrap;
