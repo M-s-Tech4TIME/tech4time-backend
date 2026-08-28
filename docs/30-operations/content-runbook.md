@@ -86,6 +86,58 @@ only the footers lag.
 
 ---
 
+## The company profile
+
+`https://admin.tech4time.bd/?s=company` — the milestones, the figures, the client logos, the
+photographs, the technology list, the principles, and every heading and paragraph around them.
+
+It is one long form, like the contact page. **Nothing reaches the site until you press Save**, and
+the buttons that add, remove and reorder deliberately do not save — so you can move three things
+and change a heading and then save once.
+
+### Hiding is not deleting
+
+Every entry, and every whole section, has a **Shown / Hidden** control. A hidden thing keeps its
+place, its words and its picture, and simply does not appear on the site. That is what you want
+when a client asks to be off the page for a quarter; deleting them means typing it all back.
+
+Hiding a *section* hides everything in it. "Our Background" contains the figures, the clients and
+the photographs — hide it and all three go, whatever their own switches say.
+
+### Adding a picture
+
+Choose a file on any row that has one. JPEG, PNG or WebP, up to 5 MB.
+
+**It is not stored as you sent it.** The server decodes the picture and writes a new one from the
+pixels. That is what removes the location and camera details a photograph carries — a phone photo
+posted as-is tells everybody where it was taken. It is also reduced to 1600 pixels on its longest
+side, given a WebP version for browsers that prefer one, and sent to the live site straight away.
+
+An SVG cannot be used. It is a document rather than a picture and can carry code, so it is refused
+whatever it is named.
+
+**The description is not optional.** For a logo it is the client's name; for a photograph, say what
+is happening in it. It is what somebody using a screen reader hears instead of the picture, and it
+is what a search engine reads.
+
+### The order matters more than it looks
+
+The **milestones** alternate left and right down the page, so inserting one moves every entry after
+it to the other side. The **technology** logos are placed on a rotating sphere by their position,
+so reordering or adding one redistributes all of them. Neither is a problem — just expect the page
+to look rearranged rather than only changed.
+
+### Figures must start with a number
+
+`100+` and `99%` work. `Over 100` does not, and the editor will say so: the count-up animation reads
+the number off the front, and a figure it cannot read just sits there.
+
+### Stored pictures
+
+At the bottom is a count of the pictures held and how many no rows are using. Replacing a picture
+leaves the old one behind, which is normal. Nothing is ever deleted on its own — press the button
+when you want the unused ones gone, and only when you have saved.
+
 ## Your account
 
 **Admin → Account**
