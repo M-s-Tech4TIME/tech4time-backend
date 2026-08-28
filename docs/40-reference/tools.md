@@ -33,6 +33,37 @@ Both private stores need the **same** `publish.key`, or every publish is refused
 
 [running-locally.md](../10-development/running-locally.md)
 
+### Looking at it without signing in
+
+```bash
+python3 tools/preview.py            # opens a browser, already signed in
+python3 tools/preview.py --no-browser
+python3 tools/preview.py 8124       # a different port
+```
+
+For reviewing the editors rather than using them. `serve.py` gives you the admin behind its real
+password and its real second factor, which is right — and means the cost of looking at a change to
+the rail is finding the phone with the authenticator on it.
+
+**Nothing is bypassed.** `preview.py` creates a real account in a *throwaway* private store under
+`/tmp`, signs in through the real `/login.php` with the real password and a real time-based code,
+and leaves the browser sitting in the session that comes back. There is no flag in `lib/` it sets
+and no branch in the application that knows it exists; delete the file and the admin is exactly as
+protected as before. The account cannot be signed into again once the process stops, because the
+directory it lived in is deleted.
+
+It also does two things `serve.py` does not, and both matter:
+
+- `content/` is **copied out before the server starts and copied back on the way out**, so pressing
+  Save in a preview cannot leave a change in the repository.
+- publishing is pointed at a **closed port on localhost**. `lib/publish_client.php` falls back to
+  `PUBLIC_SITE` — `https://tech4time.bd` — when nothing overrides it, and a preview that quietly
+  pushed a document to the live website would be a bad way to learn that. Save writes the record and
+  the editor says the live site does not have it, which is true.
+
+Firefox and geckodriver open the window for you. Without them it prints the credentials and a code
+that reticks every thirty seconds, and you sign in yourself.
+
 ---
 
 ## Checks — run these before committing
@@ -69,7 +100,7 @@ that does the other, rather than quietly checking less than they used to.
 | `test_upload.py` | `lib/upload.php`, and mostly not by asking what it refused: it checks what came OUT still carrying what went in. EXIF stripped, an appended payload gone, an oversized picture reduced. Skips the re-encoding cases with a notice where PHP has no GD; CI installs `php-gd` so they always run there |
 | `test_qr.py` | `lib/qr.php`, against **libqrencode** — every module compared at a matched mask, then our own symbol read back and checked to say what went in, then the SVG parsed to confirm it draws that symbol and carries nothing the CSP refuses. Skips with a notice if `qrencode` is not installed |
 | `test_store.py` | `lib/store.php`: telling apart missing, unreadable and corrupt; the atomic write; and the rule that a damaged file is never copied over a good `.bak`, because the backup is what damage is recovered from |
-| `admin_session.py` | *(not run directly)* gives a test an admin account and signs it in |
+| `admin_session.py` | *(not run directly)* gives a test an admin account and signs it in — `preview.py` uses it too |
 | `publish_stub.py` | *(not run directly)* the far side, implemented a second time in Python |
 
 **`publish_stub.py` is the point, not a shortcut.** The real endpoint is `tech4time-website-frontend/api/publish.php`, and testing this half against it would check the two halves against each other
