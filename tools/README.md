@@ -35,6 +35,7 @@ guidance. Those are now in `docs/`, so each fact lives in exactly one place:
 
 ```bash
 python3 tools/serve.py                      # run the admin locally
+python3 tools/preview.py                    # ...and look at it without signing in
 
 python3 tools/check_contrast.py             # before committing
 python3 tools/check_css.py

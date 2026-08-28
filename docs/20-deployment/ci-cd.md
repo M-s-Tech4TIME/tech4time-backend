@@ -69,10 +69,27 @@ seed directory is copied with `rsync --ignore-existing`: it creates what is abse
 nothing. A file already on the host has been edited by somebody and wins, permanently, without
 anyone having to decide so on the day.
 
+**The seed is built from `CONTRACT_DOCUMENTS`, not from a list of copy calls.** For every document
+the contract defines, `build_deploy_set.py` takes `deploy/seed/<name>.json` if there is one and
+`content/<name>.json` otherwise, and refuses to build if there is neither.
+
 `deploy/seed/careers.json` carries `jobs: []` — a new host must not launch advertising the test
-vacancies — while keeping the real `cv_form_url`. `contact.json` seeds from `content/contact.json`,
-which is genuine content and the same file the page footers were built from; seeding it from
-anywhere else would make the two disagree.
+vacancies — while keeping the real `cv_form_url`. That is the only document with a hand-written
+seed. `contact.json` and `company.json` seed from `content/`, which is genuine content and, for
+contact, the same file the page footers were built from; seeding either from anywhere else would
+make the two disagree, and seeding them empty would give a new host a page of headings with nothing
+under them.
+
+### It was a list, and the list went out of step
+
+The company profile shipped with its seed line in **this** repository and never added to the other
+one. Nothing failed. `content/company.json` simply never reached the admin host, `company_load()`
+fell back to `company_defaults()`, and the editor came up rendering an empty form — over a live page
+holding seventy-seven rows. One press of Save would have published the empty one over it.
+
+That is why the loop replaced the list, in both halves, and why `--check` now asserts that every
+document in the contract has a seed. There is also a warning in the editor itself now: a section
+whose `content/<name>.json` is missing says so before anything can be saved.
 
 ---
 

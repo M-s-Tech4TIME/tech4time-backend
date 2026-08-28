@@ -394,6 +394,12 @@ in the URL a deploy leaves every returning browser on the previous stylesheet �
 means an ordinary reload will not fix it. That has happened. `check_secrets.py` fails on an asset URL written
 any other way.
 
+`contract_path()` gives a document's record path — `content/<name>.json`, the same rule in both
+repositories. `lib/careers.php`, `lib/contact.php` and `lib/company.php` each still write their own
+constant; this exists for the things that have to work over *all* the documents without knowing
+their names: the deploy's seed, and the editor's warning when a host has no record for the page
+being edited.
+
 `admin_initials()` turns the signed-in name into the one or two letters the avatar at the foot of
 the rail draws — "Syed Golam Abid" becomes SG. It uses PCRE's `\X` rather than `mb_substr()`: `\X`
 is part of the regex engine and takes a whole grapheme, so an accented letter or a Bengali cluster

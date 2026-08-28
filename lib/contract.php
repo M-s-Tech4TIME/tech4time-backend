@@ -56,6 +56,36 @@ const CONTRACT_VERSION = 1;
 const CONTRACT_DOCUMENTS = ['careers', 'contact', 'company'];
 
 /**
+ * Where a document's record lives, on either host.
+ *
+ * content/<name>.json, and the same in both repositories -- the backend's copy
+ * is the system of record and the frontend's is the replica it is sent
+ * (ADR 0010), but the path is one rule. lib/careers.php, lib/contact.php and
+ * lib/company.php each still write their own constant, because they are read
+ * far more often than this is; what this exists for is everything that has to
+ * work over ALL the documents without knowing their names in advance.
+ *
+ * The deploy is the reason it exists. A new document gets a model, an editor, a
+ * renderer, tests and documentation, and the one line that seeds it onto a
+ * fresh host is in a file nobody opens for any of that -- so it gets left out,
+ * and the failure is silent: the editor comes up showing defaults, which look
+ * like a page nobody has filled in yet rather than like a missing file. That
+ * happened to the company profile. It reached production with the admin
+ * offering an empty form over a live page holding seventy-seven rows, and one
+ * press of Save would have published the empty one over it.
+ *
+ * @throws RuntimeException on a name CONTRACT_DOCUMENTS does not list.
+ */
+function contract_path(string $document): string
+{
+    if (!in_array($document, CONTRACT_DOCUMENTS, true)) {
+        throw new RuntimeException('unknown document: ' . $document);
+    }
+
+    return __DIR__ . '/../content/' . $document . '.json';
+}
+
+/**
  * Fields a document keeps about itself, rather than about the page.
  *
  * No form posts them and no page renders them: they are how a document
