@@ -256,6 +256,17 @@ function upload_encode(GdImage $image, string $ext): ?string
 /** Write one file, atomically, unless it is already there byte for byte. */
 function upload_write(string $name, string $bytes): bool
 {
+    /* Here rather than only in upload_problem(), which upload_accept() calls
+       and upload_store() does not. The directory is not in either repository —
+       it holds nothing that is committed — so on a fresh host it does not exist
+       until something makes it. A function that works only when its caller
+       happened to do that first is a function that breaks the day somebody
+       calls it the other way. tools/reconcile.py is that other way, and so is
+       every test that reaches upload_store() directly. */
+    if (!is_dir(UPLOAD_DIR) && !@mkdir(UPLOAD_DIR, 0755, true) && !is_dir(UPLOAD_DIR)) {
+        return false;
+    }
+
     $path = UPLOAD_DIR . '/' . $name;
 
     if (is_file($path) && hash_file('sha256', $path) === hash('sha256', $bytes)) {
