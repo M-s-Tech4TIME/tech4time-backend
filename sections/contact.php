@@ -229,20 +229,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 /* ---------------------------------------------------------------- helpers */
 
-/** One row of buttons: move up, move down, remove. */
-function contact_row_controls(string $prefix, int $index, int $total, string $label): void
-{
-    ?>
-        <div class="admin-card__controls">
-          <button class="btn btn--ghost" type="submit" name="do" value="<?= h($prefix) ?>-up:<?= $index ?>"
-                  aria-label="Move <?= h($label) ?> up"<?= $index === 0 ? ' disabled' : '' ?>>↑</button>
-          <button class="btn btn--ghost" type="submit" name="do" value="<?= h($prefix) ?>-down:<?= $index ?>"
-                  aria-label="Move <?= h($label) ?> down"<?= $index === $total - 1 ? ' disabled' : '' ?>>↓</button>
-          <button class="btn btn--ghost admin-row__delete" type="submit"
-                  name="do" value="<?= h($prefix) ?>-remove:<?= $index ?>">Remove</button>
-        </div>
-    <?php
-}
+/* The row head — number, preview, status, and the move/remove controls — is
+   admin_card_head() in lib/admin.php. It was a copy of this file's markup that
+   sections/company.php did not quite make, which is how the two editors ended
+   up laying the same row out differently. */
 
 $inStep = contact_footer_in_step($data);
 
@@ -396,17 +386,12 @@ if (!$errors && $pending !== '') {
 
 <?php foreach ($rows as $i => $row): ?>
     <div class="admin-card">
-      <div class="admin-card__head">
-        <span class="admin-card__index"><?= $i + 1 ?></span>
-        <span class="admin-card__preview">
-          <?php if (isset(CONTACT_ICONS[$row['icon']])): ?>
-            <?= admin_icon($row['icon'], 'icon') ?>
-          <?php endif; ?>
-          <strong><?= h($row['label'] !== '' ? $row['label'] : 'Untitled row') ?></strong>
-          <span class="admin-card__value"><?= h(implode(' · ', $row['values'])) ?></span>
-        </span>
-        <?php contact_row_controls('reach', $i, $total, $row['label'] !== '' ? $row['label'] : 'row ' . ($i + 1)); ?>
-      </div>
+      <?php admin_card_head('reach', $i, $total, [
+          'label'  => $row['label'],
+          'noun'   => 'row',
+          'detail' => implode(' · ', $row['values']),
+          'icon'   => isset(CONTACT_ICONS[$row['icon']]) ? $row['icon'] : '',
+      ]); ?>
 
       <div class="admin__grid">
         <label class="admin__field">
@@ -500,17 +485,12 @@ if (!$errors && $pending !== '') {
 
 <?php foreach ($rows as $i => $office): ?>
     <div class="admin-card">
-      <div class="admin-card__head">
-        <span class="admin-card__index"><?= $i + 1 ?></span>
-        <span class="admin-card__preview">
-          <strong><?= h($office['name'] !== '' ? $office['name'] : 'Untitled office') ?></strong>
-          <span class="admin-card__value"><?= h($office['address']) ?></span>
-        </span>
-        <span class="admin-row__status admin-row__status--<?= $office['status'] === 'shown' ? 'open' : 'draft' ?>">
-          <?= $office['status'] === 'shown' ? 'Shown' : 'Hidden' ?>
-        </span>
-        <?php contact_row_controls('office', $i, $total, $office['name'] !== '' ? $office['name'] : 'office ' . ($i + 1)); ?>
-      </div>
+      <?php admin_card_head('office', $i, $total, [
+          'label'  => $office['name'],
+          'noun'   => 'office',
+          'detail' => $office['address'],
+          'status' => $office['status'],
+      ]); ?>
 
       <input type="hidden" name="offices[items][<?= $i ?>][id]" value="<?= h($office['id']) ?>">
 

@@ -374,7 +374,7 @@ The one place mail leaves this site, so the envelope sender is set in one place.
 
 ### `admin.php`
 
-`admin_start_session()` · `admin_require_auth()` · `admin_section()` · `admin_head()` / `admin_foot()` · `admin_shell_head()` / `admin_shell_foot()` · `admin_icons()` · `admin_asset()` · `admin_outline()` · `admin_initials()` · `admin_csrf()`
+`admin_start_session()` · `admin_require_auth()` · `admin_section()` · `admin_head()` / `admin_foot()` · `admin_shell_head()` / `admin_shell_foot()` · `admin_icons()` · `admin_asset()` · `admin_outline()` · `admin_initials()` · `admin_card_head()` · `admin_csrf()`
 
 The section registry, the icon rail, the page furniture, and the gate.
 
@@ -399,6 +399,13 @@ repositories. `lib/careers.php`, `lib/contact.php` and `lib/company.php` each st
 constant; this exists for the things that have to work over *all* the documents without knowing
 their names: the deploy's seed, and the editor's warning when a host has no record for the page
 being edited.
+
+`admin_card_head()` draws the head of one repeatable row — its number, a preview of its content, a
+Shown/Hidden pill and the move/remove controls — for **every** editor. It is here rather than in
+each `sections/*.php` because it was in each of them, and they were not the same: contact put the
+controls inside the `.admin-card__head` flex line, where `margin-inline-start: auto` pushes them
+right; company emitted them as a bare child of `.admin-card`, where that rule has nothing to push
+against. Same classes, same stylesheet, different page.
 
 `admin_initials()` turns the signed-in name into the one or two letters the avatar at the foot of
 the rail draws — "Syed Golam Abid" becomes SG. It uses PCRE's `\X` rather than `mb_substr()`: `\X`

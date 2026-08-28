@@ -123,6 +123,29 @@ its own data, because the only way to learn a band existed was to scroll to it.
 It spent one release nested inside the rail, under the current section, which is the wrong column —
 the rail is a list of places to go and this is a map of where you already are.
 
+**There is no row head to write either.** `admin_card_head()` in `lib/admin.php` draws it — the
+row's number, a one-line preview of what is in it, a Shown/Hidden pill, and the move and remove
+controls at the right end of the line:
+
+```php
+admin_card_head('<band>', $i, $total, [
+    'label'  => $row['title'],      // '' renders "Untitled <noun>"
+    'noun'   => 'milestone',        // names the row for a screen reader
+    'detail' => $row['year'],       // one line of its content, optional
+    'icon'   => '',                 // a sprite id, optional
+    'status' => $row['status'],     // '' for a row with no shown/hidden setting
+]);
+```
+
+The button values are `<band>-up:<index>`, `-down:` and `-remove:`, which is the contract with your
+POST handler.
+
+**Do not copy this markup into your section.** It was copied once — contact had it, company made a
+near-copy that left the buttons outside the flex line the stylesheet pushes them along, and the two
+editors laid the same row out differently for a fortnight with no check able to see it. Every
+repeatable row in the admin comes from this one function, and anything else a second editor needs
+belongs beside it rather than in both.
+
 **There is no save bar to write.** The Save button is drawn by `admin_head()` into the bar across
 the top and reaches your form through the HTML `form` attribute. A section that draws its own is a
 section whose button is somewhere else from every other one, and `html{scroll-padding}` in
