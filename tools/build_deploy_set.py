@@ -50,6 +50,7 @@ and wins, permanently, without anyone deciding so on the day.
 import argparse
 import fnmatch
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -103,6 +104,7 @@ REQUIRED = [
     "lib/publish_client.php",        # without it a save writes and never sends
     "sections/careers.php",
     "sections/contact.php",
+    "sections/company.php",
 ]
 
 # Never in the set, whatever else changes. Stated separately from "not in
@@ -111,6 +113,54 @@ FORBIDDEN_TREES = ["content", "tools", "docs", "references", ".git", ".claude",
                    "deploy", "pages", "api", "public/uploads"]
 
 SEED = ROOT / "deploy" / "seed"
+CONTRACT = ROOT / "lib" / "contract.php"
+
+
+def documents() -> list[str]:
+    """Every document there is, read out of lib/contract.php.
+
+    NOT A LIST KEPT HERE. A second list is a list that goes out of step, and
+    this one went out of step in the way that does not announce itself: the
+    company profile got a model, an editor, a renderer, tests and six documents,
+    and the one line that put it in the seed was never written. Nothing failed.
+    The admin on the live host simply came up with an empty company form over a
+    page holding seventy-seven rows, and Save would have published the empty one
+    over it.
+
+    So the set of documents comes from the file that defines the set of
+    documents, and adding one to CONTRACT_DOCUMENTS is the whole of it.
+    """
+    text = CONTRACT.read_text(encoding="utf-8")
+    found = re.search(r"const\s+CONTRACT_DOCUMENTS\s*=\s*\[(.*?)\]", text, re.S)
+
+    if not found:
+        raise SystemExit(
+            "lib/contract.php: could not find CONTRACT_DOCUMENTS. The seed is "
+            "built from it, so this cannot be guessed at.")
+
+    names = re.findall(r"'([a-z0-9_-]+)'", found.group(1))
+
+    if not names:
+        raise SystemExit("lib/contract.php: CONTRACT_DOCUMENTS is empty")
+
+    return names
+
+
+def seed_source(name: str) -> Path:
+    """Which file seeds a fresh host with this document.
+
+    deploy/seed/<name>.json when there is one, and that is the exception rather
+    than the rule: careers has one because a new host must start with NO job
+    posts while keeping the site-wide settings around them, so its seed is a
+    deliberately emptied document that is committed and reviewed.
+
+    Everything else seeds from content/<name>.json — the real thing. A contact
+    page or a company profile has no meaningful empty state: the page renders
+    either way, and rendering it empty is not a fresh start, it is a blank page
+    where the site used to be.
+    """
+    special = SEED / f"{name}.json"
+    return special if special.is_file() else ROOT / "content" / f"{name}.json"
 
 
 def denied(rel: str) -> bool:
@@ -164,16 +214,40 @@ def build(out_dir: Path) -> list[str]:
     # be copied into this host's content/ before the first save, or the first
     # save will publish an empty document over it. See
     # docs/20-deployment/first-deploy.md.
-    shutil.copy2(SEED / "careers.json", seed / "careers.json")
-    shutil.copy2(ROOT / "content" / "contact.json", seed / "contact.json")
+    #
+    # Every document, from the contract. See documents() for why this is not a
+    # list of three copy calls, one of which was missing for a fortnight.
+    for name in documents():
+        source = seed_source(name)
+
+        if not source.is_file():
+            raise SystemExit(
+                f"{name} is in CONTRACT_DOCUMENTS but neither "
+                f"deploy/seed/{name}.json nor content/{name}.json exists. A "
+                f"fresh host would have nothing to render it from, and the "
+                f"first save in the editor would publish an empty document "
+                f"over the live page.")
+
+        shutil.copy2(source, seed / f"{name}.json")
 
     return paths
 
 
-def check(paths: list[str], out_dir: Path) -> int:
+def check(paths: list[str], out_dir: Path) -> tuple[int, int]:
+    """Assert everything, and report (run, failed).
+
+    It used to report only the failures and let main() work the total out with
+    arithmetic over the constant lists. That is a count of the checks somebody
+    remembered to include in the sum, not of the checks that ran — and it went
+    wrong the moment a loop was added, quietly reporting fewer than it did. The
+    counter is where the counting happens now.
+    """
     failed = []
+    run = 0
 
     def assert_(case: str, ok: bool, detail: str = "") -> None:
+        nonlocal run
+        run += 1
         if ok:
             return
         failed.append(case)
@@ -203,9 +277,28 @@ def check(paths: list[str], out_dir: Path) -> int:
         rel = php.relative_to(ROOT).as_posix()
         assert_(f"{rel} is in the upload set", rel in paths)
 
-    seeded = out_dir / "seed" / "careers.json"
+    # EVERY document is seeded, not just the ones somebody remembered. The
+    # company profile shipped without this and the failure was invisible from
+    # here: the editor rendered, the form worked, and every field in it was
+    # empty because the file it reads had never reached the host.
+    for name in documents():
+        seeded = out_dir / "seed" / f"{name}.json"
+        assert_(f"a fresh host is seeded with {name}", seeded.is_file(),
+                f"nothing would create content/{name}.json, so the editor "
+                f"would open on defaults and the first save would publish "
+                f"them over the live page")
+
+        if not seeded.is_file():
+            continue
+
+        try:
+            json.loads(seeded.read_text())
+            assert_(f"the {name} seed is readable JSON", True)
+        except (OSError, ValueError) as exc:
+            assert_(f"the {name} seed is readable JSON", False, str(exc))
+
     try:
-        data = json.loads(seeded.read_text())
+        data = json.loads((out_dir / "seed" / "careers.json").read_text())
         assert_("the careers seed carries no job posts", data.get("jobs") == [],
                 f"jobs: {len(data.get('jobs', []))} — a new host would launch "
                 f"advertising test vacancies")
@@ -214,7 +307,7 @@ def check(paths: list[str], out_dir: Path) -> int:
     except (OSError, ValueError) as exc:
         assert_("the careers seed is readable JSON", False, str(exc))
 
-    return len(failed)
+    return run, len(failed)
 
 
 def main() -> None:
@@ -242,11 +335,8 @@ def main() -> None:
         if not args.check:
             return
 
-        bad = check(paths, out_dir)
+        total, bad = check(paths, out_dir)
 
-    total = len(FORBIDDEN_TREES) + len(REQUIRED) + len(DENY) + 2 \
-        + len(list((ROOT / "lib").glob("*.php"))) \
-        + len(list((ROOT / "admin").rglob("*.php")))
     print(f"\n{total - bad}/{total} checks passed")
 
     if bad:

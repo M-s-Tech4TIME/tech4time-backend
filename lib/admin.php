@@ -784,6 +784,7 @@ function admin_notices(array $errors): void
 {
     $saved = trim((string)($_GET['saved'] ?? ''));
 
+    admin_missing_record_notice();
     admin_publish_notice();
 
     if ($errors) {
@@ -798,6 +799,63 @@ function admin_notices(array $errors): void
     if ($saved !== '') {
         echo '<p class="admin__notice admin__notice--ok">' . h($saved) . '</p>';
     }
+}
+
+/**
+ * Say so when this host has no record for the page being edited.
+ *
+ * THE FORM BELOW IS NOT THE WEBSITE. When content/<name>.json is absent,
+ * <name>_load() falls back to the defaults in lib/contract.php, and those
+ * defaults are a shape rather than a page: headings, no rows. The editor then
+ * renders perfectly, every field works, and every one of them is empty --
+ * which reads as a page nobody has filled in yet, not as a file that never
+ * arrived.
+ *
+ * It reached production exactly that way. The company profile's seed line was
+ * never added to tools/build_deploy_set.py, so the admin came up offering an
+ * empty company form over a live page holding seventy-seven rows. The person
+ * who found it was one press of Save away from publishing the empty one over
+ * the real one, and nothing on the screen would have warned them.
+ *
+ * So this says it, on every editor, for every document, without any section
+ * having to remember to ask. It does NOT disable Save: a genuinely fresh host
+ * has to be able to start somewhere, and a control that refuses with no way
+ * past it is how somebody ends up editing the JSON by hand.
+ */
+function admin_missing_record_notice(): void
+{
+    $section = admin_section();
+
+    if (!in_array($section, CONTRACT_DOCUMENTS, true)
+            || is_file(contract_path($section))) {
+        return;
+    }
+
+    $meta = ADMIN_SECTIONS[$section] ?? [];
+    ?>
+<div class="admin__notice admin__notice--warn">
+  <p><strong>This server has no saved copy of this page yet, so the form below
+     is showing defaults — not what the website is currently showing.</strong></p>
+<?php if (!empty($meta['view'])): ?>
+  <p>
+    Compare it with
+    <a href="<?= h(public_url($meta['view'])) ?>" target="_blank" rel="noopener">the live page</a>
+    before you change anything.
+  </p>
+<?php endif; ?>
+  <p>
+    <strong>Saving now would publish these defaults over it.</strong> If the
+    live page has content this form does not, stop and say so — the record can
+    be copied across without losing anything, and the next deploy seeds it
+    automatically.
+  </p>
+  <p class="admin__hint">
+    Expected at <code>content/<?= h($section) ?>.json</code> on this server.
+    Nothing is broken and nothing has been lost; this host has simply never
+    been given the file.
+  </p>
+</div>
+    <?php
 }
 
 /**

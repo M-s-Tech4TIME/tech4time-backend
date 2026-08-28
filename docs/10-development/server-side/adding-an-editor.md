@@ -202,6 +202,7 @@ the reason beside it. `test_careers_admin.py` is the worked example.
 - [ ] `content/<name>.json` seeded with the current content
 - [ ] `pages/<name>/index.html` → `index.php`, rendering from the model, everything through `h()`
 - [ ] `sections/<name>.php` with the `T4T_ADMIN` guard, CSRF on POST and `$action` assigned
+- [ ] the document name is in **`CONTRACT_DOCUMENTS`** — the deploy seeds every name it lists, and a page missing from it reaches the host with no record at all
 - [ ] `data-async` on every form; an `id` on the main one; `NAME_OUTLINE` passed to `admin_head()`
 - [ ] `btn--secondary` on every "Add a …" button, so it reads as a button beside the fields
 - [ ] an `id` on every `<fieldset>` the outline names
