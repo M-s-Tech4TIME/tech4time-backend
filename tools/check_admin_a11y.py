@@ -176,6 +176,68 @@ return {
 };
 """
 
+# Runs in the OUTER window. Puts a screen into a frame of the requested width
+# and returns {"loading": true} until it is ready, so the caller polls rather
+# than sleeping a guessed amount. The measuring scripts below are then run
+# INSIDE that frame.
+#
+# WHY A FRAME AND NOT THE WINDOW — this is the whole reason the reflow walk is
+# shaped the way it is, and it is ADR 0015 arriving in this repository.
+#
+# Firefox will not make a window narrower than about 500px, headless included;
+# measured on this machine, asking for 320, 360 and 400 all returned 500. Ask
+# WebDriver for 320 and the call succeeds, returns no error, and you measure
+# 500. That is worse than having no check: it leaves a record saying the
+# narrowest phones were covered by a run that never went near them. This check
+# did exactly that until it was noticed — and then began FAILING at 500,
+# reporting a width it had not tested either way.
+#
+# A frame establishes its own viewport, so 320 means 320. It works here because
+# the admin's frame-ancestors comes from public/.htaccess, which the PHP dev
+# server does not read; the real header is asserted where it belongs, by
+# check_secrets.py and by verify_live.py against the live host.
+FRAME = r"""
+var width = arguments[0], url = arguments[1];
+
+var frame = document.getElementById('probe');
+if (!frame) {
+  frame = document.createElement('iframe');
+  frame.id = 'probe';
+  frame.style.border = '0';
+  frame.style.height = '900px';
+  document.body.innerHTML = '';
+  document.body.style.margin = '0';
+  document.body.appendChild(frame);
+}
+frame.style.width = width + 'px';
+
+var want = url + '#' + width;
+if (frame.getAttribute('data-showing') !== want) {
+  frame.setAttribute('data-showing', want);
+  frame.src = url;
+  return {loading: true};
+}
+
+var doc = frame.contentDocument;
+if (!doc || doc.readyState !== 'complete' || !doc.body) return {loading: true};
+
+return {loading: false, inner: doc.documentElement.clientWidth};
+"""
+
+# Run one of the measuring scripts below inside the frame instead of the page.
+#
+# window.document, not document: `var document` below is hoisted to the top of
+# the function WebDriver wraps this in, so a bare `document` on this line is
+# the undefined shadow rather than the outer one. That cost a 500 from
+# geckodriver and no explanation whatsoever.
+IN_FRAME = r"""
+var frame = window.document.getElementById('probe');
+var view = frame.contentWindow;
+var document = frame.contentDocument;
+var innerWidth = document.documentElement.clientWidth;
+var getComputedStyle = view.getComputedStyle.bind(view);
+"""
+
 REFLOW = r"""
 var doc = document.documentElement;
 var over = [];
@@ -515,24 +577,61 @@ def walk_focus(b: Browser, base: str, screens, label, r: Results) -> None:
         print(f"  {stops:>3} focus stops   {label} {screen}{ceiling}")
 
 
-def walk_reflow(b: Browser, base: str, screens, r: Results) -> None:
-    b.size(320, 720)
-    for screen in screens:
-        b.go(base + screen)
+REFLOW_WIDTH = 320
 
-        flow = b.js(REFLOW)
-        r.check(f"320px {screen}: the page does not scroll sideways",
+
+def walk_reflow(b: Browser, base: str, screens, r: Results) -> None:
+    """SC 1.4.10, at the width the criterion is actually defined at.
+
+    Every assertion here names the width it MEASURED, and the first thing
+    checked is that the measurement is the width that was asked for. See the
+    note above FRAME: this check spent its whole first life reporting 320 and
+    measuring 500.
+    """
+    b.size(1200, 950)
+    b.go(base + "/")
+
+    for screen in screens:
+        for _ in range(60):
+            state = b.js(FRAME, REFLOW_WIDTH, base + screen)
+            if not state.get("loading"):
+                break
+            time.sleep(0.25)
+        else:
+            r.check(f"{REFLOW_WIDTH}px {screen}: loads in a frame", False,
+                    "the frame never finished loading")
+            continue
+
+        # The frame carries a scrollbar, so a few pixels under is expected and
+        # is what the frontend's check_responsive.py allows too. WIDER than
+        # asked for is the clamp, and it is the thing this line exists to
+        # catch: it invalidates every assertion below it, so nothing below it
+        # runs. ADR 0015.
+        got = int(state["inner"])
+        slack = REFLOW_WIDTH - got
+        if not 0 <= slack <= 40:
+            r.check(f"{REFLOW_WIDTH}px {screen}: the viewport is the width asked for",
+                    False,
+                    f"asked for {REFLOW_WIDTH}, measured {got} — the frame is "
+                    f"being clamped, so nothing checked at this width can be "
+                    f"believed")
+            continue
+
+        flow = b.js(IN_FRAME + REFLOW)
+        r.check(f"{REFLOW_WIDTH}px {screen}: the page does not scroll sideways",
                 flow["scrollWidth"] <= flow["inner"] + 1,
                 f"scrollWidth {flow['scrollWidth']} > viewport {flow['inner']}; "
                 f"widened by {', '.join(flow['overflowing']) or 'something'} "
                 f"(SC 1.4.10)")
 
-        small = b.js(TARGETS)
-        r.check(f"320px {screen}: every control is at least {MIN_TARGET}x{MIN_TARGET}",
+        small = b.js(IN_FRAME + TARGETS)
+        r.check(f"{REFLOW_WIDTH}px {screen}: every control is at least "
+                f"{MIN_TARGET}x{MIN_TARGET}",
                 not small,
                 "; ".join(small) + "  (SC 2.5.8)")
 
-        print(f"  {'ok  ' if not small else 'FAIL'}  320px {screen}")
+        print(f"  {'ok  ' if not small else 'FAIL'}  {REFLOW_WIDTH}px {screen}"
+              f"  (measured {got}px)")
 
 
 def walk_dark(b: Browser, base: str, screens, r: Results) -> None:

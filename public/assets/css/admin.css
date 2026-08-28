@@ -60,6 +60,26 @@
   border-block-end: var(--border-width) solid var(--border-subtle);
 }
 
+/* WHY THESE THREE LINES EXIST, because deleting one of them is easy and the
+   consequence is invisible on any screen wide enough to develop on.
+
+   Below 60em the rail is a horizontal strip, and .rail__list carries
+   overflow-x: auto so that five sections scroll inside it rather than
+   stretching the page. That did not work, and could not: a flex item's
+   min-width defaults to AUTO, which means "never shrink below your content".
+   So .rail__nav and .rail__foot each grew to fit their children, .rail grew to
+   fit them, and the whole document was 649px wide inside a 320px viewport —
+   the admin scrolled sideways on every screen, on every phone, and the
+   overflow-x that was supposed to prevent it never got the chance.
+
+   min-width: 0 is what lets a flex item be narrower than its content, which is
+   what lets a scroller inside it scroll. WCAG 2.2 SC 1.4.10 (Reflow) is
+   defined at exactly 320px, and tools/check_admin_a11y.py now measures there
+   for real -- ADR 0015. */
+.rail,
+.rail__nav,
+.rail__foot { min-width: 0; }
+
 @media (min-width: 60em) {
   .rail {
     position: sticky;
@@ -282,6 +302,9 @@
   .rail__foot {
     padding-block-start: 0;
     border-block-start: 0;
+    /* Two icon-only links. They scroll with the strip rather than widening it,
+       for the same reason .rail__list does. */
+    overflow-x: auto;
   }
 
   /* Hidden the accessible way, not with display: none. These two are the only
