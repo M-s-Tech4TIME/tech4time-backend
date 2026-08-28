@@ -47,6 +47,32 @@
   background-color: var(--bg-base);
 }
 
+/* MOVING BETWEEN SCREENS.
+
+   admin-swap.js fetches the next screen and puts it here, so between the press
+   and the answer nothing about the page changes — and on a slow connection
+   that reads as a press that did nothing. The bar says "Loading…" in the
+   status line; this is the same sentence for whoever is not reading it.
+
+   Only the editing column dims. The bar carries the status line and the rail
+   carries the row that was just pressed, and fading either of those would hide
+   the two things that say what is happening.
+
+   base.css already reduces every transition to nothing under
+   prefers-reduced-motion, so there is no clause for it here — the dim still
+   happens, it simply happens at once, which is what that setting asks for. */
+.admin-shell__body[aria-busy="true"] {
+  cursor: progress;
+}
+
+.admin-shell__body[aria-busy="true"] .admin {
+  opacity: 0.55;
+}
+
+.admin-shell__body .admin {
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
 /* --------------------------------------------------------------------------
    2. The icon rail
    -------------------------------------------------------------------------- */

@@ -1,7 +1,7 @@
 # Tech4TIME — backend
 
-The editor at **`admin.tech4time.bd`**: a sign-in of its own, four sections, and the content of
-record for the two pages of the public site that change. No build step, no framework — the files
+The editor at **`admin.tech4time.bd`**: a sign-in of its own, five screens, and the content of
+record for the three pages of the public site that change. No build step, no framework — the files
 here are the files that run on the server.
 
 **The public site is not in this repository.** It is **`tech4time-website-frontend`**, serving
@@ -33,11 +33,17 @@ its record before acting.
 7. **`lib/html.php`, `lib/contract.php`, `lib/publish.php` and the icon sprite are byte-identical**
    with `tech4time-website-frontend`. Change one and you change both, in the same breath, and bump
    `CONTRACT_VERSION` if the *shape* of a document changed.
-8. **Every save publishes.** The publish lives inside `careers_save()` and `contact_save()`, not at
-   the call sites — the careers editor alone has six of those.
+8. **Every save publishes.** The publish lives inside `careers_save()`, `contact_save()` and
+   `company_save()`, not at the call sites — the careers editor alone has six of those.
 9. **`tools/` is never deployed.**
 10. **Do not leave cPanel's Directory Privacy on `public/`.** It writes its own `.htaccess` there
     and every deploy ships ours over it, removing the password silently.
+11. **Nothing in the admin reloads the page.** Every `<form>` carries `data-async`; every link
+    between screens is `admin_url()`, which writes `?s=<section>` on the admin's own path. That is
+    the whole of the contract — `admin-forms.js` and `admin-swap.js` do the rest, with no server
+    side, and a link of any other shape tears the shell down and rebuilds the rail with it.
+    Anything genuinely elsewhere — an in-page anchor, the public site, a new tab — is left alone by
+    both. This holds for editors that do not exist yet, and `test_admin_forms.py` enforces it.
 
 ---
 
@@ -46,7 +52,7 @@ its record before acting.
 | | |
 |---|---|
 | `public/` | **the document root** — six entry points, `.htaccess`, and the assets a browser fetches |
-| `sections/` | the four editors, included by `public/index.php` |
+| `sections/` | the five screens, included by `public/index.php` |
 | `lib/` | the sign-in, the contract, the publish client, the store |
 | `content/` | the JSON the editors write — **the system of record** |
 | `tools/` | build, audit and test scripts — never deployed |
@@ -130,9 +136,10 @@ Touched `lib/store.php`? Also `test_store.py`. Touched the rich-text editor? Als
 — needs Firefox and geckodriver, and leaves processes behind if interrupted
 (`pkill firefox geckodriver`).
 
-Touched the shell, a form, or `admin-forms.js`? Also `test_admin_forms.py` — it drives the editors
-in a browser and then repeats every edit **with JavaScript off**, which is the half that proves the
-asynchronous submission is still only an enhancement. Same browser requirements.
+Touched the shell, a form, a link between screens, `admin-forms.js`, `admin-swap.js` or
+`admin-nav.js`? Also `test_admin_forms.py` — it drives the editors in a browser, moves between
+screens, and then repeats every edit and every move **with JavaScript off**, which is the half that
+proves all of it is still only an enhancement. Same browser requirements.
 
 Touched CSS, an admin screen or anything a keyboard reaches? Also
 `python3 tools/check_admin_a11y.py` — the focus ring, 320px, dark mode and hover across all nine

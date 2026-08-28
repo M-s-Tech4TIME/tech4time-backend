@@ -60,7 +60,7 @@ Needs Firefox and geckodriver. Slower.
 
 ```bash
 python3 tools/test_editor.py           # the toolbar, driven as a person drives it
-python3 tools/test_admin_forms.py     # the editors submit without navigating
+python3 tools/test_admin_forms.py     # nothing in the admin reloads the page
 ```
 
 ```bash
@@ -134,7 +134,7 @@ runs against a copy of the real data files, restored afterwards whether the run 
 | Script | Proves |
 |---|---|
 | `test_editor.py` | the rich-text editor driven as a person drives it, including a real sign-in: the toolbar, the selection, and that alignment is a class and never an inline style |
-| `test_admin_forms.py` | that every form in the shell carries `data-async`, and that adding, moving, removing and saving each leave the page where it was and the focus where it is wanted — then the same edits with **JavaScript switched off**, which is the half that proves the enhancement is still only an enhancement |
+| `test_admin_forms.py` | that nothing in the admin throws the document away. Every form carries `data-async` and every link is one `admin-swap.js` will answer; adding, moving, removing and saving each leave the page where it was and the focus where it is wanted; following a rail item changes the bar, the tab, the address and `aria-current` while leaving the rail element itself standing; Back and Forward work. Then the same edits **and the same moves** with **JavaScript switched off** — including the one measurement only that browser can make, that the server draws a narrow rail on its own, which is what stopped the rail flashing open and shut on every load |
 | `check_hover.py` | every interactive element visibly responds to a real pointer |
 | `check_dark_mode.py` | every page in both themes, as painted — catching what a CSS reader cannot, like a token that resolves to the same colour as its background |
 | `check_responsive.py` | every page at 320, 360, 414, 640, 768, 1024 and 1440px: the document does not scroll sideways, no link, button or field is wider than the screen, and no tap target is under 24px. Each width is a frame, not a window — see *0015* (in tech4time-website-frontend), because Firefox silently clamps a window at about 500px and a check written the obvious way reports widths it never tested |

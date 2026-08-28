@@ -93,6 +93,11 @@ const ADMIN_PAGE_SECTIONS = ['careers', 'contact', 'company'];
 /* The marker admin_form_tail() writes and admin_form_truncated() looks for. */
 const ADMIN_TAIL_FIELD = '__tail';
 
+/* Where the rail's width is remembered. Written by admin-nav.js, read by
+   admin_rail_state(), and named in both places — change one and change the
+   other. */
+const ADMIN_RAIL_COOKIE = 't4t_rail';
+
 /* Symbols inlined into every admin page: the rail, the controls, and every
    icon the contact and company editors offer, since both render a live
    preview of them. */
@@ -760,6 +765,27 @@ function admin_graphemes(string $word, int $n): string
 }
 
 /**
+ * How wide the rail should be drawn: 'wide' or 'narrow'.
+ *
+ * WHY THE SERVER KNOWS THIS AT ALL. It was a localStorage value applied by
+ * admin-nav.js, which is deferred — so the browser parsed and painted a rail
+ * at its full width and then, a frame or two later, snapped it shut. Every
+ * load, on every screen, visibly.
+ *
+ * A cookie arrives with the request, so the attribute is written before the
+ * rail is, and the first frame is already the right shape. That is the only
+ * reason this is a cookie: it is a width, it is not a secret, and nothing in
+ * the application branches on it.
+ *
+ * Anything that is not one of the two names is the wide rail — the labelled
+ * one, which is what somebody who has never pressed the button should get.
+ */
+function admin_rail_state(): string
+{
+    return ($_COOKIE[ADMIN_RAIL_COOKIE] ?? '') === 'narrow' ? 'narrow' : 'wide';
+}
+
+/**
  * The current section's table of contents, remembered between the two halves
  * of the shell.
  *
@@ -818,11 +844,13 @@ function admin_head(string $section, string $user, string $lede = '',
 
   <?php /* The rail. Its default state is the wide one, so it is fully
            labelled with no JavaScript at all; admin-nav.js adds the button
-           that narrows it to icons and remembers the choice. Below 60em the
-           CSS turns it into a strip across the top instead — a fixed column
-           down the side of a phone leaves no room for the thing being
-           edited. */ ?>
-  <aside class="rail" data-rail id="admin-rail">
+           that narrows it to icons and writes the cookie admin_rail_state()
+           reads back. The width is decided HERE, before a byte of the rail is
+           sent, which is what stops it being drawn wide and then snapped shut
+           a frame later. Below 60em the CSS turns it into a strip across the
+           top instead — a fixed column down the side of a phone leaves no
+           room for the thing being edited. */ ?>
+  <aside class="rail" data-rail="<?= h(admin_rail_state()) ?>" id="admin-rail">
     <?php /* THE BRAND AND THE CONTROL THAT NARROWS THE RAIL SHARE THIS ROW.
 
              The control used to live in the bar across the top, on the
@@ -946,7 +974,14 @@ function admin_head(string $section, string $user, string $lede = '',
     </div>
   </aside>
 
-  <div class="admin-shell__body">
+  <?php /* EVERYTHING THAT CHANGES BETWEEN SCREENS, AND NOTHING THAT DOES NOT.
+
+           admin-swap.js replaces this element's contents when a link in the
+           rail is followed, so the rail itself — its width, its open account
+           menu, its own scroll position — survives the move. The id is the
+           whole of that contract: rename it here and navigation quietly goes
+           back to being a full page load. */ ?>
+  <div class="admin-shell__body" id="admin-body">
     <?php /* THE BAR IS TWO ROWS: WHAT THIS IS, AND WHAT YOU CAN DO TO IT.
 
              It was one row, and the line explaining what the section edits had
@@ -1001,8 +1036,19 @@ function admin_head(string $section, string $user, string $lede = '',
                  works with JavaScript off, and admin-forms.js does not have to
                  know that the button is not inside the form it submits. */ ?>
         <div class="admin-bar__actions">
-<?php if ($save): ?>
+          <?php /* WHERE EVERY SCREEN SAYS WHAT IT IS DOING, and it is outside
+                   the test below on purpose. It used to be rendered only for a
+                   section that has a Save button, which is three of the five —
+                   so on the overview, on careers and on the account page, a
+                   fetch that was slow said nothing and a fetch that FAILED
+                   said nothing either. Somebody changing their password over a
+                   dropped connection was shown the form they had just filled
+                   in, unchanged, with no indication that it had not been sent.
+
+                   It is empty, and .admin__status:empty is display:none, so it
+                   costs a screen nothing until there is something to say. */ ?>
           <p class="admin__status" data-form-status role="status" aria-live="polite"></p>
+<?php if ($save): ?>
 <?php if (!empty($save['discard'])): ?>
           <a class="btn btn--ghost" href="<?= h($save['discard']) ?>">Discard</a>
 <?php endif; ?>
@@ -1033,7 +1079,14 @@ function admin_head(string $section, string $user, string $lede = '',
 <?php endif; ?>
     </header>
 
-    <main class="admin" id="admin-main">
+    <?php /* tabindex="-1" so it can be FOCUSED without being TABBED TO. Two
+             things land here: the skip link at the top of the document, which
+             in Firefox and Safari moves the caret but not the focus without
+             this, and admin-swap.js after it has swapped a screen in. Landing
+             on <main> rather than on the heading is what makes the next Tab
+             the first control of the new screen rather than wherever the rail
+             had got to. */ ?>
+    <main class="admin" id="admin-main" tabindex="-1">
       <div class="admin__inner<?= $outline ? ' admin__inner--outlined' : '' ?>">
         <div class="admin__col">
 <?php
@@ -1210,6 +1263,7 @@ function admin_foot(string $note = ''): void
 <script src="<?= h(admin_asset('/assets/js/theme-toggle.js')) ?>" defer></script>
 <script src="<?= h(admin_asset('/assets/js/admin-nav.js')) ?>" defer></script>
 <script src="<?= h(admin_asset('/assets/js/editor.js')) ?>" defer></script>
+<script src="<?= h(admin_asset('/assets/js/admin-swap.js')) ?>" defer></script>
 <script src="<?= h(admin_asset('/assets/js/admin-forms.js')) ?>" defer></script>
 <script src="<?= h(admin_asset('/assets/js/admin-init.js')) ?>" defer></script>
 </body>

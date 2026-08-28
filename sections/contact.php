@@ -297,7 +297,7 @@ function contact_take_uploads(array $data, array &$errors): array
 
 $inStep = contact_footer_in_step($data);
 
-/* The rail's table of contents for this page — see COMPANY_OUTLINE. */
+/* The "On this page" column beside this editor — see COMPANY_OUTLINE. */
 const CONTACT_OUTLINE = [
     'band-hero'    => 'The banner',
     'band-form'    => 'The enquiry form',
