@@ -635,6 +635,106 @@ def walk_reflow(b: Browser, base: str, screens, r: Results) -> None:
               f"  (measured {got}px)")
 
 
+# --------------------------------------------------------------- spacing
+
+MIN_FIELD_GAP = 6        # between a label, its control, and its hint
+MIN_STACK_GAP = 12       # between two things stacked in a band or a card
+
+SPACING = r"""
+/* The vertical rhythm of the forms, measured rather than eyeballed.
+
+   Four pixels between a bold label and the box it names reads as one
+   undifferentiated stripe -- label, control and hint all touching equally --
+   and a band whose last control is a single full-width field ran into the
+   first row card under it at exactly 0px. Both were reported, from
+   screenshots, by somebody using it. Neither is visible in a diff and neither
+   is something a stylesheet can be asked about: the gaps come from four
+   different rules interacting, so the only honest way to know is to measure
+   the boxes.
+
+   FLOATS ARE SKIPPED. A <legend> is floated -- see .admin__block >
+   .admin__section-title -- so the element after it overlaps it by design and
+   measures as a large negative gap. That is not a spacing fault; it is the
+   only way to stop a legend cutting a notch in its own fieldset's border. */
+function boxes(parent) {
+  return Array.prototype.filter.call(parent.children, function (e) {
+    var r = e.getBoundingClientRect();
+    if (r.height === 0 || r.width === 0) return false;
+    var cs = getComputedStyle(e);
+    return cs.display !== 'none' && cs.float === 'none' && cs.position === 'static';
+  });
+}
+
+/* ONLY THINGS THAT ARE ACTUALLY STACKED. .admin__grid puts two fields side by
+   side, and DOM order says nothing about which of those is "above" the other:
+   measuring top-minus-bottom across a grid ROW gives a large negative number
+   and reads as a catastrophic overlap. The first run of this check reported
+   -102px on the company editor and -73px on contact, both of them two fields
+   sitting happily beside each other.
+
+   So a pair is only compared when their horizontal ranges overlap -- same
+   column -- and the second one starts at or below the first. Everything else
+   is a row, and a row's spacing is the grid's column-gap, not this. */
+function tight(parent, floor, out, where) {
+  var kids = boxes(parent);
+  for (var i = 0; i < kids.length - 1; i++) {
+    var a = kids[i].getBoundingClientRect();
+    var b = kids[i + 1].getBoundingClientRect();
+
+    var sameColumn = Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0;
+    if (!sameColumn || b.top < a.bottom) continue;
+
+    var gap = Math.round(b.top - a.bottom);
+    if (gap < floor) {
+      out.push(where + ': ' + (kids[i].className || kids[i].tagName) + ' -> '
+             + (kids[i + 1].className || kids[i + 1].tagName)
+             + ' = ' + gap + 'px (needs ' + floor + ')');
+    }
+  }
+}
+
+var found = [];
+document.querySelectorAll('.admin__field').forEach(function (f) {
+  tight(f, FIELD, found, 'inside a field');
+});
+document.querySelectorAll('.admin__block, .admin-card, .admin__grid').forEach(function (b) {
+  tight(b, STACK, found, 'stacked');
+});
+
+/* One of each shape is enough to act on; a hundred lines of the same fault is
+   not more information. */
+var seen = {}, unique = [];
+found.forEach(function (line) {
+  var shape = line.replace(/= -?\d+px/, '');
+  if (!seen[shape]) { seen[shape] = true; unique.push(line); }
+});
+return unique;
+""".replace("FIELD", str(MIN_FIELD_GAP)).replace("STACK", str(MIN_STACK_GAP))
+
+
+def check_spacing(b: Browser, base: str, screens, r: Results) -> None:
+    """Nothing in a form touches the thing above it.
+
+    The forms are the admin. Every fault this looks for is one somebody
+    reported from a screenshot -- a label four pixels off its own control, a
+    field flush against the card beneath it -- and every one of them came from
+    a rule that was correct on the page it was written for and had nothing to
+    say about the page it was reused on. One stylesheet, so one measurement.
+    """
+    b.size(1200)
+
+    for screen in screens:
+        b.go(base + screen)
+        found = b.js(SPACING) or []
+
+        r.check(f"{screen}: nothing in the form is touching",
+                not found,
+                "; ".join(found[:6]))
+
+        print(f"  {'ok  ' if not found else 'FAIL'}  {screen}"
+              f"  ({len(found)} tight)")
+
+
 def walk_dark(b: Browser, base: str, screens, r: Results) -> None:
     b.size(1200)
     b.go(base + "/login.php")
@@ -878,6 +978,9 @@ def run(b: Browser, base: str, secret: str, r: Results) -> None:
 
     r.section("the sticky bars")
     check_bars(b, base, SIGNED_IN_SCREENS, r)
+
+    r.section("spacing")
+    check_spacing(b, base, SIGNED_IN_SCREENS, r)
 
     r.section("hover")
     walk_hover(b, base, SIGNED_IN_SCREENS, r)

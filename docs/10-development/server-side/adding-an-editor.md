@@ -123,6 +123,12 @@ its own data, because the only way to learn a band existed was to scroll to it.
 It spent one release nested inside the rail, under the current section, which is the wrong column —
 the rail is a list of places to go and this is a map of where you already are.
 
+**Spacing is not yours to choose.** `admin.css` sets one rhythm for every form in the admin —
+0.5rem inside a field (label, control, hint), 1.5rem between fields, 2rem between a field and the
+next block — and `check_admin_a11y.py` measures it on every screen and fails on anything tighter. Use
+`.admin__field`, `.admin__grid`, `.admin__block` and `.admin-card` and you get it; a margin of your
+own is how one page ends up spaced differently from the next.
+
 **There is no row head to write either.** `admin_card_head()` in `lib/admin.php` draws it — the
 row's number, a one-line preview of what is in it, a Shown/Hidden pill, and the move and remove
 controls at the right end of the line:
