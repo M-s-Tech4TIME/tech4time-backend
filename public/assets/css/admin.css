@@ -777,6 +777,33 @@
   border-radius: var(--radius);
 }
 
+/* A file input is not a text field, whatever the class it shares says. It
+   draws its own button, and the padding and line-height that make an <input
+   type="text"> the right height make this one too tall and clip the button on
+   Firefox. So it takes the border, the radius and the colours and nothing
+   else. */
+.admin__file {
+  padding: var(--space-2xs);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.admin__file::file-selector-button {
+  margin-inline-end: var(--space-xs);
+  padding: var(--space-3xs) var(--space-xs);
+  font: inherit;
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.admin__file:hover::file-selector-button {
+  border-color: var(--silver-accent-mid);
+}
+
 /* A hidden row is kept, not deleted, so it has to look kept — present and
    plainly switched off. Opacity alone would say "disabled"; the dashed edge
    says "this one is not on the page". Not display:none, obviously: you cannot

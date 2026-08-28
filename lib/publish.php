@@ -282,6 +282,117 @@ function publish_check_envelope(mixed $envelope): string
     return '';
 }
 
+/* ==========================================================================
+   Assets — the second thing that travels this road
+   ========================================================================== */
+
+/**
+ * WHY PICTURES DO NOT GO IN THE DOCUMENT.
+ *
+ * The content channel is one signed JSON POST capped at PUBLISH_MAX_BYTES.
+ * Sixty logos base64'd into it would blow that cap several times over, and
+ * would re-send every picture on every save of a single word. So an asset
+ * travels on its own: same key, same fingerprint, same timestamp window, same
+ * refusal vocabulary — a different endpoint and a body that is bytes.
+ *
+ * See docs/90-decisions/0019-uploaded-images-travel-their-own-channel.md.
+ *
+ * THE NAME IS COMPUTED, NEVER SENT. Both sides derive it from the bytes, so
+ * the sender's idea of what a file is called never reaches a filesystem call.
+ * A name that cannot be influenced cannot carry a traversal, an extension the
+ * server will execute, or a collision with somebody else's picture.
+ */
+
+/** After re-encoding, a picture this site will publish is smaller than this. */
+const PUBLISH_ASSET_MAX_BYTES = 2097152;
+
+/**
+ * The three formats that may cross the wire, and the extension each is given.
+ *
+ * Raster only, and no SVG. An SVG is a document: it can carry script, external
+ * references and entities, and no amount of re-encoding makes it not a
+ * document. GIF and BMP are absent because nothing needs them, and a format
+ * nobody uses is an attack surface nobody watches.
+ */
+const PUBLISH_ASSET_TYPES = [
+    IMAGETYPE_WEBP => ['webp', 'image/webp'],
+    IMAGETYPE_JPEG => ['jpg',  'image/jpeg'],
+    IMAGETYPE_PNG  => ['png',  'image/png'],
+];
+
+/**
+ * The largest picture this site will publish, per side and in total.
+ *
+ * The per-side bound is not tidiness. getimagesizefromstring() reads the
+ * header and stops -- it does not decode -- so eight bytes of PNG signature
+ * followed by anything at all is reported as a PNG, with whatever the next
+ * four bytes happen to spell as its width. A file like that was accepted here
+ * and stored with a width of 1937007981, which would have gone into the
+ * document and out as <img width="1937007981">.
+ *
+ * The total bound is the other half of the same idea: a picture declaring
+ * 60000x60000 is eleven bytes on the wire and three and a half gigabytes to
+ * anything that tries to decode it.
+ *
+ * Both are far above anything real. The backend reduces to 1600 on its longest
+ * side before sending, so nothing legitimate comes close.
+ */
+const PUBLISH_ASSET_MAX_SIDE = 10000;
+const PUBLISH_ASSET_MAX_PIXELS = 40000000;
+
+/**
+ * What these bytes actually are, or null if they are not a picture we publish.
+ *
+ * Decided from the CONTENT — getimagesizefromstring() reads the header — and
+ * never from a filename, an extension or a Content-Type. Those are all things
+ * the sender chose.
+ *
+ * @return array{0:string,1:string,2:int,3:int}|null  ext, mime, width, height
+ */
+function publish_asset_type(string $bytes): ?array
+{
+    $size = @getimagesizefromstring($bytes);
+
+    if ($size === false || !isset(PUBLISH_ASSET_TYPES[$size[2]])) {
+        return null;
+    }
+    $width  = (int)$size[0];
+    $height = (int)$size[1];
+
+    if ($width <= 0 || $height <= 0
+            || $width > PUBLISH_ASSET_MAX_SIDE || $height > PUBLISH_ASSET_MAX_SIDE
+            || $width * $height > PUBLISH_ASSET_MAX_PIXELS) {
+        return null;
+    }
+
+    [$ext, $mime] = PUBLISH_ASSET_TYPES[$size[2]];
+
+    return [$ext, $mime, $width, $height];
+}
+
+/**
+ * The name these bytes get, on either host.
+ *
+ * Content-addressed: the same picture uploaded twice is one file, and two
+ * people uploading at once cannot land on the same name with different
+ * contents. Sixteen hex characters of SHA-256 — 64 bits, which for a few
+ * hundred pictures is not a collision anybody will see.
+ *
+ * The shape is also the .htaccess allow-list on both hosts: sixteen hex
+ * characters, a dot, and one of three extensions. Nothing else under
+ * /uploads/ is served at all.
+ */
+function publish_asset_name(string $bytes, string $ext): string
+{
+    return substr(hash('sha256', $bytes), 0, 16) . '.' . $ext;
+}
+
+/** Whether a name is one this scheme could have produced. */
+function publish_asset_name_valid(string $name): bool
+{
+    return preg_match('/^[0-9a-f]{16}\.(webp|jpg|png)$/', $name) === 1;
+}
+
 /**
  * What each code means, for a person.
  *
@@ -313,6 +424,12 @@ const PUBLISH_REASONS = [
     'write-failed'          => 'The live site could not write the file. Check that its '
                              . 'content directory is writable.',
     'not-configured'        => 'Publishing is not set up on the live site.',
+    'not-an-image'          => 'That file is not a picture the live site will accept. '
+                             . 'JPEG, PNG and WebP only.',
+    'asset-too-large'       => 'The picture was larger than the endpoint will accept, '
+                             . 'even after being re-encoded.',
+    'asset-write-failed'    => 'The live site could not save the picture. Check that its '
+                             . 'uploads directory is writable.',
 ];
 
 function publish_reason(string $code): string

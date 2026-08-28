@@ -89,6 +89,9 @@ const ADMIN_SECTIONS = [
  */
 const ADMIN_PAGE_SECTIONS = ['careers', 'contact', 'company'];
 
+/* The marker admin_form_tail() writes and admin_form_truncated() looks for. */
+const ADMIN_TAIL_FIELD = '__tail';
+
 /* Symbols inlined into every admin page: the rail, the controls, and every
    icon the contact and company editors offer, since both render a live
    preview of them. */
@@ -254,6 +257,49 @@ function admin_refuse(string $problem): never
        . '</div></div></main></body></html>';
 
     exit;
+}
+
+/* --------------------------------------------------------- truncated forms */
+
+/**
+ * The last control in a long form, and the check that it arrived.
+ *
+ * PHP stops parsing a request body after max_input_vars fields and DOES NOT
+ * SAY SO to the script — it drops the rest and carries on. For a form the size
+ * of the company profile that is a real limit rather than a theoretical one:
+ * it posts around five hundred and fifty fields today, against a default of a
+ * thousand, and every row added moves it closer.
+ *
+ * What makes it dangerous is the shape of the failure. The editor would rebuild
+ * the document from a truncated $_POST, decide the missing rows had been
+ * removed, save that, publish it, and report success. Somebody would find out
+ * when a client noticed their logo was gone.
+ *
+ * So the last thing every long form renders is this marker. Truncation always
+ * drops the tail, so its absence is exactly the condition — no counting, no
+ * guessing at what should have arrived, and nothing to keep in step.
+ */
+function admin_form_tail(): string
+{
+    return '<input type="hidden" name="' . ADMIN_TAIL_FIELD . '" value="1">';
+}
+
+/** Whether this POST was cut short before the form ended. */
+function admin_form_truncated(): bool
+{
+    return ($_POST[ADMIN_TAIL_FIELD] ?? '') !== '1';
+}
+
+/** What to tell somebody whose save was refused for that reason. */
+function admin_truncated_message(): string
+{
+    return 'This page is too big for the server to accept in one go: it sent '
+         . 'more fields than PHP\'s max_input_vars setting allows, so the end of '
+         . 'the form was silently dropped. NOTHING HAS BEEN SAVED, which is the '
+         . 'right outcome — saving would have deleted whatever came after the '
+         . 'cut. Remove some entries, or ask whoever runs the server to raise '
+         . 'max_input_vars (it is currently ' . (int)ini_get('max_input_vars')
+         . ').';
 }
 
 /* ------------------------------------------------------------------- CSRF */

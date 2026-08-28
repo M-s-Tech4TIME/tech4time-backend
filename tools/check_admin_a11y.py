@@ -21,7 +21,7 @@ the sign-in, which is the half nobody has ever looked at.
 
 WHY ONE FILE AND NOT FOUR
 Over there, four files is right: sixteen public pages, and each tool carries a
-lot of crawl machinery for its own question. Here there are eight screens. Four
+lot of crawl machinery for its own question. Here there are nine screens. Four
 copies of "start PHP, start geckodriver, sign in, walk the screens" would be
 four copies of the sign-in -- and the sign-in is the part most likely to need
 changing, because it is the part that depends on the login page's markup.
@@ -99,7 +99,8 @@ MAX_TABS = 60
 # reset.php is three screens that were rebuilt recently.
 PUBLIC_SCREENS = ["/login.php", "/forgot.php", "/reset.php"]
 
-SIGNED_IN_SCREENS = ["/", "/?s=careers", "/?s=contact", "/?s=account"]
+SIGNED_IN_SCREENS = ["/", "/?s=careers", "/?s=contact", "/?s=company",
+                     "/?s=account"]
 
 MIN_TARGET = 24          # SC 2.5.8, CSS pixels
 

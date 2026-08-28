@@ -9,6 +9,9 @@ Belongs to the BACKEND.
     python3 ~/reconcile.py ~/admin.tech4time.bd    # uploaded, on the host
     python3 tools/reconcile.py careers             # one document
 
+A full run also re-sends any uploaded picture the live site is missing. Content
+and pictures travel separately (ADR 0019), so they go missing separately.
+
 IT MUST RUN ON PYTHON 3.9
 That is what the cPanel host has, and this is the only tool here that runs
 there rather than on a development machine. Nothing in it may use syntax newer
@@ -204,6 +207,65 @@ def reconcile(document: str) -> bool:
     return False
 
 
+ASSET_PROBE = """
+require 'lib/company.php';
+require 'lib/upload.php';
+
+$sent = 0; $held = 0; $failed = [];
+
+foreach (upload_held() as $name) {
+    $bytes = file_get_contents(UPLOAD_DIR . '/' . $name);
+    if ($bytes === false) { $failed[$name] = 'could not be read on this host'; continue; }
+
+    $kind = publish_asset_type($bytes);
+    if ($kind === null) { $failed[$name] = 'is not a picture this site publishes'; continue; }
+
+    $r = publish_asset($bytes, $kind[1]);
+    if (($r['ok'] ?? false) !== true) { $failed[$name] = (string)($r['error'] ?? 'refused'); continue; }
+
+    if ($r['held'] ?? false) { $held++; } else { $sent++; }
+}
+
+echo json_encode(['sent' => $sent, 'held' => $held, 'failed' => $failed]);
+"""
+
+
+def reconcile_assets() -> bool:
+    """Send every stored picture the live site does not already hold.
+
+    Content and pictures travel separately (ADR 0019), so they can go missing
+    separately: a publish that failed halfway leaves the document naming a file
+    the other host has not got, and the page draws a broken image with no
+    warning anywhere. This is the repair for that half.
+
+    Safe to run whenever. An asset is content-addressed, so re-sending one the
+    live site already has is answered 'held' and writes nothing — there is no
+    revision to roll back and nothing a replay could undo.
+    """
+    out = subprocess.run(["php", "-r", ASSET_PROBE],
+                         cwd=str(ROOT), capture_output=True, text=True)
+    try:
+        answer = json.loads(out.stdout.strip())
+    except ValueError:
+        print("  FAIL  pictures: could not run the push\n"
+              "          " + (out.stderr or out.stdout)[:300].strip())
+        return False
+
+    sent, held, failed = answer["sent"], answer["held"], answer["failed"]
+
+    if failed:
+        for name, why in failed.items():
+            print("  FAIL  " + name + ": " + why)
+        return False
+
+    if sent:
+        print("  sent  pictures: the live site was missing " + str(sent)
+              + " of " + str(sent + held))
+    else:
+        print("  ok    pictures: all " + str(held) + " are already there")
+    return True
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -232,6 +294,11 @@ def main() -> None:
     print(f"{endpoint()}\n")
 
     ok = all([reconcile(d) for d in wanted])
+
+    # Only on a full run: asking for one document is asking about that
+    # document, and walking every picture would be a surprise.
+    if not args.document:
+        ok = reconcile_assets() and ok
 
     print("\nBoth halves agree." if ok else
           "\nSomething is out of step. Read the lines above before forcing anything.")

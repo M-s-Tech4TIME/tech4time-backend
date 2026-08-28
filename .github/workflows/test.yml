@@ -83,11 +83,28 @@ jobs:
       # would check the two halves against each other rather than against the
       # format they both implement.
       - run: php -v | head -1
+
+      # The host has GD; ubuntu-24.04's php-cli does not. lib/upload.php is the
+      # only code in either repository that takes a file from somebody's
+      # computer and puts it on a web server, and the thing that makes it safe
+      # is that it DECODES and RE-ENCODES rather than inspecting and approving.
+      # Without GD, tools/test_upload.py skips exactly the cases that prove it —
+      # so it is installed here rather than left to skip in the one place a
+      # regression would be caught.
+      - name: php-gd, so the uploader is actually tested
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq php-gd
+          php -r 'exit(extension_loaded("gd") ? 0 : 1);' \
+            || { echo "php-gd did not load"; exit 1; }
+
       - run: python3 tools/test_store.py
+      - run: python3 tools/test_upload.py
       - run: python3 tools/test_admin_auth.py
       - run: python3 tools/test_publish_client.py
       - run: python3 tools/test_careers_admin.py
       - run: python3 tools/test_contact_admin.py
+      - run: python3 tools/test_company_admin.py
 
   browser:
     name: firefox

@@ -104,6 +104,7 @@ jobs:
         run: |
           cat > /tmp/protect.rules <<'RULES'
           P /content/
+          P /public/uploads/
           P /.well-known/
           P /public/.well-known/
           P /cgi-bin/

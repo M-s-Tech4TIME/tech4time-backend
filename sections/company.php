@@ -36,6 +36,7 @@ if (!defined('T4T_ADMIN')) {
 }
 
 require_once __DIR__ . '/../lib/company.php';
+require_once __DIR__ . '/../lib/upload.php';
 
 /* ---------------------------------------------------------------- reading */
 
@@ -166,8 +167,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             : '');
     }
 
-    $do = (string)($_POST['do'] ?? 'save');
-    $posted = company_from_post($data);
+    /* Before anything is read out of $_POST, because everything read out of a
+       truncated $_POST is a lie by omission — see admin_form_truncated(). */
+    if (admin_form_truncated()) {
+        $errors[] = admin_truncated_message();
+        $do = 'nothing';
+        $posted = $data;
+    } else {
+        $do = (string)($_POST['do'] ?? 'save');
+        $posted = company_from_post($data);
+        $posted = company_take_uploads($posted, $errors);
+    }
 
     if ($do === 'save') {
         $errors = company_validate($posted);
@@ -180,11 +190,135 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         /* Redraw with what was typed rather than throwing it away. */
         $data = $posted;
-    } else {
+    } elseif ($do === 'sweep-uploads') {
+        $gone = 0;
+        foreach (upload_unused(company_images($posted)) as $name) {
+            $gone += upload_delete($name) ? 1 : 0;
+        }
+        $data = $posted;
+        $pending = $gone === 1
+            ? 'Deleted one picture nothing was using.'
+            : "Deleted $gone pictures nothing was using.";
+    } elseif ($do !== 'nothing') {
         $applied = company_apply_row_action($posted, $do);
         $data = $applied[0] ?? $posted;
         $pending = $applied[1] ?? '';
     }
+}
+
+/**
+ * Take whatever pictures were attached, and put each on the row it belongs to.
+ *
+ * Runs on EVERY submit, not only a save. The row buttons submit the form
+ * without saving, so a picture chosen and then followed by "move up" would
+ * otherwise be dropped on the floor — and the file input would come back
+ * empty, with nothing to say why.
+ *
+ * A picture is stored here and sent to the live site immediately, rather than
+ * at save time. Two reasons: the operator finds out at once if the channel is
+ * broken, while they still know what they were doing; and a save that carried
+ * sixty pictures would re-send every one of them for a one-word edit.
+ *
+ * An orphan is possible — a picture uploaded and the save then abandoned — and
+ * is the right trade. It costs disk; the other order costs an edit.
+ */
+function company_take_uploads(array $data, array &$errors): array
+{
+    foreach (company_uploaded_files() as [$band, $index, $file]) {
+        if (!isset(COMPANY_LISTS[$band]) || !isset($data[$band]['items'][$index])) {
+            continue;
+        }
+
+        $stored = upload_accept($file);
+
+        if (isset($stored['error'])) {
+            $errors[] = 'Row ' . ($index + 1) . ' of '
+                      . ADMIN_SECTIONS['company']['label'] . ': ' . $stored['error'];
+            continue;
+        }
+
+        $sent = company_send_picture($stored);
+        if ($sent !== '') {
+            $errors[] = 'Row ' . ($index + 1) . ': ' . $sent;
+            continue;
+        }
+
+        $data[$band]['items'][$index]['image'] = company_image_defaults($stored);
+    }
+
+    return $data;
+}
+
+/**
+ * $_FILES, flattened.
+ *
+ * PHP turns upload[clients][3] inside out: rather than one entry per file it
+ * gives $_FILES['upload']['name']['clients'][3] and four more arrays shaped
+ * the same way. This puts each file back together.
+ *
+ * @return list<array{0:string,1:int,2:array}>  band, row index, one $_FILES entry
+ */
+function company_uploaded_files(): array
+{
+    $found = [];
+    $upload = $_FILES['upload'] ?? null;
+
+    if (!is_array($upload) || !isset($upload['name']) || !is_array($upload['name'])) {
+        return $found;
+    }
+
+    foreach ($upload['name'] as $band => $rows) {
+        if (!is_array($rows)) {
+            continue;
+        }
+        foreach (array_keys($rows) as $index) {
+            $file = [];
+            foreach (['name', 'type', 'tmp_name', 'error', 'size'] as $key) {
+                $file[$key] = $upload[$key][$band][$index] ?? null;
+            }
+            /* An untouched file input still posts, with error NO_FILE. */
+            if ((int)($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $found[] = [(string)$band, (int)$index, $file];
+        }
+    }
+
+    return $found;
+}
+
+/**
+ * Send a stored picture and its WebP sibling to the live site.
+ *
+ * Returns '' or a sentence. Both files go, because the page names both and a
+ * <source> pointing at a picture the other host does not have is a broken
+ * image for everybody whose browser prefers WebP — which is nearly everybody.
+ */
+function company_send_picture(array $stored): string
+{
+    foreach (['src', 'webp'] as $which) {
+        $name = basename((string)($stored[$which] ?? ''));
+        if ($name === '') {
+            continue;
+        }
+
+        $path = UPLOAD_DIR . '/' . $name;
+        $bytes = @file_get_contents($path);
+
+        if ($bytes === false) {
+            return 'The picture was not where it had just been written.';
+        }
+
+        $kind = publish_asset_type($bytes);
+        $result = publish_asset($bytes, $kind[1] ?? 'application/octet-stream');
+
+        if (($result['ok'] ?? false) !== true) {
+            return 'Saved here, but the live site did not take the picture: '
+                 . (string)($result['error'] ?? 'it refused.');
+        }
+    }
+
+    return '';
 }
 
 /**
@@ -288,6 +422,20 @@ function company_status_field(string $name, string $status, string $noun): void
     <?php
 }
 
+/**
+ * Where the editor fetches a row's picture from.
+ *
+ * An upload is served from this host: public/uploads/ holds the canonical copy
+ * (ADR 0010), so the preview is right even when the publish has not happened
+ * or has failed. Artwork that ships with the site exists only on the other
+ * host, and is fetched from there — which is the one thing public/.htaccess
+ * widens img-src for.
+ */
+function company_preview_src(string $path): string
+{
+    return str_starts_with($path, UPLOAD_URL_ROOT) ? $path : public_url($path);
+}
+
 /** The picture a row holds, shown as it is, with its fields carried across. */
 function company_image_fields(string $band, int $i, array $image): void
 {
@@ -295,7 +443,11 @@ function company_image_fields(string $band, int $i, array $image): void
     ?>
         <div class="admin-card__media">
 <?php if ($image['src'] !== ''): ?>
-          <img class="admin-card__thumb" src="<?= h(public_url($image['src'])) ?>"
+          <?php /* An uploaded picture is served from THIS host, which holds the
+                   canonical copy — the preview must not depend on a publish
+                   having succeeded. Everything else is artwork that ships with
+                   the site and exists only there. */ ?>
+          <img class="admin-card__thumb" src="<?= h(company_preview_src($image['src'])) ?>"
                alt="" width="<?= (int)$image['width'] ?>" height="<?= (int)$image['height'] ?>"
                loading="lazy" decoding="async">
           <p class="admin__fineprint">
@@ -319,6 +471,28 @@ function company_image_fields(string $band, int $i, array $image): void
         <input type="hidden" name="<?= h($field) ?>[webp]" value="<?= h($image['webp']) ?>">
         <input type="hidden" name="<?= h($field) ?>[width]" value="<?= (int)$image['width'] ?>">
         <input type="hidden" name="<?= h($field) ?>[height]" value="<?= (int)$image['height'] ?>">
+
+<?php $problem = upload_problem(); ?>
+<?php if ($problem !== ''): ?>
+        <p class="admin__hint"><?= admin_icon('info-circle', 'icon icon--sm') ?>
+           <?= h($problem) ?></p>
+<?php else: ?>
+        <label class="admin__field admin__field--wide">
+          <span class="admin__label">
+            <?= $image['src'] === '' ? 'Choose a picture' : 'Replace it' ?>
+          </span>
+          <input class="admin__input admin__file" type="file"
+                 name="upload[<?= h($band) ?>][<?= $i ?>]"
+                 accept="image/jpeg,image/png,image/webp">
+          <span class="admin__hint">
+            JPEG, PNG or WebP, up to <?= (int)(UPLOAD_MAX_BYTES / 1048576) ?> MB.
+            It is re-encoded here — which is what removes the location and the
+            camera details a photograph carries — reduced to
+            <?= UPLOAD_MAX_DIMENSION ?> pixels on its longest side, given a WebP
+            version, and sent to the live site straight away.
+          </span>
+        </label>
+<?php endif; ?>
     <?php
 }
 
@@ -359,7 +533,10 @@ if (!$errors && $pending !== '') {
 }
 ?>
 
-<form class="admin__form" method="post" action="<?= h(admin_url('company')) ?>">
+<?php /* multipart, because this form carries pictures. Everything else about
+         it is an ordinary POST. */ ?>
+<form class="admin__form" method="post" enctype="multipart/form-data"
+      action="<?= h(admin_url('company')) ?>">
   <?= admin_form_fields('company') ?>
 
   <?php /* Pressing Enter in a text field submits the form using the first
@@ -783,6 +960,38 @@ if (!$errors && $pending !== '') {
     </div>
   </fieldset>
 
+  <!-- ========================== stored pictures ========================== -->
+<?php $unused = upload_problem() === '' ? upload_unused(company_images($data)) : []; ?>
+  <fieldset class="admin__block">
+    <legend class="admin__section-title">Stored pictures</legend>
+    <p class="admin__blurb">
+      Every picture uploaded through this page is kept here, named after its own
+      contents. Uploading the same one twice stores it once.
+    </p>
+
+<?php if (upload_problem() !== ''): ?>
+    <p class="admin__hint"><?= h(upload_problem()) ?></p>
+<?php elseif (!$unused): ?>
+    <p class="admin__hint">
+      <?= count(upload_held()) ?> stored, and every one of them is in use.
+    </p>
+<?php else: ?>
+    <p class="admin__hint">
+      <?= count($unused) ?> of <?= count(upload_held()) ?> are not used by any row
+      above. That is normal just after replacing a picture, and normal while a
+      row you have not saved yet still refers to one.
+    </p>
+    <?php /* Never swept on its own. A count taken from a document somebody is
+             halfway through editing is not a fact, and acting on it would
+             delete the picture belonging to the row they are about to save. */ ?>
+    <div class="admin__actions">
+      <button class="btn btn--ghost" type="submit" name="do" value="sweep-uploads">
+        Delete the <?= count($unused) ?> unused
+      </button>
+    </div>
+<?php endif; ?>
+  </fieldset>
+
   <!-- ============================ search ============================ -->
   <fieldset class="admin__block">
     <legend class="admin__section-title">How it appears elsewhere</legend>
@@ -818,6 +1027,10 @@ if (!$errors && $pending !== '') {
       Save the company profile
     </button>
   </div>
+
+  <?php /* The last control in the form, and the only reason it exists is that
+           its ABSENCE is readable. See admin_form_tail(). */ ?>
+  <?= admin_form_tail() ?>
 </form>
 
 <?php

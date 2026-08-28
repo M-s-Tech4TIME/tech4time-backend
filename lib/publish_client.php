@@ -49,6 +49,11 @@ const PUBLIC_SITE = 'https://tech4time.bd';
 /** Where a document is posted. Overridden more narrowly by $T4T_PUBLISH_URL. */
 const PUBLISH_PATH = '/api/publish.php';
 
+/** Where a picture is posted. Derived from PUBLISH_PATH, never set apart from
+    it: the two endpoints are always deployed together, and a separate override
+    is a way to point them at different hosts by accident. */
+const PUBLISH_ASSET_PATH = '/api/publish-asset.php';
+
 /** Seconds to wait for the connection, and for the whole exchange. */
 const PUBLISH_CONNECT_TIMEOUT = 5;
 const PUBLISH_TIMEOUT = 15;
@@ -72,6 +77,96 @@ function publish_endpoint(): string
     $url = trim((string)(getenv('T4T_PUBLISH_URL') ?: ($_SERVER['T4T_PUBLISH_URL'] ?? '')));
 
     return $url !== '' ? $url : public_url(PUBLISH_PATH);
+}
+
+/**
+ * Where a picture is posted.
+ *
+ * Follows publish_endpoint(), so pointing the content channel at a development
+ * server points this one there too. Doing it by string replacement rather than
+ * by a second environment variable is deliberate: two variables is two chances
+ * to set only one, and a site whose text went to localhost while its pictures
+ * went to production is a bad afternoon.
+ */
+function publish_asset_endpoint(): string
+{
+    $content = publish_endpoint();
+
+    if (str_ends_with($content, PUBLISH_PATH)) {
+        return substr($content, 0, -strlen(PUBLISH_PATH)) . PUBLISH_ASSET_PATH;
+    }
+
+    /* $T4T_PUBLISH_URL was set to something that is not the standard path —
+       a stub in a test, usually. Put the asset path beside it. */
+    return preg_replace('~/[^/]*$~', PUBLISH_ASSET_PATH, $content) ?? $content;
+}
+
+/**
+ * Send one picture. Returns what the editor should show.
+ *
+ *   ['ok' => true,  'asset' => 'a1b2….webp', 'held' => false]
+ *   ['ok' => false, 'code' => 'not-an-image', 'error' => '…']
+ *
+ * The body is the bytes themselves, signed exactly as a document is. There is
+ * no envelope and no revision: a picture is content-addressed, so re-sending
+ * one is a no-op rather than something that could roll anything back, and
+ * there is nothing for a replay to undo.
+ */
+function publish_asset(string $bytes, string $mime): array
+{
+    $problem = publish_problem();
+    if ($problem !== '') {
+        return ['ok' => false, 'code' => 'not-configured', 'error' => $problem];
+    }
+
+    $timestamp = time();
+
+    $headers = [
+        'Content-Type: ' . $mime,
+        PUBLISH_TIMESTAMP_HEADER . ': ' . $timestamp,
+        PUBLISH_SIGNATURE_HEADER . ': ' . publish_sign($bytes, $timestamp),
+    ];
+
+    [$status, $answer, $transport] = function_exists('curl_init')
+        ? publish_post_curl(publish_asset_endpoint(), $headers, $bytes)
+        : publish_post_stream(publish_asset_endpoint(), $headers, $bytes);
+
+    if ($transport !== '') {
+        return [
+            'ok'    => false,
+            'code'  => 'unreachable',
+            'error' => 'The live site could not be reached: ' . $transport,
+        ];
+    }
+
+    $decoded = json_decode($answer, true);
+
+    if (!is_array($decoded)) {
+        return [
+            'ok'    => false,
+            'code'  => 'bad-answer',
+            'error' => 'The live site answered ' . $status . ' with something that '
+                     . 'was not JSON. Check that ' . publish_asset_endpoint()
+                     . ' is deployed.',
+        ];
+    }
+
+    if (($decoded['ok'] ?? false) === true) {
+        return [
+            'ok'    => true,
+            'asset' => (string)($decoded['asset'] ?? ''),
+            'held'  => (bool)($decoded['held'] ?? false),
+        ];
+    }
+
+    $code = (string)($decoded['code'] ?? 'refused');
+
+    return [
+        'ok'     => false,
+        'code'   => $code,
+        'error'  => (string)($decoded['error'] ?? publish_reason($code)),
+        'status' => $status,
+    ];
 }
 
 /**
