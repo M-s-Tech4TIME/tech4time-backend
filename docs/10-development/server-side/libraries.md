@@ -18,6 +18,8 @@ store they read from is outside the document root entirely.
 | [`contract.php`](#contractphp) **shared** | the shape of every editable document | `html` |
 | [`careers.php`](#careersphp) | what this side does with a job post | `contract`, `store` |
 | [`contact.php`](#contactphp) | what this side does with the contact page | `contract`, `store` |
+| [`company.php`](#companyphp) | what this side does with the company profile | `contract`, `store` |
+| [`upload.php`](#uploadphp) *(backend)* | a file somebody chose, turned into a picture this site will show | `publish` |
 | [`publish.php`](#publishphp) **shared** | how a document is signed and checked on the wire | `private`, `contract` |
 | [`publish_client.php`](#publish_clientphp) *(backend)* | sending one | `publish` |
 | [`footer-fingerprint.php`](#footer-fingerprintphp) *(frontend, generated)* | what this site's footers currently say | — |
@@ -148,6 +150,50 @@ The footer-drift banner is powered by `contact_footer_in_step()` in `contract.ph
 details now held against `footer_synced` — which after the split is **what the frontend reported in
 the last publish response**, not something this side computed. See
 [`footer-fingerprint.php`](#footer-fingerprintphp).
+
+### `company.php`
+
+`company_load()` · `company_save()` · `company_validate()`
+
+The same division again, for the company profile — the largest of the three shapes, and the only
+one carrying artwork. Six repeatable lists live in `contract.php`: milestones, figures, clients,
+photographs, technology and principles, each row with a `status` so it can be **hidden without
+being deleted**.
+
+Two rules in `company_validate()` are worth knowing before changing either half:
+
+**A figure must start with a digit.** `animations.js` counts it up by reading the number off the
+front, so `"Over 100"` silently never animates. The editor says so rather than letting somebody
+find out.
+
+**A picture may only point inside this site** — `company_safe_image_path()` in `contract.php`,
+against `COMPANY_IMAGE_ROOTS`. The editor checks it because a hidden input is a text field with the
+label taken off; the frontend checks it again on receipt, because a signature proves where a
+document came from and not what is in it.
+
+### `upload.php`
+
+**Backend only.** The frontend has no upload form and must never gain one.
+
+`upload_problem()` · `upload_accept()` · `upload_store()` · `upload_held()` ·
+`upload_unused()` · `upload_delete()`
+
+The only code in either repository that takes a file from somebody's computer and puts it on a web
+server. **The rule it works to is that nothing the browser sent is ever written.** An upload is
+read and then *replaced*: decoded by GD and re-encoded from the pixel data, so what lands on disk
+is that library's output.
+
+That one step is what removes EXIF — including the coordinates a phone puts in a photograph —
+anything appended after the image data, and a file that is a valid JPEG *and* a valid PHP script.
+A validator could do none of it: it can only decide it did not find what it knew to look for.
+
+JPEG, PNG and WebP, decided from the file's own header. **No SVG:** an SVG is a document, it can
+carry script, and re-encoding does not make it not a document. Full reasoning in
+[0019](../../90-decisions/0019-uploaded-images-travel-their-own-channel.md); the proof is
+[`test_upload.py`](../../40-reference/tools.md).
+
+`upload_unused()` never deletes anything on its own. A reference count taken from a document
+somebody is halfway through editing is not a fact.
 
 ### `publish.php`
 

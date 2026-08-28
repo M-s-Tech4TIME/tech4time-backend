@@ -181,6 +181,15 @@ function contact_apply_row_action(array $data, string $do): ?array
 $data = contact_load();
 $pending = '';   /* an unsaved change made by a row button */
 
+/* The retry that the failed-publish notice posts, named here rather than read
+   inline below. It was undefined: a $_POST key that is only ever compared
+   reads exactly like one that was assigned. The comparison was therefore
+   always false, the retry fell through to the save path, and that path
+   rebuilds the whole document from the form — which on this three-field retry
+   meant an emptied page and a wall of validation errors, on the one route
+   somebody reaches for when a publish has already failed. */
+$action = (string)($_POST['action'] ?? $_GET['action'] ?? '');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     admin_check_csrf();
 

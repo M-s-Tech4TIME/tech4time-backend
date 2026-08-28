@@ -32,5 +32,8 @@ new record superseding the old one rather than quietly doing the opposite.
 | *0012* (in tech4time-website-frontend) | Motion may decorate, never gate | accepted |
 | [0013](0013-damaged-stores-refuse.md) | A damaged store refuses; it never looks empty | accepted |
 | [0014](0014-derived-secrets-name-their-key.md) | A value derived from the master key carries the key's name | accepted |
-| *0015* (in tech4time-website-frontend) | Narrow widths are tested in a frame, not in the window | accepted |
+| [0015](0015-narrow-widths-need-a-frame.md) | Narrow widths are tested in a frame, not in the window | accepted |
 | [0016](0016-a-deploy-protects-what-the-panel-owns.md) | A deploy protects what the panel owns | accepted |
+| [0017](0017-two-private-stores.md) | Two private stores, one per half | accepted |
+| [0018](0018-the-backend-serves-from-a-subdirectory.md) | The backend serves from a subdirectory | accepted |
+| [0019](0019-uploaded-images-travel-their-own-channel.md) | Uploaded images travel their own signed channel | accepted |

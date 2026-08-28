@@ -17,7 +17,7 @@ Every editable field exists in three places, and all three must agree:
            │
            ├──────────────────────────────────┐
            ▼                                  ▼
-    admin/sections/contact.php          pages/contact/index.php
+    sections/contact.php                pages/contact/index.php
     the FORM                            the RENDERER
     what an editor can type             what a visitor sees
            │                                  ▲

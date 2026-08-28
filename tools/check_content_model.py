@@ -9,7 +9,7 @@ WHY THIS EXISTS
 An editable page is three things that have to agree:
 
     the model      lib/contract.php  — what a field is called and what it holds
-    the form       admin/sections/   — where somebody types it
+    the form       sections/         — where somebody types it
     the renderer   pages/…/index.php — where it comes out
 
 The model moved to lib/contract.php with the repository split: it is the one
@@ -45,6 +45,7 @@ named in COVERED_ELSEWHERE — so an editor checked by neither route fails here
 rather than being quietly absent, which is what it was until 2026-08-23.
 """
 
+import json
 import re
 import shutil
 import subprocess
@@ -115,6 +116,20 @@ COVERED_ELSEWHERE = {
         "to drift, and then reporting that all is well. It is proved by round "
         "trip instead: a marker through every field the model declares, over "
         "HTTP, through whichever half of the journey this repository owns.",
+    ),
+    "company": (
+        "tools/test_company_admin.py" if SIDE in ("backend", "both")
+        else "tools/test_publish.py",
+        "The company profile is six repeatable lists, and both the editor and "
+        "the renderer walk them. The editor names its inputs "
+        "\"<?= $band ?>[items][<?= $i ?>][name]\" and the page renders each "
+        "list with foreach over company_shown(), so the regexes below read the "
+        "loop variables rather than the fields. Worse than careers: the bands "
+        "themselves are a loop too, over COMPANY_LISTS, so a SUBJECTS entry "
+        "would have to exempt nearly the whole model and would then report a "
+        "pass on a model it had not looked at. Proved by round trip instead — "
+        "every field set through the editor and read back off the wire, plus "
+        "add, remove, hide and reorder on all six lists.",
     ),
 }
 
@@ -309,6 +324,81 @@ def fingerprints_agree() -> str:
     )
 
 
+def icons_are_drawable() -> list[str]:
+    """Every icon the model offers can actually be drawn, on this side.
+
+    COMPANY_ICONS and CONTACT_ICONS are chosen at run time, which is exactly
+    what neither repository's icon tooling can see. So each half has to inline
+    the whole list up front, and each half does it differently:
+
+        backend    ADMIN_ICONS in lib/admin.php, inlined on every admin page,
+                   because the editor draws a live preview of the icon a row
+                   was given
+        frontend   a comment block in the page listing each name literally,
+                   which is the only thing tools/inject_icons.py can scan
+
+    inject_icons.py --check covers the frontend half. Nothing covered the
+    backend half, and the failure is silent: an icon in the model that the
+    admin does not inline renders in the editor as an empty box, and only
+    somebody looking at that one row would ever notice.
+    """
+    problems = []
+
+    php = subprocess.run(
+        ["php", "-r",
+         "require 'lib/contract.php';"
+         "echo json_encode(['contact' => array_keys(CONTACT_ICONS),"
+         "                  'company' => array_keys(COMPANY_ICONS)]);"],
+        cwd=ROOT, capture_output=True, text=True,
+    )
+    if php.returncode != 0:
+        return [f"could not read the icon lists from lib/contract.php: {php.stderr.strip()}"]
+
+    offered = json.loads(php.stdout)
+
+    sprite = next((p for p in (ROOT / "assets" / "icons" / "sprite.svg",
+                               ROOT / "public" / "assets" / "icons" / "sprite.svg")
+                   if p.is_file()), None)
+    if sprite is None:
+        return ["no assets/icons/sprite.svg to check the icon lists against"]
+
+    drawable = set(re.findall(r'<symbol id="([^"]+)"', sprite.read_text()))
+
+    for document, names in sorted(offered.items()):
+        for name in names:
+            if name not in drawable:
+                problems.append(
+                    f"{document}: the model offers the icon '{name}', which is "
+                    f"not in {sprite.relative_to(ROOT)} — a row given it renders "
+                    f"as nothing"
+                )
+
+    if FORM_DIR is not None:
+        php = subprocess.run(
+            ["php", "-r", "require 'lib/admin.php'; echo json_encode(ADMIN_ICONS);"],
+            cwd=ROOT, capture_output=True, text=True,
+        )
+        if php.returncode != 0:
+            return problems + ["could not read ADMIN_ICONS from lib/admin.php"]
+
+        inlined = set(json.loads(php.stdout))
+        for document, names in sorted(offered.items()):
+            for name in names:
+                if name not in inlined:
+                    problems.append(
+                        f"{document}: the model offers the icon '{name}', which "
+                        f"ADMIN_ICONS does not inline — the editor's preview of "
+                        f"that row draws an empty box"
+                    )
+
+    if not problems:
+        where = "the sprite and ADMIN_ICONS" if FORM_DIR else "the sprite"
+        n = sum(len(v) for v in offered.values())
+        print(f"icons        —  all {n} the model offers are in {where}")
+
+    return problems
+
+
 def main() -> None:
     problems: list[str] = []
 
@@ -333,6 +423,8 @@ def main() -> None:
     else:
         print("fingerprint  —  not checked here; the footers are the frontend's")
 
+
+    problems.extend(icons_are_drawable())
 
     accounted = {s["name"] for s in SUBJECTS} | set(COVERED_ELSEWHERE)
     for name in editors():

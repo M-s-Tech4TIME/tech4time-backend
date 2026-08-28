@@ -60,6 +60,26 @@
   border-block-end: var(--border-width) solid var(--border-subtle);
 }
 
+/* WHY THESE THREE LINES EXIST, because deleting one of them is easy and the
+   consequence is invisible on any screen wide enough to develop on.
+
+   Below 60em the rail is a horizontal strip, and .rail__list carries
+   overflow-x: auto so that five sections scroll inside it rather than
+   stretching the page. That did not work, and could not: a flex item's
+   min-width defaults to AUTO, which means "never shrink below your content".
+   So .rail__nav and .rail__foot each grew to fit their children, .rail grew to
+   fit them, and the whole document was 649px wide inside a 320px viewport —
+   the admin scrolled sideways on every screen, on every phone, and the
+   overflow-x that was supposed to prevent it never got the chance.
+
+   min-width: 0 is what lets a flex item be narrower than its content, which is
+   what lets a scroller inside it scroll. WCAG 2.2 SC 1.4.10 (Reflow) is
+   defined at exactly 320px, and tools/check_admin_a11y.py now measures there
+   for real -- ADR 0015. */
+.rail,
+.rail__nav,
+.rail__foot { min-width: 0; }
+
 @media (min-width: 60em) {
   .rail {
     position: sticky;
@@ -282,6 +302,9 @@
   .rail__foot {
     padding-block-start: 0;
     border-block-start: 0;
+    /* Two icon-only links. They scroll with the strip rather than widening it,
+       for the same reason .rail__list does. */
+    overflow-x: auto;
   }
 
   /* Hidden the accessible way, not with display: none. These two are the only
@@ -775,6 +798,88 @@
   background-color: var(--bg-base);
   border: var(--border-width) solid var(--border-subtle);
   border-radius: var(--radius);
+}
+
+/* A file input is not a text field, whatever the class it shares says. It
+   draws its own button, and the padding and line-height that make an <input
+   type="text"> the right height make this one too tall and clip the button on
+   Firefox. So it takes the border, the radius and the colours and nothing
+   else. */
+.admin__file {
+  padding: var(--space-2xs);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.admin__file::file-selector-button {
+  margin-inline-end: var(--space-xs);
+  padding: var(--space-3xs) var(--space-xs);
+  font: inherit;
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.admin__file:hover::file-selector-button {
+  border-color: var(--silver-accent-mid);
+}
+
+/* A hidden row is kept, not deleted, so it has to look kept — present and
+   plainly switched off. Opacity alone would say "disabled"; the dashed edge
+   says "this one is not on the page". Not display:none, obviously: you cannot
+   edit what you cannot see, and switching it back on is the point. */
+.admin-card--hidden {
+  border-style: dashed;
+  background-color: var(--bg-surface);
+}
+
+.admin-card--hidden .admin-card__thumb,
+.admin-card--hidden .admin-card__icon { opacity: 0.55; }
+
+/* The picture a row holds, at the size it will be judged at rather than the
+   size it was uploaded at. --artwork-plate and not --bg-elevated for the same
+   reason the public page uses it: a dark-ink logo on the dark theme's
+   elevated surface falls to about 1.4:1. */
+.admin-card__media {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  margin-block-end: var(--space-md);
+  background-color: var(--artwork-plate);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.admin-card__thumb {
+  width: auto;
+  max-width: 8rem;
+  height: auto;
+  max-height: 4rem;
+  object-fit: contain;
+}
+
+.admin-card__media p { margin: 0; }
+
+.admin-card__icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.admin-card__icon .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: var(--silver-accent-mid);
 }
 
 .admin-card__head {

@@ -74,6 +74,11 @@ DENY = [
     "*.key",              # secret.key or publish.key, if one strays into the tree
     "admins.json",        # password hashes, likewise
     "setup-token.txt",
+    "public/uploads/*",   # every picture the editor has ever accepted. This
+                          # host is where they are AUTHORED, so the repository
+                          # has none of them — and public/ ships wholesale, so
+                          # without this line a deploy with --delete would
+                          # remove the lot and report success. ADR 0019.
     "*.bak",              # content backups written by store_write()
     "*.tmp",
     ".DS_Store",
@@ -103,7 +108,7 @@ REQUIRED = [
 # Never in the set, whatever else changes. Stated separately from "not in
 # UPLOAD" because that is the claim worth failing on out loud.
 FORBIDDEN_TREES = ["content", "tools", "docs", "references", ".git", ".claude",
-                   "deploy", "pages", "api"]
+                   "deploy", "pages", "api", "public/uploads"]
 
 SEED = ROOT / "deploy" / "seed"
 

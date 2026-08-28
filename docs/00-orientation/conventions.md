@@ -99,7 +99,7 @@ by people who are not you, and a deploy that includes `content/` destroys their 
 - Every file opens with a comment block saying **what it owns and why it exists** — not what the
   functions are named. Follow that pattern; it is the main reason this codebase can be read.
 - Escape on output, always: `h()` from `lib/html.php`. Never trust that a value was cleaned earlier.
-- Section files under `admin/sections/` must refuse to run unless `T4T_ADMIN` is defined.
+- Section files under `sections/` must refuse to run unless `T4T_ADMIN` is defined.
 - **Fail closed on authority, fail open on convenience.** The sign-in refuses to run when it cannot
   reach its store; the contact form's rate limit carries on if its counter is unreadable. An
   unreachable file must not make the company uncontactable.

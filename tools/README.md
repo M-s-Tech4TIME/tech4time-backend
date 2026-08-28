@@ -1,9 +1,13 @@
 # tools/
 
-Build, audit and test scripts. **None of it is deployed** — `.htaccess` blocks `/tools/` as a
-backstop, but the real rule is that this directory never gets uploaded.
+Build, audit and test scripts. **None of it is deployed** — the admin serves from `public/`, so
+this directory is outside the document root and unreachable either way. The real rule is that it
+never gets uploaded.
 
-Two files are exceptions, uploaded by hand and then deleted: `host-probe.php` and `admin-cli.php`.
+One file is an exception, uploaded by hand and then deleted: `host-probe.php`. `admin-cli.php` is
+the other thing that goes up by hand — see
+[30-operations/secrets-recovery.md](../docs/30-operations/secrets-recovery.md) — and it comes back
+down the moment it has done its job.
 
 ---
 
@@ -18,7 +22,7 @@ guidance. Those are now in `docs/`, so each fact lives in exactly one place:
 | Was here | Now |
 |---|---|
 | What each script does | [40-reference/tools.md](../docs/40-reference/tools.md) |
-| The admin, signing in, the private store | [10-development/backend/authentication.md](../docs/10-development/backend/authentication.md) |
+| The admin, signing in, the private store | [10-development/server-side/authentication.md](../docs/10-development/server-side/authentication.md) |
 | Recovering a lost password or secret | [30-operations/secrets-recovery.md](../docs/30-operations/secrets-recovery.md) |
 | Job posts and the contact page, day to day | [30-operations/content-runbook.md](../docs/30-operations/content-runbook.md) |
 | Host state — mail, DNS, DMARC, quotas | [40-reference/host-facts.md](../docs/40-reference/host-facts.md) |
@@ -30,20 +34,25 @@ guidance. Those are now in `docs/`, so each fact lives in exactly one place:
 ## The short version
 
 ```bash
-python3 tools/serve.py                 # run the site locally
+python3 tools/serve.py                      # run the admin locally
 
-python3 tools/check_contrast.py        # before committing
-python3 tools/inject_icons.py --check
-python3 tools/check_shared_markup.py
+python3 tools/check_contrast.py             # before committing
+python3 tools/check_css.py
 python3 tools/check_content_model.py
 python3 tools/check_secrets.py
 python3 tools/check_docs.py
-python3 tools/audit_pages.py
+python3 tools/build_deploy_set.py --check
+python3 tools/check_shared_lib.py
+python3 tools/check_shared_repos.py
 ```
 
+That is this repository's gate, and it is not the frontend's — `inject_icons.py`,
+`check_shared_markup.py` and `audit_pages.py` belong to the half that has pages, and are not here.
+`CLAUDE.md` carries the conditional tests on top of the list above.
+
 Adding a script? Give it a docstring saying what it proves and how to run it, keep to the standard
-library (Pillow is the one exception, for the asset builders), and add it to
-[40-reference/tools.md](../docs/40-reference/tools.md) — `check_docs.py` fails until you do.
+library, and add it to [40-reference/tools.md](../docs/40-reference/tools.md) — `check_docs.py`
+fails until you do.
 
 ---
 
@@ -51,6 +60,7 @@ library (Pillow is the one exception, for the asset builders), and add it to
 
 | | |
 |---|---|
-| `templates/` | the canonical header, footer, head and script markup — see its own README |
-| `masters/` | source artwork for the asset builders |
 | `shots/` | screenshot output, gitignored |
+
+The frontend's `templates/` and `masters/` have no counterpart here: this half has no pages to
+assemble and no artwork to build.

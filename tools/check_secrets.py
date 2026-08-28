@@ -408,6 +408,40 @@ def check_unindexed() -> None:
     else:
         bad("and keeps it out of shared caches")
 
+    # An ALLOW-list, not a block: uploads/ has to be served, because the editor
+    # draws every row's picture from it. It is the one directory here holding
+    # files that came from somebody's computer, and this rule is the third of
+    # ADR 0019's three layers -- the only one that still holds if the bytes were
+    # not re-encoded and the name was not computed. Removing it is silent until
+    # somebody notices /uploads/x.php answering 200.
+    if re.search(r"\^/uploads/\[0-9a-f\]\{16\}", htaccess):
+        ok("uploads/ serves the shape it mints, and nothing else")
+    else:
+        bad("uploads/ serves the shape it mints, and nothing else",
+            "public/.htaccess has no allow-list for uploads/")
+
+    # The one origin the admin's CSP names besides itself, and only for images:
+    # most of the artwork the company editor previews ships with the public site
+    # and exists nowhere else. Asserted so that it stays exactly this wide.
+    csp = re.search(r'Content-Security-Policy "([^"]*)"', htaccess)
+    directives = dict(
+        (part.split(" ", 1) + [""])[:2]
+        for part in (csp.group(1).split("; ") if csp else [])
+        if part
+    )
+    if directives.get("img-src", "") == "'self' data: https://tech4time.bd":
+        ok("the CSP names one outside origin, for images only")
+    else:
+        bad("the CSP names one outside origin, for images only",
+            f"img-src is {directives.get('img-src')!r}")
+
+    for name in ("script-src", "style-src", "connect-src", "font-src", "default-src"):
+        if directives.get(name, "").strip() == "'self'":
+            ok(f"and {name} is still nothing but 'self'")
+        else:
+            bad(f"and {name} is still nothing but 'self'",
+                f"{name} is {directives.get(name)!r}")
+
     if re.search(r"^\s*User-agent: \*\s*$", (ROOT / "public" / "robots.txt").read_text(), re.M):
         ok("robots.txt asks as well, which is the weaker half of the pair")
     else:

@@ -1,0 +1,7 @@
+# Everything here is written by lib/upload.php: pictures decoded and re-encoded
+# through gd, under a name computed from the resulting bytes. This host is the
+# system of record for them; the public site holds a replica, sent by
+# publish_asset(). None of it is committed, and a deploy must never sync this
+# directory — see docs/90-decisions/0019-uploaded-images-travel-their-own-channel.md.
+*
+!.gitignore

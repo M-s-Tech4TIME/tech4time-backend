@@ -53,7 +53,7 @@ require_once __DIR__ . '/html.php';
 const CONTRACT_VERSION = 1;
 
 /** Every document that is published, by name. The endpoint refuses any other. */
-const CONTRACT_DOCUMENTS = ['careers', 'contact'];
+const CONTRACT_DOCUMENTS = ['careers', 'contact', 'company'];
 
 /**
  * Fields a document keeps about itself, rather than about the page.
@@ -543,7 +543,445 @@ function contact_footer_in_step(array $data): bool
 }
 
 /* ==========================================================================
-   3. Revisions
+   3. Company profile — the shape of the company page
+   ========================================================================== */
+
+/**
+ * The icons a principle card may use.
+ *
+ * Fixed for the same reason CONTACT_ICONS is: tools/inject_icons.py inlines the
+ * symbols a page references by scanning it for a literal href="#name", and a
+ * name chosen at run time is invisible to that scan. Every icon offered here is
+ * therefore also listed in a comment in the frontend's
+ * pages/company-profile/index.php, where the scanner can see it. Add one here
+ * and add it there; inject_icons.py --check says so if it is forgotten.
+ */
+const COMPANY_ICONS = [
+    'shield-alt'     => 'Shield',
+    'lightbulb'      => 'Lightbulb',
+    'handshake'      => 'Handshake',
+    'clock'          => 'Clock',
+    'cogs'           => 'Cogs',
+    'building'       => 'Building',
+    'globe'          => 'Globe',
+    'headset'        => 'Headset',
+    'comment-alt'    => 'Speech bubble',
+    'calendar-check' => 'Calendar tick',
+    'check-circle'   => 'Tick in a circle',
+    'user-shield'    => 'Person and shield',
+    'eye'            => 'Eye',
+    'info-circle'    => 'Information',
+];
+
+/* Free-text single-line fields, by band. */
+const COMPANY_TEXT_FIELDS = [
+    'meta'       => ['title', 'description', 'share_title'],
+    'hero'       => ['title', 'subtitle'],
+    'milestones' => ['eyebrow', 'title'],
+    'background' => ['eyebrow', 'title'],
+    'experience' => ['title'],
+    'clients'    => ['title'],
+    'journey'    => ['title'],
+    'excellence' => ['eyebrow', 'title'],
+    'technology' => ['title'],
+    'principles' => ['title'],
+    'cta'        => ['title', 'label', 'href', 'icon'],
+];
+
+/* Fields stored as sanitised HTML, so a lead can carry a link or emphasis.
+   This is also the list the frontend re-sanitises on receipt. */
+const COMPANY_RICH_FIELDS = [
+    'milestones' => ['lead'],
+    'journey'    => ['lead'],
+    'excellence' => ['lead'],
+    'cta'        => ['text'],
+];
+
+/**
+ * Every band of the page that can be hidden whole, in the order it renders.
+ *
+ * Two of these CONTAIN others on the page: 'background' is the surface the
+ * experience, clients and journey blocks sit on, and 'excellence' is the one
+ * holding technology and principles. Hiding a container hides what is inside
+ * it; hiding one of the inner blocks leaves the others where they were. The
+ * shape here is flat because the form is flat — the nesting is the renderer's,
+ * and company_band_shown() is what both sides ask.
+ */
+const COMPANY_BANDS = [
+    'milestones', 'background', 'experience', 'clients', 'journey',
+    'excellence', 'technology', 'principles', 'cta',
+];
+
+/**
+ * The bands that hold a list, and the function that fills one of its rows.
+ *
+ * Named once so company_normalise() can drive itself off it. A list added to
+ * the page is normalised by being added here, rather than by somebody also
+ * remembering to add a line further down — the same argument CONTRACT_BOOKKEEPING
+ * makes, for the same reason.
+ */
+const COMPANY_LISTS = [
+    'milestones' => 'company_milestone_defaults',
+    'experience' => 'company_stat_defaults',
+    'clients'    => 'company_logo_defaults',
+    'journey'    => 'company_photo_defaults',
+    'technology' => 'company_logo_defaults',
+    'principles' => 'company_principle_defaults',
+];
+
+/**
+ * The page as it ships, and the fallback for anything missing from the file.
+ *
+ * Every scalar the renderer reads exists here, so a truncated or hand-edited
+ * company.json degrades to the shipped headings rather than emptying the page.
+ * The lists default to empty, which is the same bargain the contact page makes:
+ * the page still has a shape, it just has nothing in it.
+ */
+function company_defaults(): array
+{
+    return [
+        'updated'  => '',
+        'revision' => 0,
+        'meta' => [
+            'title'       => 'Company Profile | Tech4TIME',
+            'description' => 'Our milestones, the clients we serve, and the technology our engagements are built on.',
+            'share_title' => 'Milestones in Technological Excellence',
+        ],
+        'hero' => [
+            'title'    => 'Company Profile',
+            'subtitle' => 'Milestones, Clients and the Technology We Work With',
+        ],
+        'milestones' => [
+            'status'  => 'shown',
+            'eyebrow' => 'Our Journey',
+            'title'   => 'Milestones in Technological Excellence',
+            'lead'    => '',
+            'items'   => [],
+        ],
+        'background' => [
+            'status'  => 'shown',
+            'eyebrow' => 'Who We Are',
+            'title'   => 'Our Background',
+        ],
+        'experience' => [
+            'status' => 'shown',
+            'title'  => 'Experience',
+            'items'  => [],
+        ],
+        'clients' => [
+            'status' => 'shown',
+            'title'  => 'Proud Clients',
+            'items'  => [],
+        ],
+        'journey' => [
+            'status'   => 'shown',
+            'title'    => 'Our Journey of Growth',
+            'lead'     => '',
+            'interval' => 6000,
+            'items'    => [],
+        ],
+        'excellence' => [
+            'status'  => 'shown',
+            'eyebrow' => 'Work & Expertise',
+            'title'   => 'Our Professional Excellence',
+            'lead'    => '',
+        ],
+        'technology' => [
+            'status' => 'shown',
+            'title'  => 'The Technology We Work With',
+            'items'  => [],
+        ],
+        'principles' => [
+            'status' => 'shown',
+            'title'  => 'The Principles That Guide Us',
+            'items'  => [],
+        ],
+        'cta' => [
+            'status' => 'shown',
+            'title'  => 'Want to be the next name on this page?',
+            'text'   => '',
+            'label'  => 'Talk to Us',
+            'href'   => '/pages/contact/',
+            'icon'   => 'calendar-check',
+        ],
+    ];
+}
+
+/**
+ * Bring a document to the current shape, whatever it arrived as.
+ *
+ * One level of merge per band, as the contact page does, then every list
+ * through its own row-filler. Rows are renumbered with array_values() because
+ * the editor posts them keyed by position and a removed row leaves a hole.
+ */
+function company_normalise(array $data): array
+{
+    $defaults = company_defaults();
+
+    foreach ($defaults as $key => $value) {
+        if ($key === 'revision') {
+            $data[$key] = max(0, (int)($data[$key] ?? 0));
+            continue;
+        }
+        if (!is_array($value)) {
+            $data[$key] = is_string($data[$key] ?? null) ? $data[$key] : $value;
+            continue;
+        }
+        $data[$key] = is_array($data[$key] ?? null) ? $data[$key] + $value : $value;
+    }
+
+    foreach (COMPANY_BANDS as $band) {
+        $data[$band]['status'] =
+            ($data[$band]['status'] ?? 'shown') === 'hidden' ? 'hidden' : 'shown';
+    }
+
+    /* A slideshow that advances every 40 milliseconds is not a slideshow, and
+       one that waits an hour has stopped. Clamped rather than refused: this
+       arrives from a file as often as from a form. */
+    $data['journey']['interval'] =
+        min(60000, max(2000, (int)($data['journey']['interval'] ?? 6000)));
+
+    foreach (COMPANY_LISTS as $band => $filler) {
+        $rows = is_array($data[$band]['items'] ?? null) ? $data[$band]['items'] : [];
+        $data[$band]['items'] = array_map(
+            $filler,
+            array_values(array_filter($rows, 'is_array'))
+        );
+    }
+
+    return company_identify($data);
+}
+
+/**
+ * Give every row an id, unique within its own list.
+ *
+ * Rows are addressed by position in the form and by id everywhere else — a
+ * fragment link, an upload that has to find the row it belongs to, a test that
+ * wants to name one. Minted here rather than in the editor so a row that
+ * arrived from a hand-edited file has one too.
+ */
+function company_identify(array $data): array
+{
+    foreach (COMPANY_LISTS as $band => $_filler) {
+        $taken = [];
+        foreach ($data[$band]['items'] as $i => $row) {
+            $id   = trim((string)($row['id'] ?? ''));
+            $name = company_row_name($band, $row);
+
+            /* A row added by the Add button has nothing in it yet, so there is
+               nothing to name it after and it gets the placeholder. Once it
+               HAS a name, the placeholder is replaced — otherwise every row
+               ever created through the editor would be called "row", "row-2",
+               "row-3" for the rest of its life. A real id is never re-minted:
+               it is the handle everything else holds the row by. */
+            $provisional = $id === ''
+                || preg_match('/^' . COMPANY_ID_PLACEHOLDER . '(-\d+)?$/', $id) === 1;
+
+            if (($provisional && $name !== '') || in_array($id, $taken, true)) {
+                $id = company_slug($name, $taken);
+            } elseif ($id === '') {
+                $id = company_slug('', $taken);
+            }
+
+            $data[$band]['items'][$i]['id'] = $id;
+            $taken[] = $id;
+        }
+    }
+
+    return $data;
+}
+
+/**
+ * What a row's id is minted from, whichever list it is in.
+ *
+ * A photograph is named after its file rather than its alt text: alt is a
+ * sentence, and a sentence makes an id nobody can read or type. The file is
+ * short, already unique, and describes the same thing.
+ */
+function company_row_name(string $band, array $row): string
+{
+    if ($band === 'journey') {
+        $file = pathinfo((string)($row['image']['src'] ?? ''), PATHINFO_FILENAME);
+        return $file !== '' ? $file : 'photo';
+    }
+
+    return trim((string)match ($band) {
+        'milestones' => ($row['year'] ?? '') . ' ' . ($row['title'] ?? ''),
+        'experience' => $row['label'] ?? '',
+        'principles' => $row['title'] ?? '',
+        default      => $row['name'] ?? '',
+    });
+}
+
+function company_milestone_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'year' => '', 'title' => '', 'text' => '', 'status' => 'shown',
+    ];
+}
+
+function company_stat_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'figure' => '', 'label' => '', 'status' => 'shown',
+    ];
+}
+
+/** A logo: the clients grid and the technology sphere hold the same shape. */
+function company_logo_defaults(array $row): array
+{
+    $row += ['id' => '', 'name' => '', 'status' => 'shown'];
+    $row['image'] = company_image_defaults($row['image'] ?? []);
+
+    return $row;
+}
+
+function company_photo_defaults(array $row): array
+{
+    $row += ['id' => '', 'alt' => '', 'status' => 'shown'];
+    $row['image'] = company_image_defaults($row['image'] ?? []);
+
+    return $row;
+}
+
+function company_principle_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'icon' => '', 'title' => '', 'text' => '', 'status' => 'shown',
+    ];
+}
+
+/**
+ * Where a picture may live, as path prefixes.
+ *
+ * assets/ is artwork that ships with the site and changes with a deploy;
+ * uploads/ is what the editor put there. Nothing else is a picture this site
+ * will point at.
+ *
+ * THIS IS ENFORCED ON BOTH SIDES, and that is the point of it being here. The
+ * editor checks it because a hidden input is a text field with the label taken
+ * off. The frontend checks it AGAIN on receipt, because a signature proves
+ * where a document came from and not what is inside it — the same argument
+ * contract_sanitise() makes about rich text. An <img src> pointing somewhere
+ * else would put a third party's server into every visitor's page load, and
+ * tell them who is reading the page.
+ */
+const COMPANY_IMAGE_ROOTS = ['/assets/images/', '/uploads/'];
+
+/* What a row is called before it is called anything. See company_identify(). */
+const COMPANY_ID_PLACEHOLDER = 'row';
+
+/**
+ * A picture path, or '' if it is not one this site will publish.
+ *
+ * Rejects anything with a backslash, a control character or "..", before the
+ * prefix test rather than after: "/assets/images/../../etc/passwd" starts with
+ * an allowed prefix and is not an allowed path.
+ */
+function company_safe_image_path(string $path): string
+{
+    $path = trim($path);
+
+    if ($path === '' || preg_match('~[\\x00-\\x1f\\x7f\\\\]|\\.\\.~', $path)) {
+        return '';
+    }
+
+    foreach (COMPANY_IMAGE_ROOTS as $root) {
+        if (str_starts_with($path, $root) && strlen($path) > strlen($root)) {
+            return $path;
+        }
+    }
+
+    return '';
+}
+
+/**
+ * Fill in a picture, whatever it arrived with.
+ *
+ * width and height are not decoration. They are what lets the browser reserve
+ * the right box before the bytes arrive, and this site's Cumulative Layout
+ * Shift is zero rather than nearly zero. A row whose dimensions are missing or
+ * nonsense renders without them, which is honest; a row that guessed would
+ * move the page.
+ *
+ * webp is optional and empty is meaningful: it says "there is no WebP sibling,
+ * emit a bare <img> and no <picture> wrapper". That is how the SVG and AVIF
+ * entries have always rendered.
+ */
+function company_image_defaults(mixed $image): array
+{
+    $image = is_array($image) ? $image : [];
+    $image += ['src' => '', 'webp' => '', 'width' => 0, 'height' => 0];
+
+    $image['src']    = company_safe_image_path((string)$image['src']);
+    $image['webp']   = company_safe_image_path((string)$image['webp']);
+    $image['width']  = max(0, (int)$image['width']);
+    $image['height'] = max(0, (int)$image['height']);
+
+    return $image;
+}
+
+/** Only the rows of a list a visitor should see. */
+function company_shown(array $data, string $band): array
+{
+    return array_values(array_filter(
+        $data[$band]['items'] ?? [],
+        static fn(array $row): bool => ($row['status'] ?? 'shown') !== 'hidden'
+    ));
+}
+
+/** Whether a band of the page is shown at all. */
+function company_band_shown(array $data, string $band): bool
+{
+    return ($data[$band]['status'] ?? 'shown') !== 'hidden';
+}
+
+function company_find(array $data, string $band, string $id): ?array
+{
+    foreach ($data[$band]['items'] ?? [] as $row) {
+        if (($row['id'] ?? '') === $id) {
+            return $row;
+        }
+    }
+    return null;
+}
+
+/** Every picture the document points at, as web paths, without duplicates. */
+function company_images(array $data): array
+{
+    $seen = [];
+
+    foreach (COMPANY_LISTS as $band => $_filler) {
+        foreach ($data[$band]['items'] ?? [] as $row) {
+            foreach ([$row['image']['src'] ?? '', $row['image']['webp'] ?? ''] as $path) {
+                $path = trim((string)$path);
+                if ($path !== '') {
+                    $seen[$path] = true;
+                }
+            }
+        }
+    }
+
+    return array_keys($seen);
+}
+
+/** A URL-safe id from a name, unique against the ids already in use. */
+function company_slug(string $name, array $taken = []): string
+{
+    $slug = strtolower(trim($name));
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
+    $slug = trim($slug, '-') ?: COMPANY_ID_PLACEHOLDER;
+
+    $base = $slug;
+    $n = 2;
+    while (in_array($slug, $taken, true)) {
+        $slug = $base . '-' . $n++;
+    }
+    return $slug;
+}
+
+/* ==========================================================================
+   4. Revisions
    ========================================================================== */
 
 /**
@@ -566,8 +1004,33 @@ function contract_next_revision(array $data): int
 }
 
 /* ==========================================================================
-   4. Re-sanitising on receipt
+   5. Normalising and re-sanitising on receipt
    ========================================================================== */
+
+/**
+ * Bring a document of any kind to the current shape.
+ *
+ * THIS IS A MATCH AND NOT A TERNARY, DELIBERATELY. What stood here was
+ *
+ *     $document === 'careers' ? careers_normalise(...) : contact_normalise(...)
+ *
+ * written three times over in the frontend's api/publish.php, and it had a
+ * default: anything that was not careers was treated as contact. A third
+ * document would have passed every check the endpoint makes -- signature,
+ * timestamp, revision, contract version -- and then overwritten the contact
+ * page with itself. The refusal has to be the default, not the fallthrough.
+ *
+ * @throws RuntimeException on a name CONTRACT_DOCUMENTS does not list.
+ */
+function contract_normalise(string $document, array $data): array
+{
+    return match ($document) {
+        'careers' => careers_normalise($data),
+        'contact' => contact_normalise($data),
+        'company' => company_normalise($data),
+        default   => throw new RuntimeException('Unknown document: ' . $document),
+    };
+}
 
 /**
  * Run every rich field of a document back through the sanitiser.
@@ -598,6 +1061,16 @@ function contract_sanitise(string $document, array $data): array
 
     if ($document === 'contact') {
         foreach (CONTACT_RICH_FIELDS as $section => $fields) {
+            foreach ($fields as $field) {
+                $data[$section][$field] =
+                    rt_sanitise_html((string)($data[$section][$field] ?? ''));
+            }
+        }
+        return $data;
+    }
+
+    if ($document === 'company') {
+        foreach (COMPANY_RICH_FIELDS as $section => $fields) {
             foreach ($fields as $field) {
                 $data[$section][$field] =
                     rt_sanitise_html((string)($data[$section][$field] ?? ''));

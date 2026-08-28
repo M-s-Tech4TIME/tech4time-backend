@@ -35,8 +35,8 @@ require_once __DIR__ . '/publish_client.php';
 /**
  * What the rail lists, in the order it lists them.
  *
- * Adding a page to the admin is adding a row here and a file beside
- * admin/sections/. Nothing else in the shell needs to know about it.
+ * Adding a page to the admin is adding a row here and a file in
+ * sections/. Nothing else in the shell needs to know about it.
  *
  *   label  the name in the rail
  *   icon   a symbol id from public/assets/icons/sprite.svg
@@ -66,6 +66,12 @@ const ADMIN_SECTIONS = [
         'desc'  => 'Offices, numbers, the form',
         'view'  => '/pages/contact/',
     ],
+    'company' => [
+        'label' => 'Company Profile',
+        'icon'  => 'building',
+        'desc'  => 'Milestones, clients, technology',
+        'view'  => '/pages/company-profile/',
+    ],
     'account' => [
         'label' => 'Account',
         'icon'  => 'user-shield',
@@ -81,10 +87,14 @@ const ADMIN_SECTIONS = [
  * account — so anything counting or listing "the pages you can edit" asks here
  * rather than filtering the registry by hand in three places.
  */
-const ADMIN_PAGE_SECTIONS = ['careers', 'contact'];
+const ADMIN_PAGE_SECTIONS = ['careers', 'contact', 'company'];
+
+/* The marker admin_form_tail() writes and admin_form_truncated() looks for. */
+const ADMIN_TAIL_FIELD = '__tail';
 
 /* Symbols inlined into every admin page: the rail, the controls, and every
-   icon the contact editor offers, since it renders a live preview of them. */
+   icon the contact and company editors offer, since both render a live
+   preview of them. */
 const ADMIN_ICONS = [
     'home', 'briefcase', 'envelope', 'sun', 'moon', 'chevron-left',
     'chevron-right', 'arrow-up', 'arrow-down', 'arrow-right', 'link', 'user',
@@ -96,6 +106,11 @@ const ADMIN_ICONS = [
        enrolment and recovery panels on the account page. */
     'user-shield', 'user-lock', 'shield-alt', 'check-circle',
     'exclamation-circle', 'question-circle',
+    /* The company profile: the icons a principle card may carry, plus the one
+       its picture rows use for "upload". Kept in step with COMPANY_ICONS —
+       every name there must be inlined here, or the editor's live preview
+       draws an empty box for it. */
+    'lightbulb', 'handshake', 'calendar-check', 'cloud-upload-alt',
 ];
 
 /* ------------------------------------------------------------------- auth */
@@ -244,11 +259,54 @@ function admin_refuse(string $problem): never
     exit;
 }
 
+/* --------------------------------------------------------- truncated forms */
+
+/**
+ * The last control in a long form, and the check that it arrived.
+ *
+ * PHP stops parsing a request body after max_input_vars fields and DOES NOT
+ * SAY SO to the script — it drops the rest and carries on. For a form the size
+ * of the company profile that is a real limit rather than a theoretical one:
+ * it posts around five hundred and fifty fields today, against a default of a
+ * thousand, and every row added moves it closer.
+ *
+ * What makes it dangerous is the shape of the failure. The editor would rebuild
+ * the document from a truncated $_POST, decide the missing rows had been
+ * removed, save that, publish it, and report success. Somebody would find out
+ * when a client noticed their logo was gone.
+ *
+ * So the last thing every long form renders is this marker. Truncation always
+ * drops the tail, so its absence is exactly the condition — no counting, no
+ * guessing at what should have arrived, and nothing to keep in step.
+ */
+function admin_form_tail(): string
+{
+    return '<input type="hidden" name="' . ADMIN_TAIL_FIELD . '" value="1">';
+}
+
+/** Whether this POST was cut short before the form ended. */
+function admin_form_truncated(): bool
+{
+    return ($_POST[ADMIN_TAIL_FIELD] ?? '') !== '1';
+}
+
+/** What to tell somebody whose save was refused for that reason. */
+function admin_truncated_message(): string
+{
+    return 'This page is too big for the server to accept in one go: it sent '
+         . 'more fields than PHP\'s max_input_vars setting allows, so the end of '
+         . 'the form was silently dropped. NOTHING HAS BEEN SAVED, which is the '
+         . 'right outcome — saving would have deleted whatever came after the '
+         . 'cut. Remove some entries, or ask whoever runs the server to raise '
+         . 'max_input_vars (it is currently ' . (int)ini_get('max_input_vars')
+         . ').';
+}
+
 /* ------------------------------------------------------------------- CSRF */
 
 /* The session and its token belong to lib/auth.php now, which is what sets the
    cookie flags and regenerates the id on sign-in. These stay as the names the
-   editors have always called, so nothing in admin/sections/ had to change. */
+   editors have always called, so nothing in sections/ had to change. */
 
 function admin_csrf(): string
 {

@@ -72,9 +72,9 @@ never covered these screens — before the split as well as after it. They went 
 `tech4time-website-frontend` with the pages they were written for, and for a while this paragraph
 said the admin had never been checked for focus visibility, tap targets at 320px, or dark mode.
 
-It has now. `check_admin_a11y.py` signs in the way `test_editor.py` does and walks all eight
+It has now. `check_admin_a11y.py` signs in the way `test_editor.py` does and walks all nine
 screens — the three anyone can reach and the four behind the sign-in — asserting four families of
-thing at 1200px and 320px. It is one file rather than four because there are eight screens here and
+thing at 1200px and 320px. It is one file rather than four because there are nine screens here and
 four copies of the sign-in would be four things to fix when the login markup moves.
 
 **It was not a formality.** The first run found that five `admin.css` rules wrote

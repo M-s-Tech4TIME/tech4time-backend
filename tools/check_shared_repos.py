@@ -30,9 +30,10 @@ WHAT IT COMPARES
                                 -- read from check_shared_lib.py's own SHARED
                                 map, so this file cannot fall behind that one.
 
-    Every same-named tool       Any script that exists in tools/ on both sides
-                                must be byte-identical UNLESS it is listed in
-                                DIVERGENT below with a reason.
+    Every same-named tool       Any script OR README that exists in tools/ on
+                                both sides must be byte-identical UNLESS it is
+                                listed in DIVERGENT below with a reason.
+                                See TOOL_SUFFIXES.
 
 The second rule is deliberately the wrong way round from a list of "files to
 keep in step". A list like that has to be remembered; this has to be argued
@@ -82,10 +83,21 @@ ORG = "https://github.com/M-s-Tech4TIME"
 # Same-named tools that are SUPPOSED to differ, and why. A reason is required:
 # an entry with no argument behind it is how "these two drifted" becomes "these
 # two are meant to be different" without anybody noticing it happened.
+# What counts as a tool for the comparison below. .md is in here because
+# tools/README.md was not: the backend's copy was the frontend's file with one
+# line changed, and so it told you to run three scripts that do not exist there
+# and listed two subdirectories it does not have. Nothing compared them,
+# because prose was not a tool.
+TOOL_SUFFIXES = {".py", ".php", ".md"}
+
 DIVERGENT = {
     "build_deploy_set.py":
         "different upload sets -- the frontend ships pages/ and assets/, the "
         "backend ships public/, lib/ and sections/",
+    "README.md":
+        "each half's own gate and its own subdirectories -- the frontend has "
+        "pages to audit and artwork to build, the backend has neither, and "
+        "only the backend has admin-cli.php",
     "check_secrets.py":
         "asserts different things -- the frontend proves it has no NAME for a "
         "password hash, the backend proves the accounts are unreachable",
@@ -251,9 +263,9 @@ def main() -> int:
     # ------------------------------------------------- every same-named tool
     print()
     mine = {p.name for p in (ROOT / "tools").iterdir()
-            if p.is_file() and p.suffix in {".py", ".php"}}
+            if p.is_file() and p.suffix in TOOL_SUFFIXES}
     theirs = {p.name for p in (there / "tools").iterdir()
-              if p.is_file() and p.suffix in {".py", ".php"}}
+              if p.is_file() and p.suffix in TOOL_SUFFIXES}
 
     for name in sorted(mine & theirs):
         a = (ROOT / "tools" / name).read_bytes()

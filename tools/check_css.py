@@ -130,6 +130,38 @@ def check_shorthands(path: Path, text: str, tokens: set[str], problems: list[str
             f"`{prop}: 2px solid var({token});` or set {prop}-color.")
 
 
+def check_declared(files: list[Path], problems: list[str]) -> None:
+    """Every var(--token) a stylesheet reads is declared by one of them.
+
+    A custom property that was never declared does not fail, warn, or fall back
+    to anything sensible: the declaration using it is thrown away, and the
+    element keeps whatever it inherited. So `background-color: var(--bg-subtle)`
+    against a token that does not exist is a background that silently is not
+    there -- and in a palette with --bg-base, --bg-surface and --bg-elevated,
+    guessing the fourth name is easy to do and impossible to see.
+
+    A var() with a fallback -- var(--x, 1rem) -- is left alone: naming a
+    fallback is saying the token may be absent, which is what --sphere-size and
+    --slider-columns do while JavaScript has not run yet.
+    """
+    declared: set[str] = set()
+    for path in files:
+        declared |= set(re.findall(r"^\s*(--[a-z0-9-]+)\s*:", path.read_text(encoding="utf-8"),
+                                   re.M))
+
+    for path in files:
+        body = re.sub(r"/\*.*?\*/", "", path.read_text(encoding="utf-8"), flags=re.S)
+        for n, line in enumerate(body.splitlines(), 1):
+            for token in re.findall(r"var\(\s*(--[a-z0-9-]+)\s*\)", line):
+                if token not in declared:
+                    problems.append(
+                        f"{path.relative_to(ROOT)}:{n}: `var({token})` — no "
+                        f"stylesheet declares {token}. The whole declaration is "
+                        f"dropped and the element keeps what it inherited, "
+                        f"silently. Did you mean one of: "
+                        f"{', '.join(sorted(t for t in declared if t.split('-')[2:3] == token.split('-')[2:3])[:4]) or 'a token that exists'}?")
+
+
 def main() -> int:
     files = sheets()
     if not files:
@@ -146,6 +178,8 @@ def main() -> int:
         check_comments(path, text, problems)
         check_shorthands(path, text, tokens, problems)
 
+    check_declared(files, problems)
+
     for path in files:
         print(f"  ok    {path.relative_to(ROOT)}")
 
@@ -153,11 +187,12 @@ def main() -> int:
         print(f"\ncheck_css: {len(problems)} problem(s)\n")
         for line in problems:
             print(f"  FAIL  {line}")
-        print("\nBoth of these are silent in a browser and invisible in a diff.")
+        print("\nEvery one of these is silent in a browser and invisible in a diff.")
         return 1
 
     print(f"\ncheck_css: {len(files)} stylesheets, "
-          f"{len(tokens)} colour tokens, comments and braces balanced")
+          f"{len(tokens)} colour tokens, every var() declared, "
+          f"comments and braces balanced")
     return 0
 
 

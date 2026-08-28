@@ -50,6 +50,11 @@ PATH_EXEMPT = {
     # admin/.htaccess must never exist -- cPanel writes its own, and uploading
     # over it removes the password. It is cited only to say "never create this".
     "admin/.htaccess",
+    # Cited by CLAUDE.md in the same spirit, and only in the frontend: this
+    # host has no accounts, so naming the file is how the rule is stated. Its
+    # absence IS the fact, and a check that demanded it exist would be asking
+    # for the security property to be broken.
+    "lib/auth.php",
     # written on save, gitignored
     "content/careers.json.bak",
     "content/contact.json.bak",
@@ -91,6 +96,29 @@ def ok(check: str, detail: str) -> None:
 
 def docs() -> list[Path]:
     return sorted(DOCS.rglob("*.md"))
+
+
+# Markdown that is NOT under docs/ but still describes this repository, and
+# still rots the same way. These four are the ones a reader actually starts
+# from -- and for a long time they were the only prose nothing checked, which
+# is exactly where three dead links and a stale page count were found.
+#
+# They are held to the two checks that are about facts on disk (links resolve,
+# cited paths exist) and to no others: check_indexed() is about docs/ having a
+# route in from the index, and check_applies_to() is about a header that only
+# a docs/ page carries. Applying either here would fail on files that are
+# correct.
+OUTLYING_PROSE = [
+    ROOT / "README.md",
+    ROOT / "CLAUDE.md",
+    ROOT / "tools" / "README.md",
+    ROOT / "tools" / "templates" / "README.md",   # frontend only
+]
+
+
+def prose() -> list[Path]:
+    """Every markdown file whose factual claims are checkable."""
+    return docs() + [p for p in OUTLYING_PROSE if p.is_file()]
 
 
 def text(path: Path) -> str:
@@ -332,9 +360,14 @@ def check_pages() -> None:
 
 
 def check_internal_links() -> None:
-    """Every relative link between docs resolves."""
+    """Every relative link in the project's prose resolves.
+
+    docs/ plus the four files outside it that a reader starts from -- see
+    OUTLYING_PROSE. Those were unchecked until three of their links were
+    found pointing at documents that live in the other repository.
+    """
     broken = []
-    for doc in docs():
+    for doc in prose():
         for target in re.findall(r"\]\(([^)#][^)]*)\)", text(doc)):
             if target.startswith(("http://", "https://", "mailto:")):
                 continue
@@ -351,7 +384,7 @@ def check_internal_links() -> None:
 
 
 def check_cited_paths() -> None:
-    """Every repository path a doc names in backticks exists on disk.
+    """Every repository path the prose names in backticks exists on disk.
 
     Deliberately narrow: only backticked paths that begin with a real top-level
     directory and carry a file extension. A placeholder like `lib/<name>.php`
@@ -368,7 +401,7 @@ def check_cited_paths() -> None:
         r"/[A-Za-z0-9_./-]+\.[a-z0-9]+)`"
     )
     missing = []
-    for doc in docs():
+    for doc in prose():
         for cited in set(pattern.findall(text(doc))):
             if cited in PATH_EXEMPT:
                 continue

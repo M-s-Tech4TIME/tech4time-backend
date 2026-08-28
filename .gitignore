@@ -26,6 +26,7 @@ tools/shots/
 # (it seeds a fresh deploy); its backup and the test harness router are not.
 content/careers.json.bak
 content/contact.json.bak
+content/company.json.bak
 content/*.tmp
 .test-router-*.php
 

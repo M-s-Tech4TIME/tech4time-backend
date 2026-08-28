@@ -71,7 +71,7 @@ Random bytes mixed into a password before hashing, different for every password,
 hash string** by `password_hash()`. That is why there is no separate salt field to manage.
 
 ### section
-One editable page in the admin — a row in `ADMIN_SECTIONS` plus a file in `admin/sections/`. Reached
+One editable page in the admin — a row in `ADMIN_SECTIONS` plus a file in `sections/`. Reached
 at `/?s=<name>`.
 
 ### setup token

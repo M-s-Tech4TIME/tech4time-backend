@@ -1,0 +1,855 @@
+{
+    "updated": "",
+    "revision": 0,
+    "meta": {
+        "title": "Company Profile — Milestones, Clients & Technology | Tech4TIME",
+        "description": "Tech4TIME from 2018 to today: our milestones, the clients we serve across Bangladesh, Malaysia and beyond, and the technology our engagements are built on.",
+        "share_title": "Milestones in Technological Excellence"
+    },
+    "hero": {
+        "title": "Company Profile",
+        "subtitle": "Milestones, Clients and the Technology We Work With"
+    },
+    "milestones": {
+        "status": "shown",
+        "eyebrow": "Our Journey",
+        "title": "Milestones in Technological Excellence",
+        "lead": "<p>From founding in 2018 to the security framework we run on today.</p>",
+        "items": [
+            {
+                "id": "2018-company-founded",
+                "year": "2018",
+                "title": "Company Founded",
+                "text": "Started with a vision to make cybersecurity accessible",
+                "status": "shown"
+            },
+            {
+                "id": "2019-first-government-client",
+                "year": "2019",
+                "title": "First Government Client",
+                "text": "Secured our first contract with one of the largest tier 4 data centres",
+                "status": "shown"
+            },
+            {
+                "id": "2020-soc-expansion",
+                "year": "2020",
+                "title": "SOC Expansion",
+                "text": "Launched 24/7 Security Operations Services along with other managed services",
+                "status": "shown"
+            },
+            {
+                "id": "2021-international-reach",
+                "year": "2021",
+                "title": "International Reach",
+                "text": "Expanded services to other countries in South-East Asia",
+                "status": "shown"
+            },
+            {
+                "id": "2022-technology-innovation",
+                "year": "2022",
+                "title": "Technology Innovation",
+                "text": "Developed multiple solutions using open-source technology",
+                "status": "shown"
+            },
+            {
+                "id": "2023-expanded-research",
+                "year": "2023",
+                "title": "Expanded Research",
+                "text": "Contributed our solutions and proposed our concepts across open-source communities",
+                "status": "shown"
+            },
+            {
+                "id": "2024-developed-security-framework",
+                "year": "2024",
+                "title": "Developed Security Framework",
+                "text": "Through continuous research and development, we have created our own security framework",
+                "status": "shown"
+            }
+        ]
+    },
+    "background": {
+        "status": "shown",
+        "eyebrow": "Who We Are",
+        "title": "Our Background"
+    },
+    "experience": {
+        "status": "shown",
+        "title": "Experience",
+        "items": [
+            {
+                "id": "projects-delivered",
+                "figure": "5+",
+                "label": "Projects Delivered",
+                "status": "shown"
+            },
+            {
+                "id": "clients-served",
+                "figure": "7+",
+                "label": "Clients Served",
+                "status": "shown"
+            },
+            {
+                "id": "client-satisfaction",
+                "figure": "100%",
+                "label": "Client Satisfaction",
+                "status": "shown"
+            },
+            {
+                "id": "years-of-experience",
+                "figure": "7+",
+                "label": "Years of Experience",
+                "status": "shown"
+            }
+        ]
+    },
+    "clients": {
+        "status": "shown",
+        "title": "Proud Clients",
+        "items": [
+            {
+                "id": "cca",
+                "name": "CCA",
+                "image": {
+                    "src": "/assets/images/clients/cca.jpg",
+                    "webp": "/assets/images/clients/cca.webp",
+                    "width": 320,
+                    "height": 167
+                },
+                "status": "shown"
+            },
+            {
+                "id": "ict-division",
+                "name": "ICT Division",
+                "image": {
+                    "src": "/assets/images/clients/ict-division.svg",
+                    "webp": "",
+                    "width": 66,
+                    "height": 36
+                },
+                "status": "shown"
+            },
+            {
+                "id": "aitken-spence",
+                "name": "Aitken Spence",
+                "image": {
+                    "src": "/assets/images/clients/aitken-spence.png",
+                    "webp": "/assets/images/clients/aitken-spence.webp",
+                    "width": 320,
+                    "height": 72
+                },
+                "status": "shown"
+            },
+            {
+                "id": "bangladesh-army-aviation",
+                "name": "Bangladesh Army Aviation",
+                "image": {
+                    "src": "/assets/images/clients/bangladesh-army-aviation.png",
+                    "webp": "/assets/images/clients/bangladesh-army-aviation.webp",
+                    "width": 320,
+                    "height": 320
+                },
+                "status": "shown"
+            },
+            {
+                "id": "mgc",
+                "name": "MGC",
+                "image": {
+                    "src": "/assets/images/clients/mgc.png",
+                    "webp": "/assets/images/clients/mgc.webp",
+                    "width": 320,
+                    "height": 211
+                },
+                "status": "shown"
+            },
+            {
+                "id": "petronas",
+                "name": "Petronas",
+                "image": {
+                    "src": "/assets/images/clients/petronas.png",
+                    "webp": "/assets/images/clients/petronas.webp",
+                    "width": 320,
+                    "height": 253
+                },
+                "status": "shown"
+            },
+            {
+                "id": "ups",
+                "name": "UPS",
+                "image": {
+                    "src": "/assets/images/clients/ups.png",
+                    "webp": "/assets/images/clients/ups.webp",
+                    "width": 250,
+                    "height": 297
+                },
+                "status": "shown"
+            },
+            {
+                "id": "cdbl",
+                "name": "CDBL",
+                "image": {
+                    "src": "/assets/images/clients/cdbl.png",
+                    "webp": "/assets/images/clients/cdbl.webp",
+                    "width": 320,
+                    "height": 246
+                },
+                "status": "shown"
+            },
+            {
+                "id": "aiub",
+                "name": "AIUB",
+                "image": {
+                    "src": "/assets/images/clients/aiub.png",
+                    "webp": "/assets/images/clients/aiub.webp",
+                    "width": 250,
+                    "height": 250
+                },
+                "status": "shown"
+            }
+        ]
+    },
+    "journey": {
+        "status": "shown",
+        "title": "Our Journey of Growth",
+        "lead": "<p>Celebrating milestones made possible by our valued partners.</p>",
+        "interval": 6000,
+        "items": [
+            {
+                "id": "celebration-1",
+                "alt": "Tech4TIME team celebrating a company milestone",
+                "image": {
+                    "src": "/assets/images/photos/celebration-1.jpg",
+                    "webp": "/assets/images/photos/celebration-1.webp",
+                    "width": 1024,
+                    "height": 768
+                },
+                "status": "shown"
+            },
+            {
+                "id": "celebration-2",
+                "alt": "The Tech4TIME team together at a company event",
+                "image": {
+                    "src": "/assets/images/photos/celebration-2.jpg",
+                    "webp": "/assets/images/photos/celebration-2.webp",
+                    "width": 1024,
+                    "height": 1365
+                },
+                "status": "shown"
+            },
+            {
+                "id": "celebration-3",
+                "alt": "Tech4TIME colleagues marking an achievement",
+                "image": {
+                    "src": "/assets/images/photos/celebration-3.jpg",
+                    "webp": "/assets/images/photos/celebration-3.webp",
+                    "width": 1024,
+                    "height": 768
+                },
+                "status": "shown"
+            }
+        ]
+    },
+    "excellence": {
+        "status": "shown",
+        "eyebrow": "Work & Expertise",
+        "title": "Our Professional Excellence",
+        "lead": "<p>The open-source and enterprise tooling our engagements are built on, and the principles we run them by.</p>"
+    },
+    "technology": {
+        "status": "shown",
+        "title": "The Technology We Work With",
+        "items": [
+            {
+                "id": "wazuh",
+                "name": "Wazuh",
+                "image": {
+                    "src": "/assets/images/tech/wazuh.png",
+                    "webp": "/assets/images/tech/wazuh.webp",
+                    "width": 320,
+                    "height": 66
+                },
+                "status": "shown"
+            },
+            {
+                "id": "suricata",
+                "name": "Suricata",
+                "image": {
+                    "src": "/assets/images/tech/suricata.jpg",
+                    "webp": "/assets/images/tech/suricata.webp",
+                    "width": 320,
+                    "height": 320
+                },
+                "status": "shown"
+            },
+            {
+                "id": "modsecurity",
+                "name": "ModSecurity",
+                "image": {
+                    "src": "/assets/images/tech/modsecurity.png",
+                    "webp": "/assets/images/tech/modsecurity.webp",
+                    "width": 320,
+                    "height": 83
+                },
+                "status": "shown"
+            },
+            {
+                "id": "bunkerweb",
+                "name": "BunkerWeb",
+                "image": {
+                    "src": "/assets/images/tech/bunkerweb.png",
+                    "webp": "/assets/images/tech/bunkerweb.webp",
+                    "width": 320,
+                    "height": 90
+                },
+                "status": "shown"
+            },
+            {
+                "id": "pfsense",
+                "name": "pfSense",
+                "image": {
+                    "src": "/assets/images/tech/pfsense.png",
+                    "webp": "/assets/images/tech/pfsense.webp",
+                    "width": 320,
+                    "height": 94
+                },
+                "status": "shown"
+            },
+            {
+                "id": "opnsense",
+                "name": "OPNsense",
+                "image": {
+                    "src": "/assets/images/tech/opnsense.png",
+                    "webp": "/assets/images/tech/opnsense.webp",
+                    "width": 320,
+                    "height": 95
+                },
+                "status": "shown"
+            },
+            {
+                "id": "palo-alto-networks",
+                "name": "Palo Alto Networks",
+                "image": {
+                    "src": "/assets/images/tech/palo-alto-networks.png",
+                    "webp": "/assets/images/tech/palo-alto-networks.webp",
+                    "width": 320,
+                    "height": 59
+                },
+                "status": "shown"
+            },
+            {
+                "id": "fortinet",
+                "name": "Fortinet",
+                "image": {
+                    "src": "/assets/images/tech/fortinet.svg",
+                    "webp": "",
+                    "width": 156,
+                    "height": 19
+                },
+                "status": "shown"
+            },
+            {
+                "id": "zeek",
+                "name": "Zeek",
+                "image": {
+                    "src": "/assets/images/tech/zeek.png",
+                    "webp": "/assets/images/tech/zeek.webp",
+                    "width": 275,
+                    "height": 91
+                },
+                "status": "shown"
+            },
+            {
+                "id": "opencti",
+                "name": "OpenCTI",
+                "image": {
+                    "src": "/assets/images/tech/opencti.png",
+                    "webp": "/assets/images/tech/opencti.webp",
+                    "width": 320,
+                    "height": 140
+                },
+                "status": "shown"
+            },
+            {
+                "id": "wireguard",
+                "name": "WireGuard",
+                "image": {
+                    "src": "/assets/images/tech/wireguard.png",
+                    "webp": "/assets/images/tech/wireguard.webp",
+                    "width": 320,
+                    "height": 168
+                },
+                "status": "shown"
+            },
+            {
+                "id": "iris",
+                "name": "IRIS",
+                "image": {
+                    "src": "/assets/images/tech/iris.png",
+                    "webp": "/assets/images/tech/iris.webp",
+                    "width": 320,
+                    "height": 107
+                },
+                "status": "shown"
+            },
+            {
+                "id": "velociraptor",
+                "name": "Velociraptor",
+                "image": {
+                    "src": "/assets/images/tech/velociraptor.svg",
+                    "webp": "",
+                    "width": 1350,
+                    "height": 1350
+                },
+                "status": "shown"
+            },
+            {
+                "id": "thehive",
+                "name": "TheHive",
+                "image": {
+                    "src": "/assets/images/tech/thehive.png",
+                    "webp": "/assets/images/tech/thehive.webp",
+                    "width": 320,
+                    "height": 83
+                },
+                "status": "shown"
+            },
+            {
+                "id": "cortex",
+                "name": "Cortex",
+                "image": {
+                    "src": "/assets/images/tech/cortex.png",
+                    "webp": "/assets/images/tech/cortex.webp",
+                    "width": 320,
+                    "height": 83
+                },
+                "status": "shown"
+            },
+            {
+                "id": "misp",
+                "name": "MISP",
+                "image": {
+                    "src": "/assets/images/tech/misp.png",
+                    "webp": "/assets/images/tech/misp.webp",
+                    "width": 266,
+                    "height": 195
+                },
+                "status": "shown"
+            },
+            {
+                "id": "tracecat",
+                "name": "Tracecat",
+                "image": {
+                    "src": "/assets/images/tech/tracecat.svg",
+                    "webp": "",
+                    "width": 964,
+                    "height": 192
+                },
+                "status": "shown"
+            },
+            {
+                "id": "shuffle",
+                "name": "Shuffle",
+                "image": {
+                    "src": "/assets/images/tech/shuffle.avif",
+                    "webp": "",
+                    "width": 256,
+                    "height": 256
+                },
+                "status": "shown"
+            },
+            {
+                "id": "burp-suite",
+                "name": "Burp Suite",
+                "image": {
+                    "src": "/assets/images/tech/burp-suite.jpg",
+                    "webp": "/assets/images/tech/burp-suite.webp",
+                    "width": 320,
+                    "height": 161
+                },
+                "status": "shown"
+            },
+            {
+                "id": "openvas",
+                "name": "OpenVAS",
+                "image": {
+                    "src": "/assets/images/tech/openvas.jpg",
+                    "webp": "/assets/images/tech/openvas.webp",
+                    "width": 320,
+                    "height": 90
+                },
+                "status": "shown"
+            },
+            {
+                "id": "ghidra",
+                "name": "Ghidra",
+                "image": {
+                    "src": "/assets/images/tech/ghidra.png",
+                    "webp": "/assets/images/tech/ghidra.webp",
+                    "width": 320,
+                    "height": 168
+                },
+                "status": "shown"
+            },
+            {
+                "id": "grr-rapid-response",
+                "name": "GRR Rapid Response",
+                "image": {
+                    "src": "/assets/images/tech/grr-rapid-response.png",
+                    "webp": "/assets/images/tech/grr-rapid-response.webp",
+                    "width": 320,
+                    "height": 95
+                },
+                "status": "shown"
+            },
+            {
+                "id": "elastic-stack",
+                "name": "Elastic Stack",
+                "image": {
+                    "src": "/assets/images/tech/elastic-stack.png",
+                    "webp": "/assets/images/tech/elastic-stack.webp",
+                    "width": 320,
+                    "height": 106
+                },
+                "status": "shown"
+            },
+            {
+                "id": "grafana",
+                "name": "Grafana",
+                "image": {
+                    "src": "/assets/images/tech/grafana.png",
+                    "webp": "/assets/images/tech/grafana.webp",
+                    "width": 320,
+                    "height": 327
+                },
+                "status": "shown"
+            },
+            {
+                "id": "yara",
+                "name": "YARA",
+                "image": {
+                    "src": "/assets/images/tech/yara.png",
+                    "webp": "/assets/images/tech/yara.webp",
+                    "width": 285,
+                    "height": 96
+                },
+                "status": "shown"
+            },
+            {
+                "id": "magnet-forensics",
+                "name": "Magnet Forensics",
+                "image": {
+                    "src": "/assets/images/tech/magnet-forensics.png",
+                    "webp": "/assets/images/tech/magnet-forensics.webp",
+                    "width": 320,
+                    "height": 100
+                },
+                "status": "shown"
+            },
+            {
+                "id": "belkasoft",
+                "name": "Belkasoft",
+                "image": {
+                    "src": "/assets/images/tech/belkasoft.jpg",
+                    "webp": "/assets/images/tech/belkasoft.webp",
+                    "width": 320,
+                    "height": 151
+                },
+                "status": "shown"
+            },
+            {
+                "id": "oxygen-forensic",
+                "name": "Oxygen Forensic",
+                "image": {
+                    "src": "/assets/images/tech/oxygen-forensic.png",
+                    "webp": "/assets/images/tech/oxygen-forensic.webp",
+                    "width": 320,
+                    "height": 102
+                },
+                "status": "shown"
+            },
+            {
+                "id": "elcomsoft",
+                "name": "ElcomSoft",
+                "image": {
+                    "src": "/assets/images/tech/elcomsoft.jpg",
+                    "webp": "/assets/images/tech/elcomsoft.webp",
+                    "width": 320,
+                    "height": 320
+                },
+                "status": "shown"
+            },
+            {
+                "id": "x-ways-forensics",
+                "name": "X-Ways Forensics",
+                "image": {
+                    "src": "/assets/images/tech/x-ways-forensics.png",
+                    "webp": "/assets/images/tech/x-ways-forensics.webp",
+                    "width": 320,
+                    "height": 92
+                },
+                "status": "shown"
+            },
+            {
+                "id": "encase",
+                "name": "EnCase",
+                "image": {
+                    "src": "/assets/images/tech/encase.png",
+                    "webp": "/assets/images/tech/encase.webp",
+                    "width": 190,
+                    "height": 190
+                },
+                "status": "shown"
+            },
+            {
+                "id": "ibm-qradar",
+                "name": "IBM QRadar",
+                "image": {
+                    "src": "/assets/images/tech/ibm-qradar.png",
+                    "webp": "/assets/images/tech/ibm-qradar.webp",
+                    "width": 320,
+                    "height": 62
+                },
+                "status": "shown"
+            },
+            {
+                "id": "splunk",
+                "name": "Splunk",
+                "image": {
+                    "src": "/assets/images/tech/splunk.png",
+                    "webp": "/assets/images/tech/splunk.webp",
+                    "width": 320,
+                    "height": 97
+                },
+                "status": "shown"
+            },
+            {
+                "id": "microsoft-sentinel",
+                "name": "Microsoft Sentinel",
+                "image": {
+                    "src": "/assets/images/tech/microsoft-sentinel.png",
+                    "webp": "/assets/images/tech/microsoft-sentinel.webp",
+                    "width": 320,
+                    "height": 213
+                },
+                "status": "shown"
+            },
+            {
+                "id": "nessus",
+                "name": "Nessus",
+                "image": {
+                    "src": "/assets/images/tech/nessus.png",
+                    "webp": "/assets/images/tech/nessus.webp",
+                    "width": 320,
+                    "height": 90
+                },
+                "status": "shown"
+            },
+            {
+                "id": "cobalt-strike",
+                "name": "Cobalt Strike",
+                "image": {
+                    "src": "/assets/images/tech/cobalt-strike.png",
+                    "webp": "/assets/images/tech/cobalt-strike.webp",
+                    "width": 320,
+                    "height": 76
+                },
+                "status": "shown"
+            },
+            {
+                "id": "metasploit",
+                "name": "Metasploit",
+                "image": {
+                    "src": "/assets/images/tech/metasploit.svg",
+                    "webp": "",
+                    "width": 1000,
+                    "height": 222
+                },
+                "status": "shown"
+            },
+            {
+                "id": "proxmox",
+                "name": "Proxmox",
+                "image": {
+                    "src": "/assets/images/tech/proxmox.svg",
+                    "webp": "",
+                    "width": 418,
+                    "height": 66
+                },
+                "status": "shown"
+            },
+            {
+                "id": "zabbix",
+                "name": "Zabbix",
+                "image": {
+                    "src": "/assets/images/tech/zabbix.png",
+                    "webp": "/assets/images/tech/zabbix.webp",
+                    "width": 320,
+                    "height": 84
+                },
+                "status": "shown"
+            },
+            {
+                "id": "openstack",
+                "name": "OpenStack",
+                "image": {
+                    "src": "/assets/images/tech/openstack.png",
+                    "webp": "/assets/images/tech/openstack.webp",
+                    "width": 320,
+                    "height": 155
+                },
+                "status": "shown"
+            },
+            {
+                "id": "next-js",
+                "name": "Next.js",
+                "image": {
+                    "src": "/assets/images/tech/nextjs.png",
+                    "webp": "/assets/images/tech/nextjs.webp",
+                    "width": 320,
+                    "height": 320
+                },
+                "status": "shown"
+            },
+            {
+                "id": "golang-gin",
+                "name": "Golang Gin",
+                "image": {
+                    "src": "/assets/images/tech/golang-gin.png",
+                    "webp": "/assets/images/tech/golang-gin.webp",
+                    "width": 320,
+                    "height": 195
+                },
+                "status": "shown"
+            },
+            {
+                "id": "postgresql",
+                "name": "PostgreSQL",
+                "image": {
+                    "src": "/assets/images/tech/postgresql.png",
+                    "webp": "/assets/images/tech/postgresql.webp",
+                    "width": 320,
+                    "height": 200
+                },
+                "status": "shown"
+            },
+            {
+                "id": "node-js",
+                "name": "Node.js",
+                "image": {
+                    "src": "/assets/images/tech/nodejs.png",
+                    "webp": "/assets/images/tech/nodejs.webp",
+                    "width": 320,
+                    "height": 196
+                },
+                "status": "shown"
+            },
+            {
+                "id": "react",
+                "name": "React",
+                "image": {
+                    "src": "/assets/images/tech/reactjs.png",
+                    "webp": "/assets/images/tech/reactjs.webp",
+                    "width": 320,
+                    "height": 160
+                },
+                "status": "shown"
+            },
+            {
+                "id": "flutter",
+                "name": "Flutter",
+                "image": {
+                    "src": "/assets/images/tech/flutter.png",
+                    "webp": "/assets/images/tech/flutter.webp",
+                    "width": 320,
+                    "height": 91
+                },
+                "status": "shown"
+            },
+            {
+                "id": "open-csirt-foundation",
+                "name": "Open CSIRT Foundation",
+                "image": {
+                    "src": "/assets/images/tech/open-csirt.png",
+                    "webp": "/assets/images/tech/open-csirt.webp",
+                    "width": 320,
+                    "height": 93
+                },
+                "status": "shown"
+            },
+            {
+                "id": "first",
+                "name": "FIRST",
+                "image": {
+                    "src": "/assets/images/tech/first.png",
+                    "webp": "/assets/images/tech/first.webp",
+                    "width": 320,
+                    "height": 192
+                },
+                "status": "shown"
+            },
+            {
+                "id": "crest",
+                "name": "CREST",
+                "image": {
+                    "src": "/assets/images/tech/crest.png",
+                    "webp": "/assets/images/tech/crest.webp",
+                    "width": 320,
+                    "height": 226
+                },
+                "status": "shown"
+            },
+            {
+                "id": "enisa",
+                "name": "ENISA",
+                "image": {
+                    "src": "/assets/images/tech/enisa.png",
+                    "webp": "/assets/images/tech/enisa.webp",
+                    "width": 320,
+                    "height": 219
+                },
+                "status": "shown"
+            }
+        ]
+    },
+    "principles": {
+        "status": "shown",
+        "title": "The Principles That Guide Us",
+        "items": [
+            {
+                "id": "security-first",
+                "icon": "shield-alt",
+                "title": "Security First",
+                "text": "Every decision starts with security considerations",
+                "status": "shown"
+            },
+            {
+                "id": "innovation-driven",
+                "icon": "lightbulb",
+                "title": "Innovation Driven",
+                "text": "Continuously evolving our tools and techniques",
+                "status": "shown"
+            },
+            {
+                "id": "client-partnership",
+                "icon": "handshake",
+                "title": "Client Partnership",
+                "text": "We work with you, not just for you",
+                "status": "shown"
+            },
+            {
+                "id": "24-7-365-vigilance",
+                "icon": "clock",
+                "title": "24/7/365 Vigilance",
+                "text": "Round-the-clock protection never sleeps",
+                "status": "shown"
+            }
+        ]
+    },
+    "cta": {
+        "status": "shown",
+        "title": "Want to be the next name on this page?",
+        "text": "<p>Tell us what you are building or defending. We will come back with a scope, a timeline and a straight answer on cost.</p>",
+        "href": "/pages/contact/",
+        "icon": "calendar-check",
+        "label": "Talk to Us"
+    }
+}

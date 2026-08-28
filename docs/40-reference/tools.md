@@ -65,6 +65,8 @@ that does the other, rather than quietly checking less than they used to.
 | `test_publish_client.py` | `publish_push()` and the save that calls it: a payload an independent verifier accepts, and every way it can fail arriving as something the editor can show |
 | `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write — and that **every field the model declares reaches the live site**, by pushing a marker through each one and reading it out of the published document |
 | `test_contact_admin.py` | the contact page editor, its row buttons, and the same field round trip |
+| `test_company_admin.py` | the company profile editor: all six lists, and add, remove, **hide** and reorder on each — plus the rule that hiding is not deleting, and that a picture may only point inside this site |
+| `test_upload.py` | `lib/upload.php`, and mostly not by asking what it refused: it checks what came OUT still carrying what went in. EXIF stripped, an appended payload gone, an oversized picture reduced. Skips the re-encoding cases with a notice where PHP has no GD; CI installs `php-gd` so they always run there |
 | `test_qr.py` | `lib/qr.php`, against **libqrencode** — every module compared at a matched mask, then our own symbol read back and checked to say what went in, then the SVG parsed to confirm it draws that symbol and carries nothing the CSP refuses. Skips with a notice if `qrencode` is not installed |
 | `test_store.py` | `lib/store.php`: telling apart missing, unreadable and corrupt; the atomic write; and the rule that a damaged file is never copied over a good `.bak`, because the backup is what damage is recovered from |
 | `admin_session.py` | *(not run directly)* gives a test an admin account and signs it in |
@@ -92,7 +94,7 @@ passes or fails, and against a private store in a throwaway directory under `/tm
 they never covered the editor — before the split as well as after it. They went to
 `tech4time-website-frontend` with the pages they were written for.
 
-`check_admin_a11y.py` closes that gap. It is one file rather than four because there are eight
+`check_admin_a11y.py` closes that gap. It is one file rather than four because there are nine
 screens here, not sixteen pages, and four copies of "start PHP, sign in, walk the screens" would be
 four copies of the sign-in — the part most likely to need changing.
 

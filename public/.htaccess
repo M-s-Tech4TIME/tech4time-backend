@@ -19,9 +19,23 @@
 # CDN, no external origin, no inline style or script. The editor's rich text is
 # sanitised by lib/html.php before it is stored and again by the frontend on
 # receipt; this is the layer that means a mistake in either cannot execute.
+#
+# ONE DELIBERATE WIDENING: img-src also names the public site.
+#
+# The company profile editor shows each row's artwork, and most of that artwork
+# ships with the site rather than having been uploaded — it exists only on
+# tech4time.bd, so under a bare 'self' every one of those rows would draw a
+# broken image. The alternatives were worse: copying the frontend's assets here
+# duplicates them, and dropping the previews makes reordering fifty logos a
+# guessing game.
+#
+# It is exactly one origin, and only for images. No script, no style, no frame
+# and no connect — none of which this widening touches. The origin is the site
+# this admin exists to edit, and if it were serving something hostile the
+# public site would already be serving it to everybody.
 # --------------------------------------------------------------------------
 <IfModule mod_headers.c>
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://tech4time.bd; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
     Header always set X-Content-Type-Options "nosniff"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set X-Frame-Options "DENY"
@@ -71,6 +85,20 @@ Options -Indexes
     # certificate that silently stops renewing is discovered months later.
     RewriteCond %{REQUEST_URI} !^/\.well-known/
     RewriteRule "(^|/)\." - [F,L]
+
+    # uploads/ is the only directory on this host holding files that arrived
+    # from somebody's computer, and it must be SERVED — the editor draws each
+    # row's picture from it. So it gets an allow-list rather than a block:
+    # sixteen hex characters, a dot, and one of three raster extensions, which
+    # is exactly the shape lib/upload.php computes from the re-encoded bytes.
+    # Anything else under uploads/ is refused before a handler sees it, so a
+    # .php there could not run even if one existed.
+    #
+    # Identical to the rule on the public site, and for the same reason: this
+    # is the third of ADR 0019's three layers, and the only one that still
+    # holds if the other two are wrong.
+    RewriteCond %{REQUEST_URI} !^/uploads/[0-9a-f]{16}\.(webp|jpe?g|png)$
+    RewriteRule ^uploads/. - [F,L]
 </IfModule>
 
 # --------------------------------------------------------------------------

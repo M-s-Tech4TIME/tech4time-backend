@@ -7,7 +7,7 @@ Run from the repo root:  python3 tools/test_contact_admin.py
 Requires the PHP CLI:    sudo apt install php-cli
 
 WHY THIS EXISTS
-admin/sections/contact.php writes content/contact.json, and
+sections/contact.php writes content/contact.json, and
 pages/contact/index.php renders whatever it finds there. Code that writes files
 is worth a test: a bug in the save path does not announce itself, it shows up
 as an office that quietly lost its phone number.
@@ -54,6 +54,20 @@ DATA = ROOT / "content" / "contact.json"
 ADMIN = "/?s=contact"
 
 ROUTER = ROOT / "tools" / "dev-router.php"
+
+
+def registered_sections() -> list[str]:
+    """The rail's contents, read out of lib/admin.php rather than counted here.
+
+    A number written into this file is a second copy of the registry, and it is
+    the copy that goes stale: adding an editor would fail this test in the
+    editor that was not touched, which reads as a regression in the wrong
+    place. Parsed rather than run through PHP, the way publish_stub.py reads
+    CONTRACT_DOCUMENTS.
+    """
+    text = (ROOT / "lib" / "admin.php").read_text()
+    m = re.search(r"const ADMIN_SECTIONS\s*=\s*\[(.*?)\n\];", text, re.S)
+    return re.findall(r"^\s{4}'([a-z_]+)'\s*=>", m.group(1), re.M) if m else []
 
 
 class Results:
@@ -127,6 +141,13 @@ def form_fields(html: str) -> dict:
         name = re.search(r'name="([^"]+)"', tag)
         if not name or 'type="submit"' in tag:
             continue
+        # The failed-publish notice is a SEPARATE form on the same page, and
+        # its only field is action=republish. A browser would never send it
+        # with the editor's form; scraping the whole document would, and then
+        # every save after a failed publish would silently become a republish
+        # instead -- redirecting, changing nothing, and looking like a pass.
+        if name.group(1) == "action":
+            continue
         value = re.search(r'value="([^"]*)"', tag)
         fields[name.group(1)] = unescape(value.group(1) if value else "")
 
@@ -180,9 +201,11 @@ def run(client, r, site):
     # Overview, Careers, Contact, Account. The count is asserted rather than
     # the names so that adding a section without adding it to the rail — which
     # would leave it unreachable — shows up here.
+    sections = registered_sections()
     r.check("the rail lists every section",
-            html.count('class="rail__item"') == 4,
-            f'found {html.count(chr(34) + "rail__item")}')
+            html.count('class="rail__item"') == len(sections),
+            f'{len(sections)} in ADMIN_SECTIONS, '
+            f'{html.count(chr(34) + "rail__item")} in the rail')
     r.check("and marks the one showing",
             html.count('aria-current="page"') == 1)
 
@@ -415,6 +438,42 @@ def run(client, r, site):
             "site footer is showing older details" in html)
     r.check("and names the tool that fixes it",
             "sync_site_contact.py" in html)
+
+    # ------------------------------------------------------ publishing again
+    print("\nthe retry the failed-publish notice offers")
+
+    # That notice posts three fields and nothing else: csrf, s and
+    # action=republish. It must re-send what is ON FILE. It must not travel
+    # through the save path, because the save path rebuilds the document out of
+    # the form -- and out of THIS form there is no document to rebuild.
+    before = json.loads(DATA.read_text())
+    r.check("there is something on file to re-send",
+            before["offices"]["items"] and before["reach"]["items"],
+            "this case proves nothing against an empty document")
+
+    status, _, body = client.post(ADMIN, {
+        "csrf": token, "s": "contact", "action": "republish"})
+    r.check("it redirects rather than re-rendering", status == 302, f"status {status}")
+    r.check("so the operator is never shown an emptied form",
+            "Not saved" not in body,
+            "falling through to the save path rebuilds the document out of a "
+            "form that has three fields in it")
+
+    after = json.loads(DATA.read_text())
+    r.check("the offices are still on file", after["offices"] == before["offices"],
+            "a retry must not be able to empty the record it is retrying")
+    r.check("so are the reach rows", after["reach"] == before["reach"])
+    r.check("and the page copy", after["hero"] == before["hero"])
+    r.check("no revision was minted", after["revision"] == before["revision"],
+            "nothing was saved, so nothing new was published")
+
+    r.check("the live site still holds every office",
+            [o["name"] for o in offices_sent(site)]
+            == [o["name"] for o in before["offices"]["items"]],
+            str([o["name"] for o in offices_sent(site)]))
+
+    _, html = client.get(ADMIN)
+    r.check("and the editor is not showing an error", "Not saved" not in html)
 
     # --------------------------------------------------------- empty state
     print("\nwhen everything is emptied")

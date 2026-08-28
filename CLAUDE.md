@@ -113,7 +113,11 @@ python3 tools/check_shared_repos.py
 ```
 
 Touched the admin, auth or an editor? Also `test_admin_auth.py`, `test_careers_admin.py`,
-`test_contact_admin.py`, `test_publish_client.py`.
+`test_contact_admin.py`, `test_company_admin.py`, `test_publish_client.py`.
+
+Touched `lib/upload.php` or anything a picture passes through? Also `test_upload.py` — it needs
+PHP's GD extension (`sudo apt install php-gd`) and skips the re-encoding cases with a notice
+without it. **Those are the cases that matter**, so if it skips here, read the CI run.
 
 Touched `lib/qr.php` or authenticator enrolment? Also `test_qr.py` — it needs `qrencode`
 (`sudo apt install qrencode`) and skips with a notice without it.
@@ -123,7 +127,7 @@ Touched `lib/store.php`? Also `test_store.py`. Touched the rich-text editor? Als
 (`pkill firefox geckodriver`).
 
 Touched CSS, an admin screen or anything a keyboard reaches? Also
-`python3 tools/check_admin_a11y.py` — the focus ring, 320px, dark mode and hover across all eight
+`python3 tools/check_admin_a11y.py` — the focus ring, 320px, dark mode and hover across all nine
 screens, signed in. Same Firefox and geckodriver, same clean-up.
 
 Touched `lib/contract.php`, `lib/publish.php`, `lib/html.php` or the sprite? Also

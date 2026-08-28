@@ -84,6 +84,18 @@ EXPECT = [
     ("/.git/HEAD",            (403, 404),  "a directory whose name starts with a dot"),
     ("/.env",                 (403, 404),  "and every file inside one"),
     ("/README.md",            (403, 404),  "documentation is not the application"),
+
+    # uploads/ is the only directory here holding files that came from
+    # somebody's computer, and the only one that is both written and served.
+    # .htaccess serves exactly sixteen hex characters and three raster
+    # extensions there — the third of ADR 0019's three layers, and the only one
+    # that still holds if the other two are wrong. Not testable against the dev
+    # server, which does not read .htaccess, so this is the only place it is
+    # ever checked.
+    ("/uploads/",             (403, 404),  "uploads/ does not list its contents"),
+    ("/uploads/x.php",        (403, 404),  "and a .php there is refused before any handler sees it"),
+    ("/uploads/notahexname.webp", (403, 404), "a name this host did not mint is refused"),
+    ("/uploads/0123456789abcdef.svg", (403, 404), "and so is an extension it does not serve"),
 ]
 
 # (path, header, what must be in its value)
