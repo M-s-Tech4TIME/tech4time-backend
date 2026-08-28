@@ -24,11 +24,13 @@ Trouble getting in: [secrets-recovery.md](secrets-recovery.md).
 
 | Where | What is there |
 |---|---|
-| Down the left | the pages you can edit. Under the one you have open, **every section of it** — click a name to jump straight to it |
-| The `‹` at the top of that column | narrows it to icons. It remembers, so it stays that way |
+| Down the left | the pages you can edit |
+| The round `‹` at the top of that column | narrows it to icons. It remembers, so it stays that way |
 | Your name at the **bottom** of that column | your account, and **Sign out** |
-| Beside the page name | **View the page** and **Open the site**, both in a new tab |
-| Top right | **Save**, and the light/dark switch |
+| **Down the right**, under *On this page* | **every section of the page you are editing** — click a name to jump straight to it. On a narrower screen it sits above the form instead |
+| Beside the page name | two round buttons: **view the page** (the eye) and **open the site** (the link). Both open in a new tab |
+| Top right | **Save**, **Discard**, and the light/dark switch |
+| Under the page name | which file you are editing, and where the changes go |
 
 **Save is always in the same place**, whatever you have scrolled to. There is no button at the
 bottom to hunt for.

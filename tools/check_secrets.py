@@ -541,6 +541,63 @@ def check_nothing_inline() -> None:
     ok("no inline handlers or styles anywhere in the markup")
 
 
+def check_assets_versioned() -> None:
+    """Every stylesheet, script and image the admin serves carries a version.
+
+    public/.htaccess sends assets with `max-age=31536000, immutable`, and the
+    filenames never change because there is no build step. `immutable` is the
+    dangerous half: it tells the browser not to revalidate on an ordinary
+    reload, so once a stale copy is cached, pressing F5 will not clear it.
+
+    That is not a risk, it is a report. A deploy shipped a new admin shell -- a
+    rail toggle, an account menu, an outline column, a two-label save button --
+    and the browsers went on painting it with the stylesheet from before. The
+    markup was right, the page looked broken, and pressing reload changed
+    nothing.
+
+    admin_asset() puts the file's own mtime on the end of the URL, which is what
+    makes the year safe. This asserts that nothing writes an asset URL past it,
+    and that the header it is paired with is still the one described.
+
+    Images count too: the logo is cached the same way, and a wordmark that
+    changes is a wordmark nobody sees change.
+    """
+    literal = re.compile(
+        r"""(?:href|src|srcset)\s*=\s*["'](/assets/[^"']+"""
+        r"""\.(?:css|js|png|jpe?g|webp|svg|ico|woff2?))["']""")
+
+    found = []
+
+    for rel in tracked():
+        if not rel.endswith(".php") or rel.startswith("tools/"):
+            continue
+
+        text = (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+        for m in literal.finditer(text):
+            line = text.count("\n", 0, m.start()) + 1
+            found.append(f"{rel}:{line} serves {m.group(1)} with no version — "
+                         f"wrap it in admin_asset()")
+
+    if found:
+        for one in found:
+            bad("an asset URL a year-long cache will pin", one)
+    else:
+        ok("every asset URL the admin writes goes through admin_asset()")
+
+    htaccess = ROOT / "public" / ".htaccess"
+    text = htaccess.read_text(encoding="utf-8") if htaccess.is_file() else ""
+
+    if "immutable" not in text:
+        # Not a failure. Dropping immutable is a safe direction to move in; it
+        # costs a revalidation and nothing else. This says only that the pairing
+        # above has stopped describing what is served.
+        notes.append("public/.htaccess no longer sends immutable for assets — "
+                     "the note above admin_asset() describes a header that is "
+                     "gone")
+    else:
+        ok("the assets header and admin_asset() still describe each other")
+
+
 def main() -> None:
     check_nothing_committed()
     check_store_refuses_web_root()
@@ -550,6 +607,7 @@ def main() -> None:
     check_unindexed()
     check_nothing_below_the_docroot()
     check_nothing_inline()
+    check_assets_versioned()
 
     for note in notes:
         print(f"\nnote: {note}")

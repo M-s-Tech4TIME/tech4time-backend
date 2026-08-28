@@ -93,12 +93,25 @@ asserts exactly this and says so at length.
 ## Cache busting
 
 Asset filenames are not content-hashed — there is no build step to hash them — and `public/.htaccess`
-caches CSS, JS and fonts for a year.
+caches CSS, JS, fonts and images for a year, with `immutable`.
 
-**A changed `admin.css` will not reach returning editors on its own.**
+**`admin_asset()` in `lib/admin.php` handles this, and there is nothing to remember.** Every
+`<link>`, `<script>` and `<img>` the shell writes carries the file's own modification time as a
+query string, so changing a file changes its URL. `check_secrets.py` fails on an asset URL written
+any other way.
 
-When you change one, either append a version query to the tag or lower the `max-age` for that file
-type in `public/.htaccess`.
+This section used to say, correctly, that a changed `admin.css` would not reach returning editors on
+its own, and asked whoever changed one to append a version by hand. That is not a procedure, it is a
+thing to forget — and it was forgotten. A deploy shipped a new admin shell and the browsers went on
+painting it with the previous stylesheet: the rail toggle, the account menu and the outline column
+all arrived unstyled, and the page looked broken. `immutable` is the part that makes it stick: it
+tells the browser not to revalidate on an ordinary reload, so pressing F5 changes nothing and only a
+forced reload clears it.
+
+**The public site still has this problem.** Its pages are static HTML with no PHP to stamp a version
+into, so `tech4time.bd`'s own `assets/css/*.css` remain unversioned behind the same year-long cache.
+Changing one there still needs a version appended by hand, or a lower `max-age` in that repository's
+`.htaccess`.
 
 ---
 

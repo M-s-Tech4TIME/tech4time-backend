@@ -107,22 +107,32 @@ both:
 
 ```php
 admin_head('<name>', $user, $lede,
-    NAME_OUTLINE,                                    // what the rail lists under this section
+    NAME_OUTLINE,                                    // "On this page", down the right
     ['form'    => '<name>-form',                     // the id on your <form>
      'label'   => 'Save the <thing>',
-     'short'   => 'Save',                            // shown under 34em
+     'short'   => 'Save',                            // shown when the bar is under 44rem
      'discard' => admin_url('<name>')]);
 ```
 
 The outline is `['anchor-id' => 'Label', …]` in page order, and each key must be the `id` on the
-matching `<fieldset>`. It costs the editing column no height, and it is the only thing that makes a
-form of this size legible — the company editor is 282 rows and it was reported as not containing
+matching `<fieldset>`. `admin_head()` holds it and `admin_foot()` writes it, in a column to the
+right of the form — you pass it once and there is nothing to close. It is the only thing that makes
+a form of this size legible: the company editor is 282 rows and it was reported as not containing
 its own data, because the only way to learn a band existed was to scroll to it.
+
+It spent one release nested inside the rail, under the current section, which is the wrong column —
+the rail is a list of places to go and this is a map of where you already are.
 
 **There is no save bar to write.** The Save button is drawn by `admin_head()` into the bar across
 the top and reaches your form through the HTML `form` attribute. A section that draws its own is a
 section whose button is somewhere else from every other one, and `html{scroll-padding}` in
-`admin.css` is measured against that bar — `check_admin_a11y.py` fails if the two disagree.
+`admin.css` is measured against that bar — `check_admin_a11y.py` fails if the two disagree, at 1200px
+and again at 320px, where the bar wraps to two rows.
+
+**And no `<link>` or `<script>` to write either.** `admin_head()` writes them, through
+`admin_asset()`, which puts the file's modification time on the end of the URL. Assets here are
+served with `max-age=31536000, immutable`, so an unversioned URL is a stale file the browser will not
+revalidate on an ordinary reload — `check_secrets.py` fails on one.
 
 ## 5. The registry — `lib/admin.php`
 
@@ -193,6 +203,7 @@ the reason beside it. `test_careers_admin.py` is the worked example.
 - [ ] `pages/<name>/index.html` → `index.php`, rendering from the model, everything through `h()`
 - [ ] `sections/<name>.php` with the `T4T_ADMIN` guard, CSRF on POST and `$action` assigned
 - [ ] `data-async` on every form; an `id` on the main one; `NAME_OUTLINE` passed to `admin_head()`
+- [ ] `btn--secondary` on every "Add a …" button, so it reads as a button beside the fields
 - [ ] an `id` on every `<fieldset>` the outline names
 - [ ] `ADMIN_SECTIONS` and `ADMIN_PAGE_SECTIONS` updated; icon in `ADMIN_ICONS`
 - [ ] `check_content_model.py`: a `SUBJECTS` entry, or a `COVERED_ELSEWHERE` one naming the test

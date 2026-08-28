@@ -374,7 +374,7 @@ The one place mail leaves this site, so the envelope sender is set in one place.
 
 ### `admin.php`
 
-`admin_start_session()` · `admin_require_auth()` · `admin_section()` · `admin_head()` / `admin_foot()` · `admin_shell_head()` / `admin_shell_foot()` · `admin_icons()` · `admin_csrf()`
+`admin_start_session()` · `admin_require_auth()` · `admin_section()` · `admin_head()` / `admin_foot()` · `admin_shell_head()` / `admin_shell_foot()` · `admin_icons()` · `admin_asset()` · `admin_outline()` · `admin_initials()` · `admin_csrf()`
 
 The section registry, the icon rail, the page furniture, and the gate.
 
@@ -386,6 +386,24 @@ by hand in three places.
 `admin_shell_*` are the furniture for the pages that have **no** session yet — login, forgot, reset,
 setup. They exist because `admin_head()` fatals on a section that is not in the registry, and those
 pages are not sections.
+
+`admin_asset()` is how every stylesheet, script and image URL in both shells is written. It appends
+the file's own modification time. `public/.htaccess` serves assets with
+`max-age=31536000, immutable` and there is no build step to change a filename, so without a version
+in the URL a deploy leaves every returning browser on the previous stylesheet — and `immutable`
+means an ordinary reload will not fix it. That has happened. `check_secrets.py` fails on an asset URL written
+any other way.
+
+`admin_initials()` turns the signed-in name into the one or two letters the avatar at the foot of
+the rail draws — "Syed Golam Abid" becomes SG. It uses PCRE's `\X` rather than `mb_substr()`: `\X`
+is part of the regex engine and takes a whole grapheme, so an accented letter or a Bengali cluster
+survives instead of arriving as the first byte of one. `lib/html.php` avoids mbstring for the same
+reason.
+
+`admin_outline()` holds the current section's table of contents between the two halves of the shell:
+`admin_head()` is given it, `admin_foot()` writes it as the "On this page" column to the right of
+the form. There is nothing between them to pass it through — the section's own markup is what sits
+in the middle.
 
 [adding-an-editor.md](adding-an-editor.md)
 
