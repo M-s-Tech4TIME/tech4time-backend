@@ -201,6 +201,21 @@ def run(r: Results, gd: bool) -> None:
     r.check("an oversized picture is reduced", got.get("width") == 1600, str(got))
     r.check("and keeps its shape", got.get("height") == 8, str(got))
 
+    print("\nwhen the directory is not there yet")
+    # It is in neither repository -- it holds nothing that is committed -- so on
+    # a fresh host it does not exist until something makes it. upload_accept()
+    # makes it via upload_problem(); upload_store() and reconcile.py do not go
+    # through that path, and on the live host this was the difference between
+    # a picture being saved and "could not be saved on this server".
+    import shutil as _sh
+    _sh.rmtree(UPLOADS, ignore_errors=True)
+    got = php("echo json_encode(upload_store(base64_decode('%s')));"
+              % base64.b64encode(png(3, 3)).decode())
+    r.check("upload_store makes it rather than failing", "error" not in got,
+            str(got)[:200])
+    r.check("and the picture is there", UPLOADS.is_dir()
+            and (UPLOADS / Path(got.get("src", "x")).name).is_file(), str(got)[:200])
+
     print("\nhouse-keeping")
     held = php("echo json_encode(upload_held());")
     r.check("every stored name is one this scheme could have minted",
