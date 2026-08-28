@@ -9,7 +9,7 @@ WHY THIS EXISTS
 An editable page is three things that have to agree:
 
     the model      lib/contract.php  — what a field is called and what it holds
-    the form       admin/sections/   — where somebody types it
+    the form       sections/         — where somebody types it
     the renderer   pages/…/index.php — where it comes out
 
 The model moved to lib/contract.php with the repository split: it is the one

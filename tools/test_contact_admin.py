@@ -7,7 +7,7 @@ Run from the repo root:  python3 tools/test_contact_admin.py
 Requires the PHP CLI:    sudo apt install php-cli
 
 WHY THIS EXISTS
-admin/sections/contact.php writes content/contact.json, and
+sections/contact.php writes content/contact.json, and
 pages/contact/index.php renders whatever it finds there. Code that writes files
 is worth a test: a bug in the save path does not announce itself, it shows up
 as an office that quietly lost its phone number.
@@ -415,6 +415,42 @@ def run(client, r, site):
             "site footer is showing older details" in html)
     r.check("and names the tool that fixes it",
             "sync_site_contact.py" in html)
+
+    # ------------------------------------------------------ publishing again
+    print("\nthe retry the failed-publish notice offers")
+
+    # That notice posts three fields and nothing else: csrf, s and
+    # action=republish. It must re-send what is ON FILE. It must not travel
+    # through the save path, because the save path rebuilds the document out of
+    # the form -- and out of THIS form there is no document to rebuild.
+    before = json.loads(DATA.read_text())
+    r.check("there is something on file to re-send",
+            before["offices"]["items"] and before["reach"]["items"],
+            "this case proves nothing against an empty document")
+
+    status, _, body = client.post(ADMIN, {
+        "csrf": token, "s": "contact", "action": "republish"})
+    r.check("it redirects rather than re-rendering", status == 302, f"status {status}")
+    r.check("so the operator is never shown an emptied form",
+            "Not saved" not in body,
+            "falling through to the save path rebuilds the document out of a "
+            "form that has three fields in it")
+
+    after = json.loads(DATA.read_text())
+    r.check("the offices are still on file", after["offices"] == before["offices"],
+            "a retry must not be able to empty the record it is retrying")
+    r.check("so are the reach rows", after["reach"] == before["reach"])
+    r.check("and the page copy", after["hero"] == before["hero"])
+    r.check("no revision was minted", after["revision"] == before["revision"],
+            "nothing was saved, so nothing new was published")
+
+    r.check("the live site still holds every office",
+            [o["name"] for o in offices_sent(site)]
+            == [o["name"] for o in before["offices"]["items"]],
+            str([o["name"] for o in offices_sent(site)]))
+
+    _, html = client.get(ADMIN)
+    r.check("and the editor is not showing an error", "Not saved" not in html)
 
     # --------------------------------------------------------- empty state
     print("\nwhen everything is emptied")

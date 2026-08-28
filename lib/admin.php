@@ -35,8 +35,8 @@ require_once __DIR__ . '/publish_client.php';
 /**
  * What the rail lists, in the order it lists them.
  *
- * Adding a page to the admin is adding a row here and a file beside
- * admin/sections/. Nothing else in the shell needs to know about it.
+ * Adding a page to the admin is adding a row here and a file in
+ * sections/. Nothing else in the shell needs to know about it.
  *
  *   label  the name in the rail
  *   icon   a symbol id from public/assets/icons/sprite.svg
@@ -248,7 +248,7 @@ function admin_refuse(string $problem): never
 
 /* The session and its token belong to lib/auth.php now, which is what sets the
    cookie flags and regenerates the id on sign-in. These stay as the names the
-   editors have always called, so nothing in admin/sections/ had to change. */
+   editors have always called, so nothing in sections/ had to change. */
 
 function admin_csrf(): string
 {

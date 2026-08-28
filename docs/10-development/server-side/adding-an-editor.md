@@ -2,7 +2,7 @@
 
 **Applies to:** backend
 
-Turning a static page into one the admin can manage. This is the recipe for the thirteen pages that
+Turning a static page into one the admin can manage. This is the recipe for the fourteen pages that
 are still hand-edited HTML.
 
 **Do this only when the page genuinely changes without a redeploy.** Two pages qualify today: job
@@ -20,7 +20,7 @@ Five pieces:
 | a **model** | `lib/<name>.php` — the fields, their defaults, their validation |
 | **data** | `content/<name>.json` |
 | a **renderer** | `pages/<name>/index.php` — replaces `tech4time-website-frontend/index.html` |
-| a **form** | `admin/sections/<name>.php` |
+| a **form** | `sections/<name>.php` |
 | a **registry entry** | a row in `ADMIN_SECTIONS` |
 
 The shell needs to know nothing else. The rail draws itself from the registry.
@@ -80,7 +80,7 @@ $data = about_load();
 Keep the markup otherwise identical — `check_shared_markup.py` still applies, and the head, header
 and footer must stay byte-identical to the templates.
 
-## 4. The form — `admin/sections/<name>.php`
+## 4. The form — `sections/<name>.php`
 
 Start by copying `sections/contact.php`. It is the fuller of the two and demonstrates
 repeatable rows, reordering, validation display and the save cycle.
@@ -164,7 +164,7 @@ the reason beside it. `test_careers_admin.py` is the worked example.
 - [ ] `lib/<name>.php` with `*_defaults()`, `*_load()`, `*_save()`, `*_validate()`
 - [ ] `content/<name>.json` seeded with the current content
 - [ ] `pages/<name>/index.html` → `index.php`, rendering from the model, everything through `h()`
-- [ ] `admin/sections/<name>.php` with the `T4T_ADMIN` guard and CSRF on POST
+- [ ] `sections/<name>.php` with the `T4T_ADMIN` guard and CSRF on POST
 - [ ] `ADMIN_SECTIONS` and `ADMIN_PAGE_SECTIONS` updated; icon in `ADMIN_ICONS`
 - [ ] `check_content_model.py`: a `SUBJECTS` entry, or a `COVERED_ELSEWHERE` one naming the test
 - [ ] `test_<name>_admin.py`
