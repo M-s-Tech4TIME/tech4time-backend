@@ -838,10 +838,41 @@
   margin-block-end: var(--space-lg);
 }
 
+/* THE VERTICAL RHYTHM OF EVERY FORM IN THE ADMIN, IN ONE PLACE.
+
+   Three sizes, and the hierarchy is the whole point: 0.5rem inside a field,
+   1.5rem between fields, 2rem between a field and the next block. A reader
+   should be able to tell what belongs to what without reading any of it.
+
+   It was 0.25rem inside a field -- four pixels between a bold label and the
+   box it names, and four more before its hint -- which packs a label, a
+   control and a sentence of explanation into one undifferentiated stripe.
+   Reported as "clingy", which is exactly right: at four pixels the label is
+   not attached to its control, it is touching everything equally. */
 .admin__field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3xs);
+  gap: var(--space-2xs);
+}
+
+/* A field, or a hint, that is NOT inside .admin__grid has no gap of its own --
+   the grid is what spaces the ones that are. So a band whose last control is a
+   single full-width field ran straight into the first row card underneath it
+   with nothing between them at all, and a card that stacks its fields one
+   under the next had them touching. Measured at 0px on both editors. */
+.admin__block > .admin__field,
+.admin__block > .admin__grid + .admin__field,
+.admin-card > .admin__field,
+.admin-card > .admin__hint,
+.admin__details > .admin__field {
+  margin-block-end: var(--space-md);
+}
+
+/* And a card never butts against whatever came before it. Margins collapse in
+   this normal flow, so where .admin__grid above already leaves 2rem, nothing
+   doubles. */
+.admin-card {
+  margin-block-start: var(--space-lg);
 }
 
 .admin__field--wide {
