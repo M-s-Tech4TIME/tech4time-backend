@@ -20,9 +20,19 @@
  *     "meta":    { title, description, share_title }
  *     "hero":    { title, subtitle }
  *     "form":    { title, lead, subject_hint, note, service_types[] }
- *     "reach":   { title, items[ { icon, label, type, values[], text } ] }
- *     "offices": { eyebrow, title, lead, items[ { name, flag, address,
- *                  phones[], hours, languages[], status, schema{} } ] }
+ *     "reach":   { status, title,
+ *                  items[ { icon, label, type, values[], text, status } ] }
+ *     "offices": { status, eyebrow, title, lead,
+ *                  items[ { name, flag, image{}, address, phones[], hours,
+ *                  languages[], status, schema{} } ] }
+ *
+ *   A band's status and a row's are separate switches and both are honoured:
+ *   contact_shown_reach() and contact_shown_offices() answer for both, so the
+ *   structured data cannot advertise a band the page does not draw.
+ *
+ *   An office has a flag TWICE: 'flag' is a slug naming a file that ships with
+ *   the public site, and 'image' is an uploaded picture. The upload wins when
+ *   it is set; the slug is what the three original offices still use.
  *   }
  */
 

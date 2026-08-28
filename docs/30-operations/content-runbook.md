@@ -88,6 +88,34 @@ One link for the whole page, for speculative applications. Admin → Careers, at
 
 Offices, phone numbers, email addresses, the page's headings, and the enquiry form's copy.
 
+### Showing and hiding
+
+Two switches, and they are not the same instruction:
+
+| Switch | Where | What it does |
+|---|---|---|
+| **the section's** | at the top of *Reach us directly* or *Our offices* | takes the whole band off the page, keeping everything in it |
+| **a row's** | at the foot of each row or office card | takes that one entry off, keeping the band |
+
+Hidden means hidden: a hidden band or row is gone from the page **and** from the structured data
+the page gives Google. Nothing is deleted — a hidden entry is still in the editor, marked
+**Hidden**, and switching it back on puts it straight back.
+
+The banner and the enquiry form have no switch on purpose. A contact page with no way to make
+contact is not a page anybody meant to publish.
+
+### Flags
+
+Each office can have a flag, and there are two ways to give it one:
+
+- **Upload a picture.** The way to add any country. It is re-encoded here — which is what strips the
+  location and camera details out of a photograph — reduced to fit, given a WebP version, and sent
+  to the live site straight away.
+- **Pick one of the three built into the site.** Bangladesh, Belgium and Malaysia. This list cannot
+  grow without a developer, which is why the upload exists.
+
+An uploaded flag always wins. Remove it to fall back to the bundled list.
+
 ### The footer needs a developer
 
 > **Changing a phone number here does not change the footer.**

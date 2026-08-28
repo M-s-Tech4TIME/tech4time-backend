@@ -63,6 +63,11 @@ function contact_from_post(array $current): array
     $data['form']['service_types'] =
         contact_string_list((string)($_POST['form']['service_types'] ?? ''));
 
+    foreach (CONTACT_BANDS as $band) {
+        $data[$band]['status'] =
+            ($_POST[$band]['status'] ?? 'shown') === 'hidden' ? 'hidden' : 'shown';
+    }
+
     /* Rows arrive keyed by their position in the form. Removing one leaves a
        hole in those keys, so they are renumbered rather than trusted. */
     $data['reach']['items'] = [];
@@ -76,6 +81,7 @@ function contact_from_post(array $current): array
             'type'   => isset(CONTACT_REACH_TYPES[$row['type'] ?? '']) ? (string)$row['type'] : 'text',
             'values' => contact_string_list((string)($row['values'] ?? '')),
             'text'   => trim((string)($row['text'] ?? '')),
+            'status' => ($row['status'] ?? 'shown') === 'hidden' ? 'hidden' : 'shown',
         ]);
     }
 
@@ -105,6 +111,10 @@ function contact_from_post(array $current): array
                 str_replace(',', "\n", (string)($row['languages'] ?? ''))
             ),
             'status'    => ($row['status'] ?? 'shown') === 'hidden' ? 'hidden' : 'shown',
+            /* Re-checked against CONTRACT_IMAGE_ROOTS by the model rather than
+               taken as sent: these are hidden inputs, which is a text field
+               with the label taken off. */
+            'image'     => contract_image_defaults($row['image'] ?? []),
             'schema'    => [
                 'street'      => trim((string)($row['schema']['street'] ?? '')),
                 'locality'    => trim((string)($row['schema']['locality'] ?? '')),
@@ -190,6 +200,11 @@ $pending = '';   /* an unsaved change made by a row button */
    somebody reaches for when a publish has already failed. */
 $action = (string)($_POST['action'] ?? $_GET['action'] ?? '');
 
+/* Filled by contact_take_uploads(). Declared here because a row button that
+   fails to store a picture has to report it too, and that path does not go
+   near $errors. */
+$upload_errors = [];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     admin_check_csrf();
 
@@ -210,8 +225,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $do = (string)($_POST['do'] ?? 'save');
     $posted = contact_from_post($data);
 
+    /* BEFORE the branch below, not inside the save. The row buttons submit
+       without saving, so a flag chosen and then followed by "move up" would be
+       dropped on the floor — and the file input would come back empty with
+       nothing to say why. Same reasoning as the company profile's, which is
+       why the machinery is shared. */
+    $posted = contact_take_uploads($posted, $upload_errors);
+
     if ($do === 'save') {
-        $errors = contact_validate($posted);
+        $errors = array_merge($upload_errors, contact_validate($posted));
         if (!$errors) {
             if (contact_save($posted)) {
                 admin_redirect('contact', 'Saved the contact page.');
@@ -224,7 +246,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $applied = contact_apply_row_action($posted, $do);
         $data = $applied[0] ?? $posted;
         $pending = $applied[1] ?? '';
+        $errors = $upload_errors;
     }
+}
+
+/**
+ * Take whatever flags were attached, and put each on the office it belongs to.
+ *
+ * A picture is stored here and sent to the live site immediately rather than
+ * at save time, for the two reasons the company profile's does it: the
+ * operator finds out at once if the channel is broken, while they still know
+ * what they were doing; and a save carrying every flag would re-send all of
+ * them for a one-word edit.
+ *
+ * An orphan is possible — a flag uploaded and the save then abandoned — and is
+ * the right trade. It costs disk; the other order costs an edit.
+ */
+function contact_take_uploads(array $data, array &$errors): array
+{
+    foreach (admin_uploaded_files() as [$band, $index, $file]) {
+        if ($band !== 'offices' || !isset($data['offices']['items'][$index])) {
+            continue;
+        }
+
+        $stored = upload_accept($file);
+
+        if (isset($stored['error'])) {
+            $errors[] = 'Office ' . ($index + 1) . ': ' . $stored['error'];
+            continue;
+        }
+
+        $sent = admin_send_picture($stored);
+        if ($sent !== '') {
+            $errors[] = 'Office ' . ($index + 1) . ': ' . $sent;
+            continue;
+        }
+
+        $data['offices']['items'][$index]['image'] = contract_image_defaults($stored);
+    }
+
+    return $data;
 }
 
 /* ---------------------------------------------------------------- helpers */
@@ -372,6 +433,10 @@ if (!$errors && $pending !== '') {
     </p>
 
     <div class="admin__grid">
+      <?php admin_status_field('reach[status]', $data['reach']['status'], 'this section'); ?>
+    </div>
+
+    <div class="admin__grid">
       <label class="admin__field admin__field--wide">
         <span class="admin__label">Heading</span>
         <input class="admin__input" type="text" name="reach[title]"
@@ -385,12 +450,13 @@ if (!$errors && $pending !== '') {
 <?php endif; ?>
 
 <?php foreach ($rows as $i => $row): ?>
-    <div class="admin-card">
+    <div class="admin-card<?= $row['status'] === 'hidden' ? ' admin-card--hidden' : '' ?>">
       <?php admin_card_head('reach', $i, $total, [
           'label'  => $row['label'],
           'noun'   => 'row',
           'detail' => implode(' · ', $row['values']),
           'icon'   => isset(CONTACT_ICONS[$row['icon']]) ? $row['icon'] : '',
+          'status' => $row['status'],
       ]); ?>
 
       <div class="admin__grid">
@@ -443,6 +509,9 @@ if (!$errors && $pending !== '') {
           </span>
         </label>
       </div>
+
+      <?php admin_status_field("reach[items][$i][status]",
+          $row['status'], 'this row'); ?>
     </div>
 <?php endforeach; ?>
 
@@ -455,6 +524,10 @@ if (!$errors && $pending !== '') {
   <fieldset class="admin__block" id="band-offices">
     <legend class="admin__section-title">Our offices</legend>
     <p class="admin__blurb">The band at the foot of the page, one card per office.</p>
+
+    <div class="admin__grid">
+      <?php admin_status_field('offices[status]', $data['offices']['status'], 'this section'); ?>
+    </div>
 
     <div class="admin__grid">
       <label class="admin__field">
@@ -484,7 +557,7 @@ if (!$errors && $pending !== '') {
 <?php endif; ?>
 
 <?php foreach ($rows as $i => $office): ?>
-    <div class="admin-card">
+    <div class="admin-card<?= $office['status'] === 'hidden' ? ' admin-card--hidden' : '' ?>">
       <?php admin_card_head('office', $i, $total, [
           'label'  => $office['name'],
           'noun'   => 'office',
@@ -493,6 +566,17 @@ if (!$errors && $pending !== '') {
       ]); ?>
 
       <input type="hidden" name="offices[items][<?= $i ?>][id]" value="<?= h($office['id']) ?>">
+
+      <?php admin_image_fields(
+          "offices[items][$i][image]",
+          "upload[offices][$i]",
+          $office['image'],
+          'flag',
+          $office['flag'] !== ''
+              ? 'Using the built-in ' . str_replace('-', ' ', $office['flag'])
+                . ' flag. Upload one to replace it.'
+              : ''
+      ); ?>
 
       <div class="admin__grid">
         <label class="admin__field">
@@ -503,27 +587,28 @@ if (!$errors && $pending !== '') {
         </label>
 
         <label class="admin__field">
-          <span class="admin__label">Flag</span>
+          <span class="admin__label">Or one of the flags that ship with the site</span>
           <select class="admin__input" name="offices[items][<?= $i ?>][flag]">
-            <option value="">No flag</option>
+            <option value="">None</option>
 <?php foreach ($flags as $flag): ?>
             <option value="<?= h($flag) ?>"<?= $office['flag'] === $flag ? ' selected' : '' ?>><?= h(ucfirst(str_replace('-', ' ', $flag))) ?></option>
 <?php endforeach; ?>
           </select>
           <span class="admin__hint">
-            Add a new one by dropping a .jpg or .png into
-            <code>/assets/images/flags/</code>; it appears in this list on the
-            next reload.
+<?php if ($office['image']['src'] !== ''): ?>
+            <strong>Not in use.</strong> This office has an uploaded flag above,
+            and an uploaded one always wins. Remove it to fall back to this
+            list.
+<?php else: ?>
+            The three that were built into the site. Uploading a flag above is
+            the way to add any other country — this list cannot grow without a
+            developer and a deploy.
+<?php endif; ?>
           </span>
         </label>
 
-        <label class="admin__field">
-          <span class="admin__label">Shown on the page</span>
-          <select class="admin__input" name="offices[items][<?= $i ?>][status]">
-            <option value="shown"<?= $office['status'] === 'shown' ? ' selected' : '' ?>>Shown — visitors see it</option>
-            <option value="hidden"<?= $office['status'] === 'hidden' ? ' selected' : '' ?>>Hidden — kept, not shown</option>
-          </select>
-        </label>
+        <?php admin_status_field("offices[items][$i][status]",
+            $office['status'], 'this office'); ?>
 
         <label class="admin__field admin__field--wide">
           <span class="admin__label">Address as it should read</span>

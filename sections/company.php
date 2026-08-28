@@ -123,7 +123,7 @@ function company_row_from_post(string $band, array $row): array
 /**
  * One picture, from the hidden fields the row carries.
  *
- * The paths are checked against COMPANY_IMAGE_ROOTS rather than taken as sent.
+ * The paths are checked against CONTRACT_IMAGE_ROOTS rather than taken as sent.
  * These are hidden inputs, so the browser is not offering a choice here — but
  * a hidden input is a text field with the label removed, and anything a form
  * posts can be posted with something else in it. A src pointing at another
@@ -133,9 +133,9 @@ function company_image_from_post(mixed $image): array
 {
     $image = is_array($image) ? $image : [];
 
-    return company_image_defaults([
-        'src'    => company_safe_image_path((string)($image['src'] ?? '')),
-        'webp'   => company_safe_image_path((string)($image['webp'] ?? '')),
+    return contract_image_defaults([
+        'src'    => contract_safe_image_path((string)($image['src'] ?? '')),
+        'webp'   => contract_safe_image_path((string)($image['webp'] ?? '')),
         'width'  => (int)($image['width'] ?? 0),
         'height' => (int)($image['height'] ?? 0),
     ]);
@@ -224,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  */
 function company_take_uploads(array $data, array &$errors): array
 {
-    foreach (company_uploaded_files() as [$band, $index, $file]) {
+    foreach (admin_uploaded_files() as [$band, $index, $file]) {
         if (!isset(COMPANY_LISTS[$band]) || !isset($data[$band]['items'][$index])) {
             continue;
         }
@@ -237,89 +237,19 @@ function company_take_uploads(array $data, array &$errors): array
             continue;
         }
 
-        $sent = company_send_picture($stored);
+        $sent = admin_send_picture($stored);
         if ($sent !== '') {
             $errors[] = 'Row ' . ($index + 1) . ': ' . $sent;
             continue;
         }
 
-        $data[$band]['items'][$index]['image'] = company_image_defaults($stored);
+        $data[$band]['items'][$index]['image'] = contract_image_defaults($stored);
     }
 
     return $data;
 }
 
-/**
- * $_FILES, flattened.
- *
- * PHP turns upload[clients][3] inside out: rather than one entry per file it
- * gives $_FILES['upload']['name']['clients'][3] and four more arrays shaped
- * the same way. This puts each file back together.
- *
- * @return list<array{0:string,1:int,2:array}>  band, row index, one $_FILES entry
- */
-function company_uploaded_files(): array
-{
-    $found = [];
-    $upload = $_FILES['upload'] ?? null;
 
-    if (!is_array($upload) || !isset($upload['name']) || !is_array($upload['name'])) {
-        return $found;
-    }
-
-    foreach ($upload['name'] as $band => $rows) {
-        if (!is_array($rows)) {
-            continue;
-        }
-        foreach (array_keys($rows) as $index) {
-            $file = [];
-            foreach (['name', 'type', 'tmp_name', 'error', 'size'] as $key) {
-                $file[$key] = $upload[$key][$band][$index] ?? null;
-            }
-            /* An untouched file input still posts, with error NO_FILE. */
-            if ((int)($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-                continue;
-            }
-            $found[] = [(string)$band, (int)$index, $file];
-        }
-    }
-
-    return $found;
-}
-
-/**
- * Send a stored picture and its WebP sibling to the live site.
- *
- * Returns '' or a sentence. Both files go, because the page names both and a
- * <source> pointing at a picture the other host does not have is a broken
- * image for everybody whose browser prefers WebP — which is nearly everybody.
- */
-function company_send_picture(array $stored): string
-{
-    foreach (['src', 'webp'] as $which) {
-        $name = basename((string)($stored[$which] ?? ''));
-        if ($name === '') {
-            continue;
-        }
-
-        $path = UPLOAD_DIR . '/' . $name;
-        $bytes = @file_get_contents($path);
-
-        if ($bytes === false) {
-            return 'The picture was not where it had just been written.';
-        }
-
-        $kind = publish_asset_type($bytes);
-        $result = publish_asset($bytes, $kind[1] ?? 'application/octet-stream');
-
-        if (($result['ok'] ?? false) !== true) {
-            return 'Saved here, but the live site did not take the picture: '
-                 . (string)($result['error'] ?? 'it refused.');
-        }
-    }
-
-    return '';
-}
 
 /**
  * Apply an add / remove / move button to one of the six lists.
@@ -387,104 +317,8 @@ function company_apply_row_action(array $data, string $do): ?array
    the stylesheet expects them in, so they sat top-left above the fields
    instead of at the right end of a row head. Same classes, different page. */
 
-/**
- * The shown/hidden control every band and every row carries.
- *
- * A <select> and not a checkbox, matching sections/contact.php — and for a
- * reason beyond consistency: an unticked checkbox is not posted at all, so
- * "switched off" and "the field was not in the form" arrive identically, and
- * telling them apart needs a hidden companion input that somebody eventually
- * forgets. A select always posts exactly one of two values.
- *
- * Hiding is not deleting. A hidden row keeps its place, its text and its
- * picture, and simply does not render.
- */
-function company_status_field(string $name, string $status, string $noun): void
-{
-    ?>
-        <label class="admin__field">
-          <span class="admin__label">Shown on the page</span>
-          <select class="admin__input" name="<?= h($name) ?>">
-            <option value="shown"<?= $status !== 'hidden' ? ' selected' : '' ?>>Shown — visitors see <?= h($noun) ?></option>
-            <option value="hidden"<?= $status === 'hidden' ? ' selected' : '' ?>>Hidden — kept, not shown</option>
-          </select>
-        </label>
-    <?php
-}
 
-/**
- * Where the editor fetches a row's picture from.
- *
- * An upload is served from this host: public/uploads/ holds the canonical copy
- * (ADR 0010), so the preview is right even when the publish has not happened
- * or has failed. Artwork that ships with the site exists only on the other
- * host, and is fetched from there — which is the one thing public/.htaccess
- * widens img-src for.
- */
-function company_preview_src(string $path): string
-{
-    return str_starts_with($path, UPLOAD_URL_ROOT) ? $path : public_url($path);
-}
 
-/** The picture a row holds, shown as it is, with its fields carried across. */
-function company_image_fields(string $band, int $i, array $image): void
-{
-    $field = $band . '[items][' . $i . '][image]';
-    ?>
-        <div class="admin-card__media">
-<?php if ($image['src'] !== ''): ?>
-          <?php /* An uploaded picture is served from THIS host, which holds the
-                   canonical copy — the preview must not depend on a publish
-                   having succeeded. Everything else is artwork that ships with
-                   the site and exists only there. */ ?>
-          <img class="admin-card__thumb" src="<?= h(company_preview_src($image['src'])) ?>"
-               alt="" width="<?= (int)$image['width'] ?>" height="<?= (int)$image['height'] ?>"
-               loading="lazy" decoding="async">
-          <p class="admin__fineprint">
-            <code><?= h(basename($image['src'])) ?></code>
-            &middot; <?= (int)$image['width'] ?>&times;<?= (int)$image['height'] ?>
-<?php if ($image['webp'] !== ''): ?>
-            &middot; with a WebP version
-<?php endif; ?>
-          </p>
-<?php else: ?>
-          <p class="admin__hint">No picture yet.</p>
-<?php endif; ?>
-        </div>
-        <?php /* Carried rather than edited. The paths and the size come from
-                 the file itself when it is uploaded, and a size typed by hand
-                 is a size that is wrong — which moves the page as it loads.
-                 company_image_from_post() re-checks all four against
-                 COMPANY_IMAGE_ROOTS anyway, because a hidden input is a text
-                 field with the label taken off. */ ?>
-        <input type="hidden" name="<?= h($field) ?>[src]" value="<?= h($image['src']) ?>">
-        <input type="hidden" name="<?= h($field) ?>[webp]" value="<?= h($image['webp']) ?>">
-        <input type="hidden" name="<?= h($field) ?>[width]" value="<?= (int)$image['width'] ?>">
-        <input type="hidden" name="<?= h($field) ?>[height]" value="<?= (int)$image['height'] ?>">
-
-<?php $problem = upload_problem(); ?>
-<?php if ($problem !== ''): ?>
-        <p class="admin__hint"><?= admin_icon('info-circle', 'icon icon--sm') ?>
-           <?= h($problem) ?></p>
-<?php else: ?>
-        <label class="admin__field admin__field--wide">
-          <span class="admin__label">
-            <?= $image['src'] === '' ? 'Choose a picture' : 'Replace it' ?>
-          </span>
-          <input class="admin__input admin__file" type="file"
-                 name="upload[<?= h($band) ?>][<?= $i ?>]"
-                 accept="image/jpeg,image/png,image/webp">
-          <span class="admin__hint">
-            JPEG, PNG or WebP, up to <?= (int)(UPLOAD_MAX_BYTES / 1048576) ?> MB.
-            It is re-encoded here — which is what removes the location and the
-            camera details a photograph carries — reduced to
-            <?= UPLOAD_MAX_DIMENSION ?> pixels on its longest side, given a WebP
-            version, and sent to the live site straight away.
-          </span>
-        </label>
-<?php endif; ?>
-    <?php
-}
 
 /** A band's heading, its show/hide switch, and the blurb under it. */
 function company_band_header(array $data, string $band, string $legend, string $blurb): void
@@ -493,7 +327,7 @@ function company_band_header(array $data, string $band, string $legend, string $
     <legend class="admin__section-title"><?= h($legend) ?></legend>
     <p class="admin__blurb"><?= h($blurb) ?></p>
     <div class="admin__grid">
-      <?php company_status_field($band . '[status]',
+      <?php admin_status_field($band . '[status]',
           (string)($data[$band]['status'] ?? 'shown'), 'this section'); ?>
     </div>
     <?php
@@ -652,7 +486,7 @@ if (!$errors && $pending !== '') {
         </label>
       </div>
 
-      <?php company_status_field("milestones[items][$i][status]",
+      <?php admin_status_field("milestones[items][$i][status]",
           (string)$row['status'], 'this entry'); ?>
     </div>
 <?php endforeach; ?>
@@ -722,7 +556,7 @@ if (!$errors && $pending !== '') {
         </label>
       </div>
 
-      <?php company_status_field("experience[items][$i][status]",
+      <?php admin_status_field("experience[items][$i][status]",
           (string)$row['status'], 'this entry'); ?>
     </div>
 <?php endforeach; ?>
@@ -752,7 +586,9 @@ if (!$errors && $pending !== '') {
           'status' => $row['status'],
       ]); ?>
 
-      <?php company_image_fields('clients', $i, $row['image']); ?>
+      <?php admin_image_fields("clients[items][$i][image]",
+                                "upload[clients][$i]",
+                                $row['image']); ?>
 
       <label class="admin__field admin__field--wide">
         <span class="admin__label">Name</span>
@@ -760,7 +596,7 @@ if (!$errors && $pending !== '') {
                value="<?= h($row['name']) ?>">
       </label>
 
-      <?php company_status_field("clients[items][$i][status]",
+      <?php admin_status_field("clients[items][$i][status]",
           (string)$row['status'], 'this entry'); ?>
     </div>
 <?php endforeach; ?>
@@ -809,7 +645,9 @@ if (!$errors && $pending !== '') {
           'status' => $row['status'],
       ]); ?>
 
-      <?php company_image_fields('journey', $i, $row['image']); ?>
+      <?php admin_image_fields("journey[items][$i][image]",
+                                "upload[journey][$i]",
+                                $row['image']); ?>
 
       <label class="admin__field admin__field--wide">
         <span class="admin__label">What is in the picture</span>
@@ -821,7 +659,7 @@ if (!$errors && $pending !== '') {
         </span>
       </label>
 
-      <?php company_status_field("journey[items][$i][status]",
+      <?php admin_status_field("journey[items][$i][status]",
           (string)$row['status'], 'this entry'); ?>
     </div>
 <?php endforeach; ?>
@@ -880,7 +718,9 @@ if (!$errors && $pending !== '') {
           'status' => $row['status'],
       ]); ?>
 
-      <?php company_image_fields('technology', $i, $row['image']); ?>
+      <?php admin_image_fields("technology[items][$i][image]",
+                                "upload[technology][$i]",
+                                $row['image']); ?>
 
       <label class="admin__field admin__field--wide">
         <span class="admin__label">Name</span>
@@ -888,7 +728,7 @@ if (!$errors && $pending !== '') {
                value="<?= h($row['name']) ?>">
       </label>
 
-      <?php company_status_field("technology[items][$i][status]",
+      <?php admin_status_field("technology[items][$i][status]",
           (string)$row['status'], 'this entry'); ?>
     </div>
 <?php endforeach; ?>
@@ -950,7 +790,7 @@ if (!$errors && $pending !== '') {
         </label>
       </div>
 
-      <?php company_status_field("principles[items][$i][status]",
+      <?php admin_status_field("principles[items][$i][status]",
           (string)$row['status'], 'this entry'); ?>
     </div>
 <?php endforeach; ?>

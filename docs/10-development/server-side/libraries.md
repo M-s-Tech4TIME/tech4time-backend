@@ -374,7 +374,7 @@ The one place mail leaves this site, so the envelope sender is set in one place.
 
 ### `admin.php`
 
-`admin_start_session()` · `admin_require_auth()` · `admin_section()` · `admin_head()` / `admin_foot()` · `admin_shell_head()` / `admin_shell_foot()` · `admin_icons()` · `admin_asset()` · `admin_outline()` · `admin_initials()` · `admin_card_head()` · `admin_csrf()`
+`admin_start_session()` · `admin_require_auth()` · `admin_section()` · `admin_head()` / `admin_foot()` · `admin_shell_head()` / `admin_shell_foot()` · `admin_icons()` · `admin_asset()` · `admin_outline()` · `admin_initials()` · `admin_card_head()` · `admin_status_field()` · `admin_image_fields()` · `admin_uploaded_files()` · `admin_send_picture()` · `admin_csrf()`
 
 The section registry, the icon rail, the page furniture, and the gate.
 
@@ -406,6 +406,13 @@ each `sections/*.php` because it was in each of them, and they were not the same
 controls inside the `.admin-card__head` flex line, where `margin-inline-start: auto` pushes them
 right; company emitted them as a bare child of `.admin-card`, where that rule has nothing to push
 against. Same classes, same stylesheet, different page.
+
+`admin_status_field()`, `admin_image_fields()`, `admin_uploaded_files()` and
+`admin_send_picture()` are the rest of what a repeatable row needs: the Shown/Hidden control, the
+thumbnail and file input, `$_FILES` put back the right way round, and the push of a stored picture
+to the live site. They were the company editor's, written for its six lists; the contact page's
+offices needed all four the day they gained a flag anybody can upload. **Both editors call these —
+do not copy them into a section.**
 
 `admin_initials()` turns the signed-in name into the one or two letters the avatar at the foot of
 the rail draws — "Syed Golam Abid" becomes SG. It uses PCRE's `\X` rather than `mb_substr()`: `\X`
