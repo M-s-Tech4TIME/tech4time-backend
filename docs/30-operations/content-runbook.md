@@ -14,9 +14,34 @@ Everything here happens at **https://admin.tech4time.bd/** — no file editing, 
 2. Your username and password
 3. Six digits from your authenticator app
 
-Sessions last one hour of inactivity, twelve hours at most. Signing out is the button in the top bar.
+Sessions last one hour of inactivity, twelve hours at most.
 
 Trouble getting in: [secrets-recovery.md](secrets-recovery.md).
+
+---
+
+## Finding your way around
+
+| Where | What is there |
+|---|---|
+| Down the left | the pages you can edit. Under the one you have open, **every section of it** — click a name to jump straight to it |
+| The `‹` at the top of that column | narrows it to icons. It remembers, so it stays that way |
+| Your name at the **bottom** of that column | your account, and **Sign out** |
+| Beside the page name | **View the page** and **Open the site**, both in a new tab |
+| Top right | **Save**, and the light/dark switch |
+
+**Save is always in the same place**, whatever you have scrolled to. There is no button at the
+bottom to hunt for.
+
+### Nothing jumps any more
+
+Adding a row, removing one, moving one up or down, and saving all happen **where you are standing**.
+The page does not reload and does not scroll back to the top, so arranging fifty logos is fifty
+clicks in one place rather than fifty round trips. Move a row and the buttons stay under your
+pointer — press again and the same row moves again.
+
+If your browser has JavaScript switched off, everything still works; it simply reloads the page each
+time, the way it used to.
 
 ---
 

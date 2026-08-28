@@ -551,6 +551,7 @@ def prove_reduced_motion(b: Browser, base: str) -> None:
 def walk_focus(b: Browser, base: str, screens, label, r: Results) -> None:
     for screen in screens:
         b.go(base + screen)
+        b.js(OPEN_DISCLOSURES)
         stops = 0
         for _ in range(MAX_TABS):
             b.tab()
@@ -664,12 +665,105 @@ def walk_dark(b: Browser, base: str, screens, r: Results) -> None:
     b.set_theme("light")
 
 
+OPEN_DISCLOSURES = r"""
+/* Open every <details> before sampling.
+
+   A control inside a closed disclosure has hover and focus rules like any
+   other, and no pointer can reach it to prove they work: the account menu
+   reported "nothing computed changed under the pointer" for both of its items
+   and the reason was that the menu was shut. Skipping them instead would mean
+   the one part of the chrome built out of a disclosure is the one part nobody
+   checks -- and the account menu holds Sign out.
+
+   Returns how many were opened so the caller can say so. */
+var shut = document.querySelectorAll('details:not([open])');
+for (var i = 0; i < shut.length; i++) { shut[i].open = true; }
+return shut.length;
+"""
+
+
+MEASURE_BARS = r"""
+/* The two bars that sit on top of the scrollport, and what html's
+   scroll-padding claims about them.
+
+   admin.css carries measured numbers here, with a comment saying to measure
+   again if either bar is restyled. That instruction has to be enforced by
+   something: a padding smaller than the bar puts fields back underneath it for
+   anyone arriving by keyboard (SC 2.4.11), and a padding much larger than the
+   bar scrolls every anchor to the wrong place. Neither is visible until
+   somebody tabs or follows a link into the middle of the form. */
+function h(sel) {
+  var e = document.querySelector(sel);
+  return e ? Math.round(e.getBoundingClientRect().height) : 0;
+}
+var root = getComputedStyle(document.documentElement);
+return {
+  top: h('.admin-bar'),
+  bottom: h('.admin__actions--sticky'),
+  padTop: Math.round(parseFloat(root.scrollPaddingTop) || 0),
+  padBottom: Math.round(parseFloat(root.scrollPaddingBottom) || 0)
+};
+"""
+
+
+def check_bars(b: Browser, base: str, screens, r: Results) -> None:
+    """Prove scroll-padding still clears the bars it was measured against.
+
+    ONE PADDING, SO ONE MEASUREMENT. html{scroll-padding} is a single pair of
+    numbers for the whole admin, and the bars are not the same height on every
+    screen -- the account page has no save bar and a shorter heading. So what
+    matters is the tallest each bar ever gets: the padding has to clear that,
+    and it should not clear it by so much that every anchor overshoots.
+    """
+    b.size(1200)
+
+    tallest = {"top": 0, "bottom": 0}
+    pads = {"top": 0, "bottom": 0}
+
+    for screen in screens:
+        b.go(base + screen)
+        m = b.js(MEASURE_BARS)
+        if not m:
+            continue
+
+        tallest["top"] = max(tallest["top"], m["top"])
+        tallest["bottom"] = max(tallest["bottom"], m["bottom"])
+        pads["top"] = m["padTop"]
+        pads["bottom"] = m["padBottom"]
+
+        print(f"  {screen}: top {m['top']}px, bottom {m['bottom']}px")
+
+    for edge in ("top", "bottom"):
+        bar, pad = tallest[edge], pads[edge]
+        if bar == 0:
+            continue
+
+        r.check(
+            f"scroll-padding clears the tallest {edge} bar",
+            pad >= bar,
+            f"the tallest is {bar}px and scroll-padding-{edge} is {pad}px — "
+            f"a field scrolled to that edge lands under it (SC 2.4.11)")
+
+        # Generous is safe; wildly generous means the number is stale, and
+        # every anchor then overshoots by the difference.
+        r.check(
+            f"scroll-padding is not stale at the {edge}",
+            pad - bar <= 32,
+            f"the tallest is {bar}px and scroll-padding-{edge} is {pad}px — "
+            f"{pad - bar}px of overshoot. Measure again and update the "
+            f"html{{scroll-padding}} rule in admin.css.")
+
+    print(f"  tallest: top {tallest['top']}px (pad {pads['top']}px), "
+          f"bottom {tallest['bottom']}px (pad {pads['bottom']}px)")
+
+
 def walk_hover(b: Browser, base: str, screens, r: Results) -> None:
     b.size(1200)
     seen_kinds: set[str] = set()
 
     for screen in screens:
         b.go(base + screen)
+        b.js(OPEN_DISCLOSURES)
         kinds = b.js(HOVER_KINDS) or {}
 
         for kind, spots in kinds.items():
@@ -728,6 +822,9 @@ def run(b: Browser, base: str, secret: str, r: Results) -> None:
 
     r.section("dark mode")
     walk_dark(b, base, SIGNED_IN_SCREENS, r)
+
+    r.section("the sticky bars")
+    check_bars(b, base, SIGNED_IN_SCREENS, r)
 
     r.section("hover")
     walk_hover(b, base, SIGNED_IN_SCREENS, r)

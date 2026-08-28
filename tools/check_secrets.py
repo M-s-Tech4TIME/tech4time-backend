@@ -488,6 +488,59 @@ def check_nothing_below_the_docroot() -> None:
         ok("every section refuses to run unless T4T_ADMIN is defined")
 
 
+def check_nothing_inline() -> None:
+    """No markup that the CSP will silently refuse to run.
+
+    The Content-Security-Policy here is script-src 'self'; style-src 'self',
+    with no 'unsafe-inline' on either. A browser does not warn about an
+    attribute it will not honour -- it drops the handler and carries on, so
+    the page looks right and one behaviour is simply gone.
+
+    That is not hypothetical. sections/careers.php asked
+    "Delete this post permanently?" from an inline submit handler written
+    before the CSP existed. Every browser refused it, nobody was ever asked,
+    and Delete deleted on the first press for as long as the policy has been
+    in place. Nothing failed; the confirmation just was not there.
+
+    THE PHP COMES OUT FIRST, and that is not tidiness. Attributes here are
+    written `action="<?= h(...) ?>"`, and `?>` contains a `>`: a pattern that
+    scans from `<tag` to the attribute with [^>]* stops dead at the first one
+    and matches nothing at all. The first version of this check passed a file
+    with the very handler it was written for still in it. Removing every
+    `<?…?>` span leaves the markup, and takes the PHP comments with it — so a
+    comment that quotes a handler while explaining why it was removed does not
+    read as one.
+    """
+    php = re.compile(r"<\?(?:.*?\?>|.*\Z)", re.S)
+    handler = re.compile(
+        r"<[a-zA-Z][^>]*?\son(?:click|submit|change|input|load|error|focus|blur"
+        r"|keydown|keyup|mouseover|mouseout)\s*=", re.S)
+    inline_style = re.compile(r"<[a-zA-Z][^>]*?\sstyle\s*=", re.S)
+
+    found = []
+
+    for rel in tracked():
+        if not rel.endswith((".php", ".html")):
+            continue
+
+        raw = (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+        # Keep the line count honest: one space per character removed.
+        text = php.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), raw)
+
+        for pattern, what in ((handler, "an inline event handler"),
+                              (inline_style, "an inline style attribute")):
+            for m in pattern.finditer(text):
+                line = text.count("\n", 0, m.start()) + 1
+                found.append(f"{rel}:{line} has {what}")
+
+    if found:
+        for one in found:
+            bad("markup the CSP refuses to run", one)
+        return
+
+    ok("no inline handlers or styles anywhere in the markup")
+
+
 def main() -> None:
     check_nothing_committed()
     check_store_refuses_web_root()
@@ -496,6 +549,7 @@ def main() -> None:
     check_nothing_leaks()
     check_unindexed()
     check_nothing_below_the_docroot()
+    check_nothing_inline()
 
     for note in notes:
         print(f"\nnote: {note}")

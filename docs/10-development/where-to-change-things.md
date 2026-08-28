@@ -48,6 +48,10 @@ The public site's palette, layout, motion, JavaScript modules and page markup ar
 | A colour | `public/assets/css/theme.css` — tokens only, never a hex elsewhere |
 | The editor's appearance | `public/assets/css/admin.css` |
 | The icon rail's width or behaviour | `public/assets/css/admin.css`, `public/assets/js/admin-nav.js` |
+| The account menu in the top bar | `admin_head()` in `lib/admin.php`; it is a `<details>` |
+| What the rail lists under the current section | the `*_OUTLINE` constant in that `sections/*.php` |
+| The save bar at the foot of an editor | `admin_save_bar()` in `lib/admin.php` — **not** per section |
+| Whether a form posts without navigating | `data-async` on the `<form>`; `public/assets/js/admin-forms.js` |
 | The rich-text toolbar | `public/assets/js/editor.js` |
 | The theme switch | `public/assets/js/theme-init.js`, `theme-toggle.js` |
 | An icon the editor offers | `CONTACT_ICONS` in `lib/contract.php` — **and the other repository** |

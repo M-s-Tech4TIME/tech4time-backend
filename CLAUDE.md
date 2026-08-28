@@ -70,6 +70,9 @@ Full table: [docs/10-development/where-to-change-things.md](docs/10-development/
 | The sign-in, sessions, hashing | `lib/auth.php` — read [authentication.md](docs/10-development/server-side/authentication.md) first |
 | Add an editor | [adding-an-editor.md](docs/10-development/server-side/adding-an-editor.md) |
 | The editor's appearance | `public/assets/css/admin.css` |
+| The shell — rail, bar, account menu, Save | `admin_head()` in `lib/admin.php` |
+| What the rail lists under the open section | the `*_OUTLINE` constant in that `sections/*.php` |
+| Whether a form posts without navigating | `data-async` on the `<form>`; `public/assets/js/admin-forms.js` |
 | A colour | `public/assets/css/theme.css` — tokens only, never a hex elsewhere |
 | Where the public site is | `PUBLIC_SITE` in `lib/publish_client.php`, or `$T4T_PUBLIC_URL` |
 | Headers, HSTS, the blanket noindex | `public/.htaccess` — not read by the local dev server |
@@ -125,6 +128,10 @@ Touched `lib/qr.php` or authenticator enrolment? Also `test_qr.py` — it needs 
 Touched `lib/store.php`? Also `test_store.py`. Touched the rich-text editor? Also `test_editor.py`
 — needs Firefox and geckodriver, and leaves processes behind if interrupted
 (`pkill firefox geckodriver`).
+
+Touched the shell, a form, or `admin-forms.js`? Also `test_admin_forms.py` — it drives the editors
+in a browser and then repeats every edit **with JavaScript off**, which is the half that proves the
+asynchronous submission is still only an enhancement. Same browser requirements.
 
 Touched CSS, an admin screen or anything a keyboard reaches? Also
 `python3 tools/check_admin_a11y.py` — the focus ring, 320px, dark mode and hover across all nine

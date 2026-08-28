@@ -51,7 +51,8 @@ public/
 ├── setup.php               creates the first account; refuses ever after
 └── assets/
     ├── css/                base.css theme.css layout.css components.css admin.css
-    ├── js/                 theme-init.js theme-toggle.js admin-init.js admin-nav.js editor.js
+    ├── js/                 theme-init.js theme-toggle.js admin-init.js admin-nav.js
+    │                       editor.js admin-forms.js
     ├── fonts/              Inter, self-hosted
     ├── icons/sprite.svg    read from disk by lib/admin.php and inlined
     └── images/             favicon, the logo, and the office flags

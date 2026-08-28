@@ -96,19 +96,76 @@
   .rail[data-rail="narrow"] { width: var(--rail-narrow); }
 }
 
-/* The brand plate. The logo is a raster with its own background baked in for
-   the mode it belongs to, which is why there are two of them and why
-   .theme-swap swaps them rather than a filter doing it. */
+/* The brand plate and the control that narrows the rail. The logo is a raster
+   with its own background baked in for the mode it belongs to, which is why
+   there are two of them and why .theme-swap swaps them rather than a filter
+   doing it. */
 .rail__head {
   display: flex;
   align-items: center;
   gap: var(--space-2xs);
+  justify-content: space-between;
   padding-inline: var(--space-2xs);
 }
 
 .rail__brand {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
   min-width: 0;
+  text-decoration: none;
+}
+
+/* THE LOGO IS A WORDMARK, AND A WORDMARK CANNOT BE 4.5rem WIDE.
+
+   It is 180x64 — very nearly three to one — so at the 1.75rem height below it
+   wants about 4.9rem of width. The narrow rail is 4.5rem including its
+   padding, so the mark was squeezed into a smear of grey every time the rail
+   was collapsed. Nothing was wrong with the image; there was simply no room
+   for it, and there is no square version of it to fall back to.
+
+   So it goes, the same way every other label in this rail goes, and the head
+   keeps the one thing that is still useful at 4.5rem: the button that widens
+   it again. */
+@media (min-width: 60em) {
+  .rail[data-rail="narrow"] .rail__brand { display: none; }
+  .rail[data-rail="narrow"] .rail__head { justify-content: center; }
+}
+
+/* The button that narrows the rail. It lives at the rail's own top edge --
+   see the note in lib/admin.php for why it is no longer in the bar. */
+.rail__toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  background-color: transparent;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.rail__toggle:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+}
+
+.rail__toggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.rail__toggle .icon {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
 }
 
 .rail__logo {
@@ -135,8 +192,20 @@
 
 @media (min-width: 60em) {
   /* Takes the slack, so the two footer links sit at the bottom of the column
-     rather than under the last section. */
-  .rail__nav { flex: 1 1 auto; }
+     rather than under the last section.
+
+     AND SCROLLS, because the current section now lists what is on the page
+     under it — twelve more lines on the company editor. The rail is exactly
+     one viewport tall, so without this the extra pushed "View the page" and
+     "Open the site" off the bottom of a laptop screen with no way to reach
+     them. min-height: 0 is the half that is easy to leave out: a flex item
+     will not shrink below its content without it, which is the same trap
+     min-width: 0 fixes for the horizontal strip above. */
+  .rail__nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
 }
 
 .rail__list {
@@ -155,8 +224,7 @@
   }
 }
 
-.rail__item,
-.rail__link {
+.rail__item {
   position: relative;
   display: flex;
   align-items: center;
@@ -175,18 +243,15 @@
 /* Across the top the items are chips in a scrolling row, and a wrapped chip
    would be taller than the strip. */
 @media (max-width: 59.99em) {
-  .rail__item,
-  .rail__link { white-space: nowrap; }
+  .rail__item { white-space: nowrap; }
 }
 
-.rail__item:hover,
-.rail__link:hover {
+.rail__item:hover {
   color: var(--text-primary);
   background-color: var(--bg-elevated);
 }
 
-.rail__item:focus-visible,
-.rail__link:focus-visible {
+.rail__item:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
@@ -281,10 +346,57 @@
     white-space: nowrap;
   }
 
-  .rail[data-rail="narrow"] .rail__item,
-  .rail[data-rail="narrow"] .rail__link {
+  .rail[data-rail="narrow"] .rail__item {
     justify-content: center;
   }
+}
+
+/* --------------------------------------------------------------------------
+   2b. What is on the page you are editing
+
+   A table of contents for the current section, nested under it in the rail.
+   It is in the rail rather than across the top because the rail has the room
+   and the editing column does not: putting it up there would take back the
+   height the bars have just given up.
+
+   Hidden when the rail is narrow, and hidden on the horizontal strip, both
+   for the same reason -- there is nowhere to put twelve labels. The anchors
+   themselves keep working; they are ordinary links to ids on the page.
+   -------------------------------------------------------------------------- */
+.rail__sub {
+  display: none;
+  padding: 0;
+  margin: var(--space-3xs) 0 var(--space-2xs) 1.6rem;
+  list-style: none;
+  border-inline-start: var(--border-width) solid var(--border-subtle);
+}
+
+@media (min-width: 60em) {
+  .rail[data-rail="wide"] .rail__sub { display: block; }
+}
+
+.rail__subitem {
+  display: block;
+  padding: var(--space-3xs) var(--space-2xs);
+  margin-inline-start: calc(var(--border-width) * -1);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-muted);
+  text-decoration: none;
+  border-inline-start: var(--border-width) solid transparent;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.rail__subitem:hover {
+  color: var(--text-primary);
+  border-inline-start-color: var(--border-strong);
+}
+
+.rail__subitem:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
 }
 
 .rail__foot {
@@ -323,39 +435,91 @@
   }
 }
 
-.rail__link .icon {
-  width: 1rem;
-  height: 1rem;
-  fill: currentColor;
-}
-
 /* --------------------------------------------------------------------------
    3. The bar above the section
    -------------------------------------------------------------------------- */
 
+/* SMALLER THAN IT WAS, ON PURPOSE.
+
+   This bar and the save bar at the foot were 208px and 101px, and both are
+   pinned inside the viewport. Three hundred pixels of a 900px screen were
+   spent on a title that does not change and a button pressed once, leaving
+   the company editor showing roughly one field group at a time. The person
+   here came to read the fields. */
 .admin-bar {
   position: sticky;
   inset-block-start: 0;
   z-index: var(--z-sticky);
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--space-md);
-  padding: var(--space-md) var(--gutter);
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--gutter);
   background-color: var(--bg-base);
   border-block-end: var(--border-width) solid var(--border-subtle);
 }
 
-.admin-bar__title { font-size: var(--text-2xl); }
+.admin-bar__titles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-sm);
+  min-width: 0;
+}
 
-.admin-bar__lede,
-.admin-bar__user {
+.admin-bar__title {
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+}
+
+/* The two ways of looking at the page being edited. Beside its name, because
+   that is what they are about -- they were at the foot of the rail, under the
+   list of sections, where they read as more navigation. */
+.admin-bar__views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+}
+
+.admin-bar__view {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  min-height: 1.75rem;
+  padding: var(--space-3xs) var(--space-2xs);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.admin-bar__view:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+}
+
+.admin-bar__view:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.admin-bar__view .icon {
+  flex: none;
+  fill: currentColor;
+}
+
+/* Under the bar rather than in it, and so it scrolls away. */
+.admin__lede {
+  margin-block-end: var(--space-md);
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
-.admin-bar__lede code,
+.admin__lede code,
 .admin__footer code,
 .admin-tile__file code,
 .admin__notes code,
@@ -364,30 +528,30 @@
   font-size: 0.9em;
 }
 
+/* It has to be allowed to shrink. flex: none here made the bar 384px wide
+   inside a 320px viewport — the save button's label is one unbreakable run of
+   words, so nothing could give. WCAG 2.2 SC 1.4.10, and check_admin_a11y.py
+   measures it at exactly 320. */
 .admin-bar__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-sm);
+  justify-content: flex-end;
+  min-width: 0;
+  gap: var(--space-2xs);
 }
 
-.admin-bar__user {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3xs);
-}
+.admin-bar__save-short { display: none; }
 
-.admin-bar__user .icon { fill: currentColor; }
+@media (max-width: 34em) {
+  .admin-bar__save-long { display: none; }
+  .admin-bar__save-short { display: inline; }
+}
 
 /* Only one of the two chevrons is ever right. */
 .rail-toggle__icon--wide { display: none; }
-.rail-toggle[aria-expanded="false"] .rail-toggle__icon--narrow { display: none; }
-.rail-toggle[aria-expanded="false"] .rail-toggle__icon--wide { display: block; }
-
-@media (max-width: 59.99em) {
-  /* Across the top there is nothing to narrow. */
-  .rail-toggle { display: none; }
-}
+.rail__toggle[aria-expanded="false"] .rail-toggle__icon--narrow { display: none; }
+.rail__toggle[aria-expanded="false"] .rail-toggle__icon--wide { display: block; }
 
 /* --------------------------------------------------------------------------
    4. The section itself
@@ -969,25 +1133,37 @@
   border-block-end: var(--border-width) solid var(--border-subtle);
 }
 
-/* The save bar follows the page, because the contact form is long enough that
-   the button would otherwise be several screens away from whatever was just
-   changed — and a change nobody can save is a change that gets lost. */
-.admin__actions--sticky {
-  position: sticky;
-  inset-block-end: 0;
-  z-index: var(--z-sticky);
-  padding: var(--space-md) 0;
-  background-color: var(--bg-base);
-  border-block-start: var(--border-width) solid var(--border-subtle);
+/* THE SAVE BAR IS GONE, and this is where it was.
+
+   It was pinned across the foot of the editing column: 101px of every screen
+   spent holding one button, on a page whose whole difficulty is that there is
+   not enough room to see the form. The button is in .admin-bar now, at the
+   right-hand end, which was holding a name that never changes. That bar was
+   already pinned, so the button costs nothing it was not already spending —
+   and the form gained a hundred pixels back. A submit button reaches its form
+   with the `form` attribute, which is plain HTML and needs no script.
+
+   Where admin-forms.js says "Working…", and what came back. aria-live, so an
+   asynchronous save that changes nothing else on screen is still announced.
+   Empty with script off, and it collapses to nothing. */
+.admin__status {
+  min-width: 0;
+  max-width: 18rem;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
 }
+
+.admin__status:empty { display: none; }
+
+.admin__status--busy { color: var(--text-muted); }
+.admin__status--bad { color: var(--text-primary); font-weight: 600; }
 
 /* A sticky bar pinned to an edge of the viewport and a keyboard are a bad
    pair, and the pairing is invisible until somebody tabs. The browser scrolls
    a focused field just far enough to be "in view" -- and "in view" means
-   inside the viewport, which .admin-bar and .admin__actions--sticky are both
-   sitting on top of. So tab into the lower half of the contact form and the
-   field you have just reached is behind the save bar. WCAG 2.2 SC 2.4.11
-   Focus Not Obscured (Minimum), Level AA.
+   inside the viewport, which .admin-bar is sitting on top of. So tab into the
+   form and the field you have just reached is behind the bar. WCAG 2.2
+   SC 2.4.11 Focus Not Obscured (Minimum), Level AA.
 
    scroll-padding on the SCROLLER is the fix, rather than scroll-margin on the
    fields: it shrinks the scrollport's optimal viewing region, so a field under
@@ -997,19 +1173,24 @@
    scroll-padding-top in base.css, which is sized for the public site's header
    and not for this one.
 
-   THE NUMBERS ARE MEASURED, NOT CHOSEN. Guessing 5rem for the header made
-   things worse: too small to clear it, and large enough to change which edge
-   the browser aligned to. Measured in the browser at 1200x900: .admin-bar is
-   208px and .admin__actions--sticky is 101px, so 13rem and 6.31rem at a 16px
-   root. Rounded up below. If either bar is restyled, measure again -- a stale
-   number here is silent, and tools/check_admin_a11y.py is what will say so.
+   THE NUMBER IS MEASURED, NOT CHOSEN. Guessing 5rem made things worse: too
+   small to clear the bar, and large enough to change which edge the browser
+   aligned to.
 
-   Found by that tool, which reported seven fields on the contact editor
-   "entirely covered by div.admin__actions". */
-html {
-  scroll-padding-block-start: 13.5rem;
-  scroll-padding-block-end: 7rem;
-}
+   There is only one now, and it measures 69px on every screen: it was 208px
+   when it also carried the lede and the account's name. 4.5rem is 72px, three
+   pixels of slack. The bar across the foot that held the save button is gone
+   entirely, so there is nothing at the bottom edge to clear -- base.css's own
+   value is left to stand there.
+
+   check_admin_a11y.py measures the bar and fails on either side of this
+   answer: a padding under it hides a focused field, and a padding well over
+   it makes every in-page anchor overshoot by the difference. That check is
+   what caught this number going stale the moment the bar changed.
+
+   The original was found by the same tool, which reported seven fields on the
+   contact editor "entirely covered by div.admin__actions". */
+html { scroll-padding-block-start: 4.5rem; }
 
 /* --------------------------------------------------------------------------
    Rich text editor
@@ -1416,26 +1597,191 @@ html {
 }
 
 /* --------------------------------------------------------------------------
-   6. Signing out, and the record of who signed in
+   6. The account menu, at the foot of the rail
+
+   A <details>, so the browser does the opening, the keyboard handling and the
+   Escape key without a line of script -- which is what lets a dropdown exist
+   at all here, where every page has to work with JavaScript off.
+
+   It opens UPWARDS: it is the last thing in a full-height column and there is
+   nothing below it to open into.
+
+   The <summary> is the whole row. Removing its marker takes two rules because
+   Safari still wants the ::-webkit- one, and dropping either leaves a
+   disclosure triangle beside the face.
    -------------------------------------------------------------------------- */
 
-.admin-bar__signout { display: inline-flex; }
-
-.admin-bar__signout-btn {
-  gap: var(--space-3xs);
-  padding-inline: var(--space-xs);
-  font-size: var(--text-xs);
+.account {
+  position: relative;
+  min-width: 0;
 }
 
-.admin-bar__signout-btn .icon {
+.account__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-height: 2.75rem;
+  padding: var(--space-2xs);
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: background-color var(--duration-fast) var(--ease-out);
+  list-style: none;
+}
+
+.account__toggle::-webkit-details-marker { display: none; }
+.account__toggle::marker { content: ""; }
+
+.account__toggle:hover { background-color: var(--bg-elevated); }
+
+.account__toggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.account__avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-full);
+}
+
+.account__avatar .icon {
   width: 0.875rem;
   height: 0.875rem;
   fill: currentColor;
 }
 
-@media (max-width: 30em) {
-  /* On a narrow screen the padlock says it well enough on its own. */
-  .admin-bar__signout-btn span { display: none; }
+/* The name in the row itself, so the rail says who is signed in without
+   anything being opened. It goes the way every other label in this rail goes
+   when the rail narrows. */
+.account__text {
+  display: grid;
+  min-width: 0;
+  line-height: var(--leading-snug);
+}
+
+.account__label {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account__hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* There is no chevron-down in the sprite, and adding one for a 12px hint is
+   not worth a sprite entry. angle-right, turned. */
+.account__caret {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-inline-start: auto;
+  fill: var(--text-muted);
+  transform: rotate(-90deg);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.account[open] .account__caret { transform: rotate(90deg); }
+
+@media (min-width: 60em) {
+  .rail[data-rail="narrow"] .account__text,
+  .rail[data-rail="narrow"] .account__caret { display: none; }
+
+  .rail[data-rail="narrow"] .account__toggle { justify-content: center; }
+}
+
+/* Below the breakpoint the rail is a strip across the top and there is no
+   column for a name to sit in. */
+@media (max-width: 59.99em) {
+  .account__text { display: none; }
+  .account__caret { margin-inline-start: 0; }
+}
+
+.account__menu {
+  position: absolute;
+  inset-block-end: calc(100% + var(--space-3xs));
+  inset-inline-start: 0;
+  z-index: var(--z-overlay);
+  min-width: 13rem;
+  padding: var(--space-3xs);
+  background-color: var(--bg-surface);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+/* On the strip across the top there is nothing above it either. */
+@media (max-width: 59.99em) {
+  .account__menu {
+    inset-block-start: calc(100% + var(--space-3xs));
+    inset-block-end: auto;
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+  }
+}
+
+.account__who {
+  display: grid;
+  gap: 1px;
+  padding: var(--space-2xs);
+  margin-block-end: var(--space-3xs);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+.account__name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.account__signout { display: block; }
+
+.account__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  width: 100%;
+  min-height: 2.25rem;
+  padding: var(--space-3xs) var(--space-2xs);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.account__item:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+}
+
+.account__item:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.account__item .icon {
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: currentColor;
 }
 
 .admin__log {

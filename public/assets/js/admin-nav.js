@@ -1,13 +1,19 @@
 /* ==========================================================================
    Tech4TIME — admin-nav.js
-   The width of the admin's icon rail.
+   The admin shell's chrome: the width of the icon rail, and the account menu.
 
-   The rail is fully labelled without this file, which is why the button that
+   THE RAIL is fully labelled without this file, which is why the button that
    narrows it starts hidden: a control that does nothing is worse than no
    control. This unhides it, remembers the choice, and does nothing else.
 
    The choice is per browser rather than per session, so the rail is the shape
    it was left in the next time someone signs in.
+
+   THE ACCOUNT MENU is a <details>, and the browser already opens it, closes
+   it on Escape and moves focus through it. The one thing <details> does not
+   do is close when a click lands somewhere else on the page, which is the
+   only behaviour added here. With this file absent the menu still opens and
+   still signs out; it simply waits to be pressed again.
    ========================================================================== */
 
 (function (global) {
@@ -65,15 +71,37 @@
     }
   };
 
+  /* Close the account menu on a click anywhere outside it. Bound once, on the
+     document, rather than per-menu: there is one of these, and a listener that
+     outlives a swapped-in page is a listener that leaks. */
+  function closeOnOutsideClick(doc) {
+    doc.addEventListener("click", function (event) {
+      var menus = doc.querySelectorAll("details[data-account][open]");
+
+      Array.prototype.forEach.call(menus, function (menu) {
+        if (!menu.contains(event.target)) {
+          menu.open = false;
+        }
+      });
+    });
+  }
+
   var api = (global.Tech4Time = global.Tech4Time || {});
 
   api.adminNav = {
     init: function () {
-      var rail = global.document.querySelector("[data-rail]");
-      var toggle = global.document.querySelector("[data-rail-toggle]");
+      var doc = global.document;
+      var rail = doc.querySelector("[data-rail]");
+      var toggle = doc.querySelector("[data-rail-toggle]");
       if (rail && toggle) {
         new Rail(rail, toggle);
       }
-    }
+
+      if (!api.adminNav.bound) {
+        closeOnOutsideClick(doc);
+        api.adminNav.bound = true;
+      }
+    },
+    bound: false
   };
 })(window);

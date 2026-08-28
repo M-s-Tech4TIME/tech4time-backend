@@ -25,6 +25,11 @@
     if (api.editor) {
       api.editor.init();
     }
+    /* Last, and it does not matter: its listener is on the document, so the
+       per-form handlers editor.js just bound still run before it. */
+    if (api.adminForms) {
+      api.adminForms.init();
+    }
   }
 
   if (global.document.readyState === "loading") {

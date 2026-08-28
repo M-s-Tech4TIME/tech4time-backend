@@ -96,6 +96,33 @@ if (!defined('T4T_ADMIN')) { http_response_code(403); exit; }   // required
 - validate through the model, never in the form
 - `admin_redirect()` after a successful save, so a refresh does not re-post
 - render errors beside the field they belong to
+- **`data-async` on every `<form>`**, and an `id` on the one the page-level Save belongs to
+- **`$action` assigned locally**, before the POST block:
+  `$action = (string)($_POST['action'] ?? $_GET['action'] ?? '');`
+
+### The shell gives you three things — ask for them
+
+`admin_head()` takes two optional arguments beyond the lede, and a page with a long form wants
+both:
+
+```php
+admin_head('<name>', $user, $lede,
+    NAME_OUTLINE,                                    // what the rail lists under this section
+    ['form'    => '<name>-form',                     // the id on your <form>
+     'label'   => 'Save the <thing>',
+     'short'   => 'Save',                            // shown under 34em
+     'discard' => admin_url('<name>')]);
+```
+
+The outline is `['anchor-id' => 'Label', …]` in page order, and each key must be the `id` on the
+matching `<fieldset>`. It costs the editing column no height, and it is the only thing that makes a
+form of this size legible — the company editor is 282 rows and it was reported as not containing
+its own data, because the only way to learn a band existed was to scroll to it.
+
+**There is no save bar to write.** The Save button is drawn by `admin_head()` into the bar across
+the top and reaches your form through the HTML `form` attribute. A section that draws its own is a
+section whose button is somewhere else from every other one, and `html{scroll-padding}` in
+`admin.css` is measured against that bar — `check_admin_a11y.py` fails if the two disagree.
 
 ## 5. The registry — `lib/admin.php`
 
@@ -164,10 +191,13 @@ the reason beside it. `test_careers_admin.py` is the worked example.
 - [ ] `lib/<name>.php` with `*_defaults()`, `*_load()`, `*_save()`, `*_validate()`
 - [ ] `content/<name>.json` seeded with the current content
 - [ ] `pages/<name>/index.html` → `index.php`, rendering from the model, everything through `h()`
-- [ ] `sections/<name>.php` with the `T4T_ADMIN` guard and CSRF on POST
+- [ ] `sections/<name>.php` with the `T4T_ADMIN` guard, CSRF on POST and `$action` assigned
+- [ ] `data-async` on every form; an `id` on the main one; `NAME_OUTLINE` passed to `admin_head()`
+- [ ] an `id` on every `<fieldset>` the outline names
 - [ ] `ADMIN_SECTIONS` and `ADMIN_PAGE_SECTIONS` updated; icon in `ADMIN_ICONS`
 - [ ] `check_content_model.py`: a `SUBJECTS` entry, or a `COVERED_ELSEWHERE` one naming the test
 - [ ] `test_<name>_admin.py`
+- [ ] `test_admin_forms.py` still passes — it asserts every form in the shell is async
 - [ ] Docs updated
 - [ ] `.gitignore` covers `content/<name>.json.bak`
 
