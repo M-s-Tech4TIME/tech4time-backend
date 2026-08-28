@@ -452,6 +452,85 @@ function admin_asset(string $path): string
     return $stamp === false ? $path : $path . '?v=' . dechex($stamp);
 }
 
+/* -------------------------------------------------------- repeatable rows */
+
+/**
+ * The head of one repeatable row: what it is, whether it shows, and the
+ * controls that move or remove it.
+ *
+ * ONE COMPONENT, NOT ONE PER EDITOR. This markup lived in sections/contact.php
+ * and again in sections/company.php, and they were not the same. Contact wrapped
+ * the row in .admin-card__head -- a flex line -- so .admin-card__controls'
+ * margin-inline-start:auto pushed the buttons to the right end of it, with the
+ * row's number and a preview of its content on the left. Company emitted the
+ * same three buttons as a bare child of .admin-card, where that rule has
+ * nothing to push against: they sat top-left, above the fields, with no head at
+ * all. Same classes, same stylesheet, different page.
+ *
+ * That is what copying markup between sections does, and it is not a thing a
+ * check can catch by looking at either file. So it is here, both of them call
+ * it, and the next editor gets the layout by asking for it rather than by
+ * remembering how the last one did it.
+ *
+ * $card takes:
+ *   label   what the row is called. Empty renders "Untitled <noun>".
+ *   noun    'office', 'figure', 'milestone' -- names the row for a screen
+ *           reader when it has no label of its own, and in "Untitled …".
+ *   detail  one line of the row's content, so a collapsed list is readable.
+ *   icon    a sprite id to show before the label, or ''.
+ *   status  'shown' or 'hidden' for the pill; '' for rows that have no such
+ *           setting, which is why it is not simply a boolean.
+ *
+ * The button VALUES are the contract with each section's POST handler --
+ * "<band>-up:<index>" -- and are the reason $band and $index are separate
+ * arguments rather than one formatted string.
+ */
+function admin_card_head(string $band, int $index, int $total, array $card): void
+{
+    $card += ['label' => '', 'noun' => 'row', 'detail' => '', 'icon' => '', 'status' => ''];
+
+    $label = (string)$card['label'];
+    $noun  = (string)$card['noun'];
+
+    /* Two different fallbacks on purpose. What is SHOWN says the row has no
+       name yet; what is ANNOUNCED has to tell three "Remove" buttons apart, so
+       it uses the position. "Remove Untitled office" three times over is a
+       menu of identical controls. */
+    $shown = $label !== '' ? $label : 'Untitled ' . $noun;
+    $named = $label !== '' ? $label : $noun . ' ' . ($index + 1);
+    ?>
+      <div class="admin-card__head">
+        <span class="admin-card__index"><?= $index + 1 ?></span>
+        <span class="admin-card__preview">
+<?php if ($card['icon'] !== ''): ?>
+          <?= admin_icon((string)$card['icon'], 'icon') ?>
+<?php endif; ?>
+          <strong><?= h($shown) ?></strong>
+<?php if ($card['detail'] !== ''): ?>
+          <span class="admin-card__value"><?= h((string)$card['detail']) ?></span>
+<?php endif; ?>
+        </span>
+<?php if ($card['status'] !== ''): ?>
+        <span class="admin-row__status admin-row__status--<?= $card['status'] === 'shown' ? 'open' : 'draft' ?>">
+          <?= $card['status'] === 'shown' ? 'Shown' : 'Hidden' ?>
+        </span>
+<?php endif; ?>
+        <?php /* margin-inline-start:auto in admin.css puts these at the right
+                 end of the line. That only works because they are inside the
+                 flex row above -- see the note at the top of this function. */ ?>
+        <div class="admin-card__controls">
+          <button class="btn btn--ghost" type="submit" name="do" value="<?= h($band) ?>-up:<?= $index ?>"
+                  aria-label="Move <?= h($named) ?> up"<?= $index === 0 ? ' disabled' : '' ?>>&uarr;</button>
+          <button class="btn btn--ghost" type="submit" name="do" value="<?= h($band) ?>-down:<?= $index ?>"
+                  aria-label="Move <?= h($named) ?> down"<?= $index === $total - 1 ? ' disabled' : '' ?>>&darr;</button>
+          <button class="btn btn--ghost admin-row__delete" type="submit"
+                  name="do" value="<?= h($band) ?>-remove:<?= $index ?>"
+                  aria-label="Remove <?= h($named) ?>">Remove</button>
+        </div>
+      </div>
+<?php
+}
+
 /* --------------------------------------------------------------- the page */
 
 /**

@@ -381,21 +381,11 @@ function company_apply_row_action(array $data, string $do): ?array
 
 /* ---------------------------------------------------------------- helpers */
 
-/** One row of buttons: move up, move down, remove. */
-function company_row_controls(string $band, int $index, int $total, string $label): void
-{
-    ?>
-        <div class="admin-card__controls">
-          <button class="btn btn--ghost" type="submit" name="do" value="<?= h($band) ?>-up:<?= $index ?>"
-                  aria-label="Move <?= h($label) ?> up"<?= $index === 0 ? ' disabled' : '' ?>>&uarr;</button>
-          <button class="btn btn--ghost" type="submit" name="do" value="<?= h($band) ?>-down:<?= $index ?>"
-                  aria-label="Move <?= h($label) ?> down"<?= $index === $total - 1 ? ' disabled' : '' ?>>&darr;</button>
-          <button class="btn btn--ghost admin-row__delete" type="submit"
-                  name="do" value="<?= h($band) ?>-remove:<?= $index ?>"
-                  aria-label="Remove <?= h($label) ?>">Remove</button>
-        </div>
-    <?php
-}
+/* The row head — number, preview, status, and the move/remove controls — is
+   admin_card_head() in lib/admin.php, which sections/contact.php calls too.
+   This file used to emit the three buttons on their own, outside the flex line
+   the stylesheet expects them in, so they sat top-left above the fields
+   instead of at the right end of a row head. Same classes, different page. */
 
 /**
  * The shown/hidden control every band and every row carries.
@@ -635,8 +625,12 @@ if (!$errors && $pending !== '') {
 <?php foreach ($rows as $i => $row): ?>
     <div class="admin-card<?= $row['status'] === 'hidden' ? ' admin-card--hidden' : '' ?>">
       <input type="hidden" name="milestones[items][<?= $i ?>][id]" value="<?= h($row['id']) ?>">
-      <?php company_row_controls('milestones', $i, $total,
-          $row['title'] !== '' ? $row['title'] : 'entry ' . ($i + 1)); ?>
+      <?php admin_card_head('milestones', $i, $total, [
+          'label'  => $row['title'],
+          'noun'   => 'entry',
+          'detail' => $row['year'],
+          'status' => $row['status'],
+      ]); ?>
 
       <div class="admin__grid">
         <label class="admin__field">
@@ -702,8 +696,12 @@ if (!$errors && $pending !== '') {
 <?php foreach ($rows as $i => $row): ?>
     <div class="admin-card<?= $row['status'] === 'hidden' ? ' admin-card--hidden' : '' ?>">
       <input type="hidden" name="experience[items][<?= $i ?>][id]" value="<?= h($row['id']) ?>">
-      <?php company_row_controls('experience', $i, $total,
-          $row['label'] !== '' ? $row['label'] : 'figure ' . ($i + 1)); ?>
+      <?php admin_card_head('experience', $i, $total, [
+          'label'  => $row['label'],
+          'noun'   => 'figure',
+          'detail' => $row['figure'],
+          'status' => $row['status'],
+      ]); ?>
 
       <div class="admin__grid">
         <label class="admin__field">
@@ -748,8 +746,11 @@ if (!$errors && $pending !== '') {
 <?php foreach ($rows as $i => $row): ?>
     <div class="admin-card<?= $row['status'] === 'hidden' ? ' admin-card--hidden' : '' ?>">
       <input type="hidden" name="clients[items][<?= $i ?>][id]" value="<?= h($row['id']) ?>">
-      <?php company_row_controls('clients', $i, $total,
-          $row['name'] !== '' ? $row['name'] : 'client ' . ($i + 1)); ?>
+      <?php admin_card_head('clients', $i, $total, [
+          'label'  => $row['name'],
+          'noun'   => 'client',
+          'status' => $row['status'],
+      ]); ?>
 
       <?php company_image_fields('clients', $i, $row['image']); ?>
 
@@ -802,7 +803,11 @@ if (!$errors && $pending !== '') {
 <?php foreach ($rows as $i => $row): ?>
     <div class="admin-card<?= $row['status'] === 'hidden' ? ' admin-card--hidden' : '' ?>">
       <input type="hidden" name="journey[items][<?= $i ?>][id]" value="<?= h($row['id']) ?>">
-      <?php company_row_controls('journey', $i, $total, 'photograph ' . ($i + 1)); ?>
+      <?php admin_card_head('journey', $i, $total, [
+          'label'  => $row['alt'],
+          'noun'   => 'photograph',
+          'status' => $row['status'],
+      ]); ?>
 
       <?php company_image_fields('journey', $i, $row['image']); ?>
 
@@ -869,8 +874,11 @@ if (!$errors && $pending !== '') {
 <?php foreach ($rows as $i => $row): ?>
     <div class="admin-card<?= $row['status'] === 'hidden' ? ' admin-card--hidden' : '' ?>">
       <input type="hidden" name="technology[items][<?= $i ?>][id]" value="<?= h($row['id']) ?>">
-      <?php company_row_controls('technology', $i, $total,
-          $row['name'] !== '' ? $row['name'] : 'entry ' . ($i + 1)); ?>
+      <?php admin_card_head('technology', $i, $total, [
+          'label'  => $row['name'],
+          'noun'   => 'entry',
+          'status' => $row['status'],
+      ]); ?>
 
       <?php company_image_fields('technology', $i, $row['image']); ?>
 
@@ -903,8 +911,12 @@ if (!$errors && $pending !== '') {
 <?php foreach ($rows as $i => $row): ?>
     <div class="admin-card<?= $row['status'] === 'hidden' ? ' admin-card--hidden' : '' ?>">
       <input type="hidden" name="principles[items][<?= $i ?>][id]" value="<?= h($row['id']) ?>">
-      <?php company_row_controls('principles', $i, $total,
-          $row['title'] !== '' ? $row['title'] : 'principle ' . ($i + 1)); ?>
+      <?php admin_card_head('principles', $i, $total, [
+          'label'  => $row['title'],
+          'noun'   => 'principle',
+          'detail' => $row['icon'],
+          'status' => $row['status'],
+      ]); ?>
 
       <div class="admin__grid">
         <label class="admin__field">
