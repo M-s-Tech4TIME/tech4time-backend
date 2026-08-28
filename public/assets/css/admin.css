@@ -129,38 +129,38 @@
    it again. */
 @media (min-width: 60em) {
   .rail[data-rail="narrow"] .rail__brand { display: none; }
-  .rail[data-rail="narrow"] .rail__head { justify-content: center; }
+
+  /* The padding goes with it. 4.5rem less 1rem of rail padding leaves 2.5rem,
+     and the toggle is 2.25rem of that. */
+  .rail[data-rail="narrow"] .rail__head {
+    justify-content: center;
+    padding-inline: 0;
+  }
 }
 
 /* The button that narrows the rail. It lives at the rail's own top edge --
-   see the note in lib/admin.php for why it is no longer in the bar. */
-.rail__toggle {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
+   see the note in lib/admin.php for why it is no longer in the bar.
+
+   It is a .btn--icon now: round and outlined, the same control as the theme
+   toggle at the other end of the shell. As a bare 2rem square with a
+   transparent border it read as a stray chevron rather than as a button, which
+   is what somebody looking for it reported.
+
+   It carries .btn--icon-sm on top of .btn--icon because the narrow rail is
+   4.5rem wide and 1rem of that is padding: a 2.75rem circle does not fit
+   inside 2.5rem, and this is the one control that has to survive the collapse.
+   2.25rem is 36px, comfortably over the 24px SC 2.5.8 minimum that
+   tools/check_admin_a11y.py measures. The modifier only resizes -- the colour,
+   the border and the hover come from .btn--icon, which is why both are on the
+   element and why this rule has to load after components.css. */
+.btn--icon-sm {
+  width: 2.25rem;
+  min-height: 2.25rem;
   padding: 0;
-  color: var(--text-secondary);
-  cursor: pointer;
-  background-color: transparent;
-  border: var(--border-width) solid transparent;
-  border-radius: var(--radius);
-  transition:
-    color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
+  border-radius: var(--radius-full);
 }
 
-.rail__toggle:hover {
-  color: var(--text-primary);
-  background-color: var(--bg-elevated);
-}
-
-.rail__toggle:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
+.rail__toggle { flex: none; }
 
 .rail__toggle .icon {
   width: 1rem;
@@ -191,16 +191,16 @@
 .rail__nav { min-width: 0; }
 
 @media (min-width: 60em) {
-  /* Takes the slack, so the two footer links sit at the bottom of the column
-     rather than under the last section.
+  /* Takes the slack, so the account sits at the bottom of the column rather
+     than under the last section.
 
-     AND SCROLLS, because the current section now lists what is on the page
-     under it — twelve more lines on the company editor. The rail is exactly
-     one viewport tall, so without this the extra pushed "View the page" and
-     "Open the site" off the bottom of a laptop screen with no way to reach
-     them. min-height: 0 is the half that is easy to leave out: a flex item
-     will not shrink below its content without it, which is the same trap
-     min-width: 0 fixes for the horizontal strip above. */
+     AND SCROLLS. The rail is exactly one viewport tall, and a list long enough
+     to fill it would otherwise push the account — the way out of this admin —
+     off the bottom of a laptop screen with no way to reach it. That is not
+     hypothetical; it is what happened the week the current section listed its
+     twelve bands here. min-height: 0 is the half that is easy to leave out: a
+     flex item will not shrink below its content without it, which is the same
+     trap min-width: 0 fixes for the horizontal strip above. */
   .rail__nav {
     flex: 1 1 auto;
     min-height: 0;
@@ -351,54 +351,6 @@
   }
 }
 
-/* --------------------------------------------------------------------------
-   2b. What is on the page you are editing
-
-   A table of contents for the current section, nested under it in the rail.
-   It is in the rail rather than across the top because the rail has the room
-   and the editing column does not: putting it up there would take back the
-   height the bars have just given up.
-
-   Hidden when the rail is narrow, and hidden on the horizontal strip, both
-   for the same reason -- there is nowhere to put twelve labels. The anchors
-   themselves keep working; they are ordinary links to ids on the page.
-   -------------------------------------------------------------------------- */
-.rail__sub {
-  display: none;
-  padding: 0;
-  margin: var(--space-3xs) 0 var(--space-2xs) 1.6rem;
-  list-style: none;
-  border-inline-start: var(--border-width) solid var(--border-subtle);
-}
-
-@media (min-width: 60em) {
-  .rail[data-rail="wide"] .rail__sub { display: block; }
-}
-
-.rail__subitem {
-  display: block;
-  padding: var(--space-3xs) var(--space-2xs);
-  margin-inline-start: calc(var(--border-width) * -1);
-  font-size: var(--text-xs);
-  line-height: var(--leading-snug);
-  color: var(--text-muted);
-  text-decoration: none;
-  border-inline-start: var(--border-width) solid transparent;
-  transition:
-    color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-}
-
-.rail__subitem:hover {
-  color: var(--text-primary);
-  border-inline-start-color: var(--border-strong);
-}
-
-.rail__subitem:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
-}
-
 .rail__foot {
   display: flex;
   gap: var(--space-3xs);
@@ -450,14 +402,18 @@
   position: sticky;
   inset-block-start: 0;
   z-index: var(--z-sticky);
+  padding: var(--space-xs) var(--gutter);
+  background-color: var(--bg-base);
+  border-block-end: var(--border-width) solid var(--border-subtle);
+}
+
+/* The title and the controls. The lede goes on its own row underneath. */
+.admin-bar__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
-  padding: var(--space-xs) var(--gutter);
-  background-color: var(--bg-base);
-  border-block-end: var(--border-width) solid var(--border-subtle);
 }
 
 .admin-bar__titles {
@@ -475,36 +431,18 @@
 
 /* The two ways of looking at the page being edited. Beside its name, because
    that is what they are about -- they were at the foot of the rail, under the
-   list of sections, where they read as more navigation. */
+   list of sections, where they read as more navigation.
+
+   ICONS ONLY, in the same round outlined control as the theme toggle. Labelled,
+   they were two underlined phrases sitting next to an <h1>, which reads as body
+   text rather than as controls -- and they were wide enough that
+   .admin-bar__titles wrapped them onto a line of their own, under the heading
+   they are meant to sit beside. The name survives in aria-label for a screen
+   reader and in title= for a hover. */
 .admin-bar__views {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3xs);
-}
-
-.admin-bar__view {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3xs);
-  min-height: 1.75rem;
-  padding: var(--space-3xs) var(--space-2xs);
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  text-decoration: none;
-  border-radius: var(--radius-sm);
-  transition:
-    color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
-}
-
-.admin-bar__view:hover {
-  color: var(--text-primary);
-  background-color: var(--bg-elevated);
-}
-
-.admin-bar__view:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
 }
 
 .admin-bar__view .icon {
@@ -512,14 +450,21 @@
   fill: currentColor;
 }
 
-/* Under the bar rather than in it, and so it scrolls away. */
-.admin__lede {
-  margin-block-end: var(--space-md);
-  font-size: var(--text-sm);
+/* WHAT THIS SECTION EDITS, AND WHERE THE CHANGES GO.
+
+   It spent one release below the bar, scrolling with the form, on the argument
+   that the bar had to be short. It is one line at --text-xs on its own row --
+   about twenty pixels against the 208px the bar used to be -- and it carries
+   the link to the live page. Out of the bar it was out of sight on a phone,
+   which is not a saving. */
+.admin-bar__lede {
+  margin-block-start: var(--space-3xs);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
   color: var(--text-secondary);
 }
 
-.admin__lede code,
+.admin-bar__lede code,
 .admin__footer code,
 .admin-tile__file code,
 .admin__notes code,
@@ -541,9 +486,27 @@
   gap: var(--space-2xs);
 }
 
+/* THE BAR ASKS ABOUT ITS OWN WIDTH, NOT THE WINDOW'S.
+
+   A viewport media query cannot see the one case that matters. Between 60em
+   and roughly 75em the rail is at its full 16.5rem and the bar is not: at a
+   1000px window the bar has 660px to work with, "Save the company profile"
+   makes the controls 692px wide, and they drop onto a second row. The bar goes
+   from 90px to 166px on the one screen size nobody develops at, and
+   html{scroll-padding} -- one number for the whole admin -- cannot be right
+   for both.
+
+   So the label switches on the container's width. 44rem is measured: the title,
+   the two view controls, Discard, Save and the theme toggle need 43.25rem to
+   stand on one line with the long label. */
+.admin-bar {
+  container-type: inline-size;
+  container-name: admin-bar;
+}
+
 .admin-bar__save-short { display: none; }
 
-@media (max-width: 34em) {
+@container admin-bar (max-width: 44rem) {
   .admin-bar__save-long { display: none; }
   .admin-bar__save-short { display: inline; }
 }
@@ -567,6 +530,143 @@
   max-width: 62rem;
   padding-inline: var(--gutter);
   margin-inline: auto;
+}
+
+/* --------------------------------------------------------------------------
+   4b. On this page
+
+   A table of contents for the section being edited: twelve bands on the
+   company profile, one under the next, none of them visible until you had
+   scrolled far enough to find out it existed.
+
+   It spent one release nested in the rail under the current section. That is
+   the wrong column -- the rail is a list of places to go and this is a map of
+   where you already are -- and twelve extra lines in a menu of five made the
+   menu itself look like the thing that had gone wrong. This is the right-hand
+   column every documentation site puts it in.
+
+   Wide: a sticky rail of links beside the form, scrolling inside itself when
+   it is taller than the screen.
+   Narrow: one scrolling row of chips above the form, which costs about 2.5rem
+   and keeps the list reachable on a phone rather than hiding it.
+   -------------------------------------------------------------------------- */
+
+.admin__inner--outlined {
+  display: flex;
+  flex-direction: column;
+  max-width: 82rem;
+}
+
+.admin__col { min-width: 0; }
+
+@media (max-width: 77.99em) {
+  /* Above the form, though it comes after it in the source -- so tabbing into
+     the page reaches the fields rather than twelve anchors first. */
+  .admin__inner--outlined > .outline { order: -1; }
+}
+
+/* Between the two: room enough to show all twelve at once, on two lines, so a
+   desktop at 1200px does not get a row of chips cut off mid-word. Below this
+   they scroll sideways instead, which is what the space allows. */
+@media (min-width: 48em) and (max-width: 77.99em) {
+  .outline__list {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+
+@media (min-width: 78em) {
+  .admin__inner--outlined {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 14rem;
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+}
+
+.outline {
+  min-width: 0;
+  margin-block-end: var(--space-lg);
+}
+
+.outline__title {
+  margin-block-end: var(--space-2xs);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.outline__list {
+  display: flex;
+  gap: var(--space-3xs);
+  padding: 0;
+  margin: 0;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.outline__link {
+  display: block;
+  padding: var(--space-3xs) var(--space-2xs);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.outline__link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+  border-color: var(--border-strong);
+}
+
+.outline__link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (min-width: 78em) {
+  /* Sticky under the bar, and no taller than what is left of the screen --
+     twelve bands do not fit under a bar on a 700px laptop, and a list whose
+     bottom cannot be reached is the complaint this column was built to
+     answer. */
+  .outline {
+    position: sticky;
+    inset-block-start: calc(var(--admin-bar-h) + var(--space-md));
+    max-height: calc(100dvh - var(--admin-bar-h) - var(--space-2xl));
+    margin-block-end: 0;
+    overflow-y: auto;
+  }
+
+  .outline__list {
+    flex-direction: column;
+    /* No gap, so the left borders below join into one continuous line. */
+    gap: 0;
+    overflow-x: visible;
+  }
+
+  .outline__link {
+    white-space: normal;
+    border: 0;
+    border-inline-start: var(--border-width) solid var(--border-subtle);
+    border-radius: 0;
+  }
+
+  .outline__link:hover {
+    background-color: transparent;
+    border-inline-start-color: var(--border-strong);
+  }
+
+  .outline__link:focus-visible { outline-offset: -2px; }
 }
 
 /* ---------------------------------------------------------------- notices */
@@ -801,10 +901,18 @@
   resize: vertical;
 }
 
+/* The row that closes a list: "Add a milestone", "Add an office".
+
+   margin-block-start because the element above it is not always a grid with a
+   margin of its own -- a band whose last control is a single full-width field
+   put the Add button hard against it, which is what made it read as part of
+   the field rather than as the end of the list. Margins collapse in this
+   normal flow, so where the grid above already spaces it, nothing doubles. */
 .admin__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
+  margin-block-start: var(--space-lg);
 }
 
 .admin__settings {
@@ -1190,7 +1298,32 @@
 
    The original was found by the same tool, which reported seven fields on the
    contact editor "entirely covered by div.admin__actions". */
-html { scroll-padding-block-start: 4.5rem; }
+/* ONE NUMBER, TWO JOBS. The bar's height is also where the outline column
+   starts sticking, and the two going out of step is exactly the class of fault
+   check_bars() was written for -- so they read the same token.
+
+   It cannot live on .admin-page: that is <body>, and html is above it.
+   admin.css is loaded by admin pages only, so :root here is safe. */
+:root {
+  --admin-bar-h: 7rem;
+}
+
+/* Below 40em the bar is two rows -- the title with its view controls cannot
+   share a line with Discard, Save and the theme toggle at 400px -- and the
+   lede runs to three lines. Measured in a frame at 320 and 400: 181px on the
+   company and contact editors, 104px on the account. One number has to clear
+   the tallest of them.
+
+   Two numbers rather than one because the difference is 70px: padding the wide
+   case to 12rem would send every in-page anchor 86px past where it was aimed
+   on the screens most people are using. */
+@media (max-width: 39.99em) {
+  :root {
+    --admin-bar-h: 12rem;
+  }
+}
+
+html { scroll-padding-block-start: var(--admin-bar-h); }
 
 /* --------------------------------------------------------------------------
    Rich text editor
@@ -1654,6 +1787,19 @@ html { scroll-padding-block-start: 4.5rem; }
   width: 0.875rem;
   height: 0.875rem;
   fill: currentColor;
+}
+
+/* Initials rather than a silhouette, when the name yields any. The circle is
+   1.75rem, so this is as large as two characters go inside it; the letter
+   spacing stops a pair like "MW" from touching the edges. aria-hidden in the
+   markup -- the name is already in the row beside it, and a screen reader
+   reading "T A" before it is noise. */
+.account__initials {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 /* The name in the row itself, so the rail says who is signed in without

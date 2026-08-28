@@ -42,7 +42,7 @@ Both private stores need the **same** `publish.key`, or every publish is refused
 | `check_contrast.py` | the palette meets WCAG 2.1 AA in both modes |
 | `check_css.py` | every stylesheet's comments and braces balance, and no shorthand (`outline`, `border`) is handed a bare colour token — which parses, computes to a colour and a width, and draws nothing, because the shorthand reset the style to `none`. Five rules in `admin.css` had exactly that, and the admin had no focus ring because of it |
 | `check_content_model.py` | the model and the editor still describe the same thing, and no editor is unchecked |
-| `check_secrets.py` | nothing protecting the admin has quietly stopped protecting it — including that `lib/`, `sections/` and `content/` are still outside the document root |
+| `check_secrets.py` | nothing protecting the admin has quietly stopped protecting it — including that `lib/`, `sections/` and `content/` are still outside the document root, that no markup carries an inline handler the CSP will refuse, and that every asset URL goes through `admin_asset()` rather than being pinned unversioned behind a year-long `immutable` cache |
 | `check_docs.py` | the documentation still describes the code: undocumented tools, libraries and **assets**; dead links; cited paths that have gone; constants whose documented values drifted. The asset and tool checks run **both** ways — a stylesheet or script named in the prose but absent from disk fails too, unless some document says in full which repository it moved to |
 | `build_deploy_set.py --check` | the set of files bound for the server holds nothing it must not, and nothing is missing |
 | `check_shared_lib.py` | the four files both repositories hold identically have not been edited here |
@@ -87,7 +87,7 @@ passes or fails, and against a private store in a throwaway directory under `/tm
 |---|---|
 | `test_editor.py` | the rich-text editor driven as a person drives it, including a real sign-in: the toolbar, the selection, and that alignment is a class and never an inline style |
 | `test_admin_forms.py` | that the editors submit **without navigating** — a row added, moved and removed, and a save, each one keeping the scroll position and moving the focus to the right place; then the same edits again with JavaScript switched off in the browser |
-| `check_admin_a11y.py` | the **signed-in** admin: that a focus ring can be seen at every tab stop and is not hidden behind the bar across the top (SC 2.4.7, 2.4.11), that `html{scroll-padding}` still matches the bar it was measured against, that 320px neither scrolls sideways nor leaves a control under 24×24 (SC 1.4.10, 2.5.8), that dark mode paints, and that every kind of control answers a pointer |
+| `check_admin_a11y.py` | the **signed-in** admin: that a focus ring can be seen at every tab stop and is not hidden behind the bar across the top (SC 2.4.7, 2.4.11), that `html{scroll-padding}` still matches the bar it was measured against — at 1200px, and again at 320px where the bar wraps to two rows and `admin.css` carries a second number — that 320px neither scrolls sideways nor leaves a control under 24×24 (SC 1.4.10, 2.5.8), that dark mode paints, and that every kind of control answers a pointer |
 
 **This used to say the admin had never been checked.** `tech4time-website-frontend/tools/check_focus.py`,
 `tech4time-website-frontend/tools/check_dark_mode.py`, `tech4time-website-frontend/tools/check_responsive.py` and

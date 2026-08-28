@@ -509,12 +509,19 @@ function company_band_header(array $data, string $band, string $legend, string $
     <?php
 }
 
-/** The "Add" button that closes every list. */
+/**
+ * The "Add" button that closes every list.
+ *
+ * btn--secondary, the same as "Add a row" and "Add an office" on the contact
+ * editor. It was btn--ghost -- no border, no fill -- which beside a stack of
+ * bordered inputs does not read as a button at all, and there is no reason for
+ * the two editors to answer the same question differently.
+ */
 function company_add_button(string $band, string $label): void
 {
     ?>
       <div class="admin__actions">
-        <button class="btn btn--ghost" type="submit" name="do" value="<?= h($band) ?>-add:0">
+        <button class="btn btn--secondary" type="submit" name="do" value="<?= h($band) ?>-add:0">
           <?= h($label) ?>
         </button>
       </div>
@@ -1008,7 +1015,7 @@ if (!$errors && $pending !== '') {
              halfway through editing is not a fact, and acting on it would
              delete the picture belonging to the row they are about to save. */ ?>
     <div class="admin__actions">
-      <button class="btn btn--ghost" type="submit" name="do" value="sweep-uploads">
+      <button class="btn btn--secondary" type="submit" name="do" value="sweep-uploads">
         Delete the <?= count($unused) ?> unused
       </button>
     </div>

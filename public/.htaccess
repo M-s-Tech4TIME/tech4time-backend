@@ -59,6 +59,19 @@
 
     # Assets are the exception: they carry no session and are fetched on every
     # page of the editor.
+    #
+    # A YEAR AND `immutable` ARE ONLY SAFE BECAUSE THE URLS CARRY A VERSION.
+    # There is no build step here, so the filenames never change; admin_asset()
+    # in lib/admin.php puts the file's own modification time on the end of every
+    # href and src the shell writes, and that is what a browser keys its cache
+    # on. Take that away and this line becomes a promise the deploy cannot keep.
+    #
+    # It has already been broken once, exactly that way. A deploy shipped a new
+    # shell and the browsers kept the old stylesheet: `immutable` tells the
+    # browser not to revalidate on an ORDINARY reload, so pressing F5 -- the one
+    # thing a person tries -- changed nothing. What they saw was an admin with
+    # unstyled controls and a page that looked, correctly, broken. Only a forced
+    # reload would have cleared it, and nobody knows to reach for that.
     <FilesMatch "\.(css|js|woff2|png|webp|svg|ico)$">
         Header always set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>

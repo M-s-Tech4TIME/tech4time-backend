@@ -237,11 +237,11 @@ function admin_refuse(string $problem): never
        . '<meta name="viewport" content="width=device-width, initial-scale=1">'
        . '<meta name="robots" content="noindex, nofollow">'
        . '<title>The admin cannot start</title>'
-       . '<link rel="stylesheet" href="/assets/css/base.css">'
-       . '<link rel="stylesheet" href="/assets/css/theme.css">'
-       . '<link rel="stylesheet" href="/assets/css/layout.css">'
-       . '<link rel="stylesheet" href="/assets/css/components.css">'
-       . '<link rel="stylesheet" href="/assets/css/admin.css">'
+       . '<link rel="stylesheet" href="' . h(admin_asset('/assets/css/base.css')) . '">'
+       . '<link rel="stylesheet" href="' . h(admin_asset('/assets/css/theme.css')) . '">'
+       . '<link rel="stylesheet" href="' . h(admin_asset('/assets/css/layout.css')) . '">'
+       . '<link rel="stylesheet" href="' . h(admin_asset('/assets/css/components.css')) . '">'
+       . '<link rel="stylesheet" href="' . h(admin_asset('/assets/css/admin.css')) . '">'
        . '</head><body class="page"><main class="admin"><div class="admin__inner">'
        . '<div class="admin__notice admin__notice--error">'
        . '<h1>The admin cannot start safely</h1>'
@@ -419,7 +419,105 @@ function admin_icon(string $name, string $class = 'icon'): string
          . '<use href="#' . h($name) . '"></use></svg>';
 }
 
+/* --------------------------------------------------------- cache-busting */
+
+/**
+ * An asset URL with a version on the end.
+ *
+ * THE ADMIN'S OWN STYLESHEET WAS BEING SERVED FROM CACHE FOR A YEAR.
+ *
+ * public/.htaccess sends every .css and .js here with
+ * `Cache-Control: public, max-age=31536000, immutable`, and the filenames
+ * carry no version because there is no build step to put one there. `immutable`
+ * is the part that turns a stale asset into a stuck one: it tells the browser
+ * not to revalidate on an ordinary reload, so pressing F5 -- the one thing a
+ * person tries -- does nothing. Only a forced reload clears it.
+ *
+ * So a deploy would change the markup and leave the stylesheet behind it. The
+ * shell would come down with a rail toggle, an account menu, an outline and a
+ * two-label save button, and be painted by a stylesheet that had never heard of
+ * any of them — an admin that looked, correctly, broken. It is not a theoretical
+ * failure; it is what the last deploy did to the person using this.
+ *
+ * The version is the file's own modification time. Change the file and the URL
+ * changes with it, which is what makes a year-long cache safe rather than
+ * dangerous. It costs one stat() per asset per page, and nothing at all on the
+ * cached hit.
+ */
+function admin_asset(string $path): string
+{
+    $file = __DIR__ . '/../public' . $path;
+    $stamp = @filemtime($file);
+
+    return $stamp === false ? $path : $path . '?v=' . dechex($stamp);
+}
+
 /* --------------------------------------------------------------- the page */
+
+/**
+ * The one or two letters that stand for a name.
+ *
+ * "Syed Golam Abid" -> SG, "testadmin" -> TE. Every tool with a rail like this
+ * one draws the account as initials rather than as a generic silhouette,
+ * because the point of the avatar is to say WHICH account is signed in --
+ * which matters on a host where more than one person can be.
+ *
+ * NO mb_* HERE, and that is not an oversight. This host has mbstring and the
+ * next one may not; lib/html.php makes the same choice for the same reason.
+ * PCRE's /u and \X are part of the regex engine rather than an extension, and
+ * \X takes a whole grapheme -- so an accented letter or a Bengali cluster
+ * comes back whole instead of as the first byte of one, which renders as a
+ * replacement glyph in a circle.
+ *
+ * strtoupper() is ASCII-only on purpose: it leaves a script that has no case
+ * exactly as it was, which is the right answer for one.
+ *
+ * Returns '' when there is nothing to take, and the caller falls back to the
+ * icon.
+ */
+function admin_initials(string $name): string
+{
+    if (!preg_match_all('/[^\s._-]+/u', $name, $found) || !$found[0]) {
+        return '';
+    }
+
+    $words = $found[0];
+
+    /* Two words give one letter each; one word gives its first two, so a
+       single-word login still reads as a mark rather than as one lonely
+       letter. */
+    $letters = count($words) > 1
+        ? admin_graphemes($words[0], 1) . admin_graphemes($words[1], 1)
+        : admin_graphemes($words[0], 2);
+
+    return strtoupper($letters);
+}
+
+/** The first $n characters of a word, counting characters and not bytes. */
+function admin_graphemes(string $word, int $n): string
+{
+    return preg_match('/^\X{1,' . $n . '}/u', $word, $m) ? $m[0] : '';
+}
+
+/**
+ * The current section's table of contents, remembered between the two halves
+ * of the shell.
+ *
+ * admin_head() is given it and admin_foot() writes it, and there is nothing
+ * between them to pass it through — the section's own markup is what sits in
+ * the middle. Passing it to admin_foot() as well would mean every caller
+ * repeating the constant, and one of them eventually not.
+ */
+function admin_outline(?array $set = null): array
+{
+    static $outline = [];
+
+    if ($set !== null) {
+        $outline = $set;
+    }
+
+    return $outline;
+}
 
 /**
  * Everything from <!DOCTYPE> down to the opening of the section's own markup:
@@ -430,6 +528,11 @@ function admin_head(string $section, string $user, string $lede = '',
 {
     $meta = ADMIN_SECTIONS[$section];
     $title = $meta['label'] . ' | Tech4TIME admin';
+
+    /* Held for admin_foot(), which writes it: the outline is a column beside
+       the editing column, so it has to be emitted after the section's own
+       markup has closed. */
+    admin_outline($outline);
     ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -438,13 +541,13 @@ function admin_head(string $section, string $user, string $lede = '',
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= h($title) ?></title>
-<link rel="icon" href="/assets/images/favicon/favicon.ico" sizes="any">
-<link rel="stylesheet" href="/assets/css/base.css">
-<link rel="stylesheet" href="/assets/css/theme.css">
-<link rel="stylesheet" href="/assets/css/layout.css">
-<link rel="stylesheet" href="/assets/css/components.css">
-<link rel="stylesheet" href="/assets/css/admin.css">
-<script src="/assets/js/theme-init.js"></script>
+<link rel="icon" href="<?= h(admin_asset('/assets/images/favicon/favicon.ico')) ?>" sizes="any">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/base.css')) ?>">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/theme.css')) ?>">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/layout.css')) ?>">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/components.css')) ?>">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/admin.css')) ?>">
+<script src="<?= h(admin_asset('/assets/js/theme-init.js')) ?>"></script>
 </head>
 <body class="page admin-page">
 <?= admin_icons(ADMIN_ICONS) ?>
@@ -474,13 +577,13 @@ function admin_head(string $section, string $user, string $lede = '',
     <div class="rail__head">
       <a class="rail__brand" href="<?= h(public_url('/')) ?>" aria-label="Tech4TIME — view the site">
         <picture class="rail__logo-wrap theme-swap--light">
-          <source srcset="/assets/images/logo/logo-light-180.webp" type="image/webp">
-          <img class="rail__logo" src="/assets/images/logo/logo-light-180.png"
+          <source srcset="<?= h(admin_asset('/assets/images/logo/logo-light-180.webp')) ?>" type="image/webp">
+          <img class="rail__logo" src="<?= h(admin_asset('/assets/images/logo/logo-light-180.png')) ?>"
                alt="Tech4TIME" width="180" height="64" decoding="async">
         </picture>
         <picture class="rail__logo-wrap theme-swap--dark">
-          <source srcset="/assets/images/logo/logo-dark-180.webp" type="image/webp">
-          <img class="rail__logo" src="/assets/images/logo/logo-dark-180.png"
+          <source srcset="<?= h(admin_asset('/assets/images/logo/logo-dark-180.webp')) ?>" type="image/webp">
+          <img class="rail__logo" src="<?= h(admin_asset('/assets/images/logo/logo-dark-180.png')) ?>"
                alt="Tech4TIME" width="180" height="64" loading="lazy" decoding="async">
         </picture>
         <span class="rail__kicker">Admin</span>
@@ -488,8 +591,12 @@ function admin_head(string $section, string $user, string $lede = '',
 
       <?php /* Starts hidden and admin-nav.js unhides it: with no script the
                rail cannot narrow, and a control that does nothing is worse
-               than no control. */ ?>
-      <button class="rail__toggle" type="button" hidden
+               than no control.
+
+               .btn--icon is the round outlined control the theme toggle uses.
+               It was a bare 2rem square, which at the top of a rail full of
+               labelled rows read as a stray chevron rather than a button. */ ?>
+      <button class="btn btn--icon btn--icon-sm rail__toggle" type="button" hidden
               data-rail-toggle aria-controls="admin-rail" aria-expanded="true">
         <?= admin_icon('chevron-left', 'icon rail-toggle__icon--narrow') ?>
         <?= admin_icon('chevron-right', 'icon rail-toggle__icon--wide') ?>
@@ -509,27 +616,6 @@ function admin_head(string $section, string $user, string $lede = '',
               <span class="rail__desc"><?= h($item['desc']) ?></span>
             </span>
           </a>
-<?php if ($current && $outline): ?>
-          <?php /* WHAT THIS PAGE CONTAINS, LISTED WHERE IT CAN BE SEEN.
-
-                   The company editor is a quarter of a megabyte of form: ten
-                   bands, 282 rows, 448 fields, one under the next. All of it
-                   was always there and none of it was visible, because the
-                   only way to learn that a section existed was to scroll far
-                   enough to reach it — and every button press put you back at
-                   the top. Somebody reasonably concluded the data was
-                   missing.
-
-                   These are plain in-page anchors, so they work with script
-                   off and they cost the editing column no height at all. */ ?>
-          <ul class="rail__sub" role="list">
-<?php foreach ($outline as $anchor => $label): ?>
-            <li>
-              <a class="rail__subitem" href="#<?= h((string)$anchor) ?>"><?= h((string)$label) ?></a>
-            </li>
-<?php endforeach; ?>
-          </ul>
-<?php endif; ?>
         </li>
 <?php endforeach; ?>
       </ul>
@@ -555,8 +641,15 @@ function admin_head(string $section, string $user, string $lede = '',
                a click lands outside. Take the script away and it still opens
                and still signs out; it merely waits to be pressed again. */ ?>
       <details class="account" data-account>
+<?php $initials = admin_initials($user); ?>
         <summary class="account__toggle" title="<?= h($user) ?>">
-          <span class="account__avatar"><?= admin_icon('user', 'icon') ?></span>
+          <span class="account__avatar">
+<?php if ($initials !== ''): ?>
+            <span class="account__initials" aria-hidden="true"><?= h($initials) ?></span>
+<?php else: ?>
+            <?= admin_icon('user', 'icon') ?>
+<?php endif; ?>
+          </span>
           <span class="account__text">
             <span class="account__label"><?= h($user) ?></span>
             <span class="account__hint">Signed in</span>
@@ -594,79 +687,95 @@ function admin_head(string $section, string $user, string $lede = '',
   </aside>
 
   <div class="admin-shell__body">
+    <?php /* THE BAR IS TWO ROWS: WHAT THIS IS, AND WHAT YOU CAN DO TO IT.
+
+             It was one row, and the line explaining what the section edits had
+             been pushed down into the scrolling column to keep the bar short.
+             That put the one sentence saying WHERE THE CHANGES GO — and the
+             link to the live page they go to — below the fold on a phone and
+             out of mind everywhere else. It belongs with the title.
+
+             The cost is about twenty pixels, at --text-xs on its own row. The
+             bar it replaced was 208px. */ ?>
     <header class="admin-bar">
-      <?php /* The heading only. The line under it used to be here too, and it
-               is two lines of wrapped text on every editor — pinned to the top
-               of the viewport, on a page whose whole problem is that there is
-               no room to see the form. It is read once and it never changes,
-               so it now scrolls with the page, below. */ ?>
-      <?php /* The heading, and the two ways to look at what is being edited.
+      <div class="admin-bar__row">
+        <?php /* The heading, and the two ways to look at what is being edited.
 
-               Those two links were at the foot of the rail, where they sat
-               under the section list and read as more navigation. They are
-               about THIS page, so they belong beside its name. */ ?>
-      <div class="admin-bar__titles">
-        <h1 class="admin-bar__title"><?= h($meta['label']) ?></h1>
+                 Icons alone, in the same round outlined control as the theme
+                 toggle beside them. As labelled links they wrapped onto their
+                 own line under a heading they are meant to sit beside, and two
+                 underlined phrases next to an <h1> read as body text rather
+                 than as controls. The name is still there for a screen reader,
+                 and a hover reveals it for everyone else. */ ?>
+        <div class="admin-bar__titles">
+          <h1 class="admin-bar__title"><?= h($meta['label']) ?></h1>
 
-        <div class="admin-bar__views">
+          <div class="admin-bar__views">
 <?php if ($meta['view'] !== ''): ?>
-          <a class="admin-bar__view" href="<?= h(public_url($meta['view'])) ?>"
-             target="_blank" rel="noopener">
-            <?= admin_icon('eye', 'icon icon--sm') ?>
-            <span>View the page</span>
-          </a>
+            <a class="btn btn--icon admin-bar__view" href="<?= h(public_url($meta['view'])) ?>"
+               target="_blank" rel="noopener" title="View the page"
+               aria-label="View the page — opens in a new tab">
+              <?= admin_icon('eye', 'icon icon--sm') ?>
+            </a>
 <?php endif; ?>
-          <a class="admin-bar__view" href="<?= h(public_url('/')) ?>"
-             target="_blank" rel="noopener">
-            <?= admin_icon('link', 'icon icon--sm') ?>
-            <span>Open the site</span>
-          </a>
+            <a class="btn btn--icon admin-bar__view" href="<?= h(public_url('/')) ?>"
+               target="_blank" rel="noopener" title="Open the site"
+               aria-label="Open the site — opens in a new tab">
+              <?= admin_icon('link', 'icon icon--sm') ?>
+            </a>
+          </div>
+        </div>
+
+        <?php /* SAVE LIVES HERE, AND THE FORM IS SEVERAL SCREENS BELOW.
+
+                 It was a bar pinned across the foot of the editing column,
+                 which cost 101px of every screen to hold one button — on a
+                 page whose difficulty is that there is not enough room to see
+                 the form. Up here it costs nothing: the bar was already
+                 pinned, and the right end of it was holding a name that does
+                 not change.
+
+                 The button reaches its form with the `form` attribute, which
+                 is plain HTML and needs no script: a submit button anywhere in
+                 the document may name the form it belongs to. So this still
+                 works with JavaScript off, and admin-forms.js does not have to
+                 know that the button is not inside the form it submits. */ ?>
+        <div class="admin-bar__actions">
+<?php if ($save): ?>
+          <p class="admin__status" data-form-status role="status" aria-live="polite"></p>
+<?php if (!empty($save['discard'])): ?>
+          <a class="btn btn--ghost" href="<?= h($save['discard']) ?>">Discard</a>
+<?php endif; ?>
+          <?php /* Two labels, one shown. "Save the company profile" is 200px of
+                   a 320px screen and the bar cannot wrap a single word, so at
+                   that width the button says "Save" instead. display:none on
+                   the other means a screen reader is offered one name, not
+                   two. */ ?>
+          <button class="btn btn--primary" type="submit" name="do" value="save"
+                  form="<?= h($save['form']) ?>">
+            <span class="admin-bar__save-long"><?= h($save['label']) ?></span>
+            <span class="admin-bar__save-short"><?= h($save['short'] ?? 'Save') ?></span>
+          </button>
+<?php endif; ?>
+          <button class="btn btn--icon" type="button" data-theme-toggle
+                  aria-label="Switch to dark mode" aria-pressed="false">
+            <?= admin_icon('moon', 'icon theme-toggle__icon--moon') ?>
+            <?= admin_icon('sun', 'icon theme-toggle__icon--sun') ?>
+          </button>
         </div>
       </div>
 
-      <?php /* SAVE LIVES HERE, AND THE FORM IS SEVERAL SCREENS BELOW.
-
-               It was a bar pinned across the foot of the editing column, which
-               cost 101px of every screen to hold one button — on a page whose
-               difficulty is that there is not enough room to see the form. Up
-               here it costs nothing: the bar was already pinned, and the right
-               end of it was holding a name that does not change.
-
-               The button reaches its form with the `form` attribute, which is
-               plain HTML and needs no script: a submit button anywhere in the
-               document may name the form it belongs to. So this still works
-               with JavaScript off, and admin-forms.js does not have to know
-               that the button is not inside the form it submits. */ ?>
-      <div class="admin-bar__actions">
-<?php if ($save): ?>
-        <p class="admin__status" data-form-status role="status" aria-live="polite"></p>
-<?php if (!empty($save['discard'])): ?>
-        <a class="btn btn--ghost" href="<?= h($save['discard']) ?>">Discard</a>
+<?php if ($lede !== ''): ?>
+      <?php /* Trusted markup, not text: every caller writes it as a literal in
+               its own file and it carries the link to the page being edited.
+               Nothing from a request reaches here. */ ?>
+      <p class="admin-bar__lede"><?= $lede ?></p>
 <?php endif; ?>
-        <?php /* Two labels, one shown. "Save the company profile" is 200px of
-                 a 320px screen and the bar cannot wrap a single word, so at
-                 that width the button says "Save" instead. display:none on
-                 the other means a screen reader is offered one name, not
-                 two. */ ?>
-        <button class="btn btn--primary" type="submit" name="do" value="save"
-                form="<?= h($save['form']) ?>">
-          <span class="admin-bar__save-long"><?= h($save['label']) ?></span>
-          <span class="admin-bar__save-short"><?= h($save['short'] ?? 'Save') ?></span>
-        </button>
-<?php endif; ?>
-        <button class="btn btn--icon" type="button" data-theme-toggle
-                aria-label="Switch to dark mode" aria-pressed="false">
-          <?= admin_icon('moon', 'icon theme-toggle__icon--moon') ?>
-          <?= admin_icon('sun', 'icon theme-toggle__icon--sun') ?>
-        </button>
-      </div>
     </header>
 
     <main class="admin" id="admin-main">
-      <div class="admin__inner">
-<?php if ($lede !== ''): ?>
-        <p class="admin__lede"><?= $lede ?></p>
-<?php endif; ?>
+      <div class="admin__inner<?= $outline ? ' admin__inner--outlined' : '' ?>">
+        <div class="admin__col">
 <?php
 }
 
@@ -735,20 +844,56 @@ function admin_publish_notice(): void
 
 function admin_foot(string $note = ''): void
 {
+    $outline = admin_outline();
     ?>
 <?php if ($note !== ''): ?>
-        <footer class="admin__footer"><?= $note ?></footer>
+          <footer class="admin__footer"><?= $note ?></footer>
+<?php endif; ?>
+        </div>
+<?php if ($outline): ?>
+        <?php /* WHAT THIS PAGE CONTAINS, LISTED WHERE IT CAN BE SEEN.
+
+                 The company editor is a quarter of a megabyte of form: ten
+                 bands, 282 rows, 448 fields, one under the next. All of it was
+                 always there and none of it was visible, because the only way
+                 to learn that a section existed was to scroll far enough to
+                 reach it. Somebody reasonably concluded the data was missing.
+
+                 It spent one release nested inside the rail, under the current
+                 section. That is the wrong column: the rail is a list of
+                 places to go, this is a map of where you already are, and
+                 twelve extra lines in a menu of five made the menu look like
+                 the thing that had gone wrong. It is the right-hand column
+                 every documentation site puts it in now.
+
+                 AFTER the editing column in the source, so tabbing into the
+                 page reaches the fields rather than twelve anchors first. Grid
+                 placement puts it on the right regardless; below the
+                 breakpoint `order` lifts it above the form, where it becomes
+                 one scrolling row of chips.
+
+                 Plain in-page anchors, so it works with script off. */ ?>
+        <nav class="outline" aria-labelledby="outline-title">
+          <p class="outline__title" id="outline-title">On this page</p>
+          <ul class="outline__list" role="list">
+<?php foreach ($outline as $anchor => $label): ?>
+            <li>
+              <a class="outline__link" href="#<?= h((string)$anchor) ?>"><?= h((string)$label) ?></a>
+            </li>
+<?php endforeach; ?>
+          </ul>
+        </nav>
 <?php endif; ?>
       </div>
     </main>
   </div>
 </div>
 
-<script src="/assets/js/theme-toggle.js" defer></script>
-<script src="/assets/js/admin-nav.js" defer></script>
-<script src="/assets/js/editor.js" defer></script>
-<script src="/assets/js/admin-forms.js" defer></script>
-<script src="/assets/js/admin-init.js" defer></script>
+<script src="<?= h(admin_asset('/assets/js/theme-toggle.js')) ?>" defer></script>
+<script src="<?= h(admin_asset('/assets/js/admin-nav.js')) ?>" defer></script>
+<script src="<?= h(admin_asset('/assets/js/editor.js')) ?>" defer></script>
+<script src="<?= h(admin_asset('/assets/js/admin-forms.js')) ?>" defer></script>
+<script src="<?= h(admin_asset('/assets/js/admin-init.js')) ?>" defer></script>
 </body>
 </html>
 <?php
@@ -777,13 +922,13 @@ function admin_shell_head(string $title, string $lede = '', string $icon = 'user
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title><?= h($title) ?> | Tech4TIME admin</title>
-<link rel="icon" href="/assets/images/favicon/favicon.ico" sizes="any">
-<link rel="stylesheet" href="/assets/css/base.css">
-<link rel="stylesheet" href="/assets/css/theme.css">
-<link rel="stylesheet" href="/assets/css/layout.css">
-<link rel="stylesheet" href="/assets/css/components.css">
-<link rel="stylesheet" href="/assets/css/admin.css">
-<script src="/assets/js/theme-init.js"></script>
+<link rel="icon" href="<?= h(admin_asset('/assets/images/favicon/favicon.ico')) ?>" sizes="any">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/base.css')) ?>">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/theme.css')) ?>">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/layout.css')) ?>">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/components.css')) ?>">
+<link rel="stylesheet" href="<?= h(admin_asset('/assets/css/admin.css')) ?>">
+<script src="<?= h(admin_asset('/assets/js/theme-init.js')) ?>"></script>
 </head>
 <body class="page admin-page">
 <?= admin_icons(ADMIN_ICONS) ?>
@@ -794,13 +939,13 @@ function admin_shell_head(string $title, string $lede = '', string $icon = 'user
     <div class="signin__top">
       <a class="signin__brand" href="<?= h(public_url('/')) ?>" aria-label="Tech4TIME — view the site">
         <picture class="signin__logo-wrap theme-swap--light">
-          <source srcset="/assets/images/logo/logo-light-180.webp" type="image/webp">
-          <img class="signin__logo" src="/assets/images/logo/logo-light-180.png"
+          <source srcset="<?= h(admin_asset('/assets/images/logo/logo-light-180.webp')) ?>" type="image/webp">
+          <img class="signin__logo" src="<?= h(admin_asset('/assets/images/logo/logo-light-180.png')) ?>"
                alt="Tech4TIME" width="180" height="64" decoding="async">
         </picture>
         <picture class="signin__logo-wrap theme-swap--dark">
-          <source srcset="/assets/images/logo/logo-dark-180.webp" type="image/webp">
-          <img class="signin__logo" src="/assets/images/logo/logo-dark-180.png"
+          <source srcset="<?= h(admin_asset('/assets/images/logo/logo-dark-180.webp')) ?>" type="image/webp">
+          <img class="signin__logo" src="<?= h(admin_asset('/assets/images/logo/logo-dark-180.png')) ?>"
                alt="Tech4TIME" width="180" height="64" loading="lazy" decoding="async">
         </picture>
       </a>
@@ -831,8 +976,8 @@ function admin_shell_foot(string $note = ''): void
   </div>
 </main>
 
-<script src="/assets/js/theme-toggle.js" defer></script>
-<script src="/assets/js/admin-init.js" defer></script>
+<script src="<?= h(admin_asset('/assets/js/theme-toggle.js')) ?>" defer></script>
+<script src="<?= h(admin_asset('/assets/js/admin-init.js')) ?>" defer></script>
 </body>
 </html>
 <?php

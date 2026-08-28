@@ -706,14 +706,45 @@ return {
 """
 
 
+def judge_bars(where: str, tallest: dict, pads: dict, slack: int, r: Results) -> None:
+    """One width's worth of bar measurements, against its own padding."""
+    for edge in ("top", "bottom"):
+        bar, pad = tallest[edge], pads[edge]
+        if bar == 0:
+            continue
+
+        r.check(
+            f"{where}: scroll-padding clears the tallest {edge} bar",
+            pad >= bar,
+            f"the tallest is {bar}px and scroll-padding-{edge} is {pad}px — "
+            f"a field scrolled to that edge lands under it (SC 2.4.11)")
+
+        # Generous is safe; wildly generous means the number is stale, and
+        # every anchor then overshoots by the difference.
+        r.check(
+            f"{where}: scroll-padding is not stale at the {edge}",
+            pad - bar <= slack,
+            f"the tallest is {bar}px and scroll-padding-{edge} is {pad}px — "
+            f"{pad - bar}px of overshoot. Measure again and update the "
+            f"html{{scroll-padding}} rule in admin.css.")
+
+
 def check_bars(b: Browser, base: str, screens, r: Results) -> None:
     """Prove scroll-padding still clears the bars it was measured against.
 
-    ONE PADDING, SO ONE MEASUREMENT. html{scroll-padding} is a single pair of
-    numbers for the whole admin, and the bars are not the same height on every
-    screen -- the account page has no save bar and a shorter heading. So what
-    matters is the tallest each bar ever gets: the padding has to clear that,
-    and it should not clear it by so much that every anchor overshoots.
+    ONE PADDING PER BREAKPOINT, SO ONE MEASUREMENT PER BREAKPOINT.
+    html{scroll-padding} is a single pair of numbers for the whole admin, and
+    the bars are not the same height on every screen -- the account page has no
+    save button and a shorter heading. So what matters is the tallest each bar
+    ever gets: the padding has to clear that, and it should not clear it by so
+    much that every anchor overshoots.
+
+    AND THE NARROW ONE IS MEASURED TOO. The bar wraps to two rows below 40em
+    and the lede under it runs to three lines, so it is 181px there against
+    106px on a desktop. admin.css carries a second --admin-bar-h for that
+    range, and a number nothing measures is a number that goes stale -- which
+    is the fault this whole function exists to catch. 320 has to be measured in
+    a frame, for the reason written above FRAME.
     """
     b.size(1200)
 
@@ -731,30 +762,52 @@ def check_bars(b: Browser, base: str, screens, r: Results) -> None:
         pads["top"] = m["padTop"]
         pads["bottom"] = m["padBottom"]
 
-        print(f"  {screen}: top {m['top']}px, bottom {m['bottom']}px")
+        print(f"  1200px {screen}: top {m['top']}px, bottom {m['bottom']}px")
 
-    for edge in ("top", "bottom"):
-        bar, pad = tallest[edge], pads[edge]
-        if bar == 0:
+    print(f"  tallest at 1200px: top {tallest['top']}px (pad {pads['top']}px), "
+          f"bottom {tallest['bottom']}px (pad {pads['bottom']}px)")
+    judge_bars("1200px", tallest, pads, 32, r)
+
+    # ------------------------------------------------------- and at 320px
+    b.size(1200, 950)
+    b.go(base + "/")
+
+    narrow = {"top": 0, "bottom": 0}
+    narrow_pads = {"top": 0, "bottom": 0}
+    measured = False
+
+    for screen in screens:
+        for _ in range(60):
+            state = b.js(FRAME, REFLOW_WIDTH, base + screen)
+            if not state.get("loading"):
+                break
+            time.sleep(0.25)
+        else:
             continue
 
-        r.check(
-            f"scroll-padding clears the tallest {edge} bar",
-            pad >= bar,
-            f"the tallest is {bar}px and scroll-padding-{edge} is {pad}px — "
-            f"a field scrolled to that edge lands under it (SC 2.4.11)")
+        if not 0 <= REFLOW_WIDTH - int(state["inner"]) <= 40:
+            continue    # clamped; walk_reflow reports that, and loudly
 
-        # Generous is safe; wildly generous means the number is stale, and
-        # every anchor then overshoots by the difference.
-        r.check(
-            f"scroll-padding is not stale at the {edge}",
-            pad - bar <= 32,
-            f"the tallest is {bar}px and scroll-padding-{edge} is {pad}px — "
-            f"{pad - bar}px of overshoot. Measure again and update the "
-            f"html{{scroll-padding}} rule in admin.css.")
+        m = b.js(IN_FRAME + MEASURE_BARS)
+        if not m:
+            continue
 
-    print(f"  tallest: top {tallest['top']}px (pad {pads['top']}px), "
-          f"bottom {tallest['bottom']}px (pad {pads['bottom']}px)")
+        measured = True
+        narrow["top"] = max(narrow["top"], m["top"])
+        narrow["bottom"] = max(narrow["bottom"], m["bottom"])
+        narrow_pads["top"] = m["padTop"]
+        narrow_pads["bottom"] = m["padBottom"]
+
+        print(f"  {REFLOW_WIDTH}px {screen}: top {m['top']}px, bottom {m['bottom']}px")
+
+    if measured:
+        # Looser than 32 on purpose: one padding covers both the account page,
+        # whose bar has no save button and a one-line lede, and the company
+        # editor, whose bar is 77px taller. The spread is real and no single
+        # number can be tight against both.
+        print(f"  tallest at {REFLOW_WIDTH}px: top {narrow['top']}px "
+              f"(pad {narrow_pads['top']}px)")
+        judge_bars(f"{REFLOW_WIDTH}px", narrow, narrow_pads, 96, r)
 
 
 def walk_hover(b: Browser, base: str, screens, r: Results) -> None:

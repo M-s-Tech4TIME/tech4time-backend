@@ -71,7 +71,8 @@ Full table: [docs/10-development/where-to-change-things.md](docs/10-development/
 | Add an editor | [adding-an-editor.md](docs/10-development/server-side/adding-an-editor.md) |
 | The editor's appearance | `public/assets/css/admin.css` |
 | The shell — rail, bar, account menu, Save | `admin_head()` in `lib/admin.php` |
-| What the rail lists under the open section | the `*_OUTLINE` constant in that `sections/*.php` |
+| "On this page", the column right of the form | the `*_OUTLINE` constant in that `sections/*.php` |
+| A stylesheet, script or image URL | never by hand — `admin_asset()` puts the version on it |
 | Whether a form posts without navigating | `data-async` on the `<form>`; `public/assets/js/admin-forms.js` |
 | A colour | `public/assets/css/theme.css` — tokens only, never a hex elsewhere |
 | Where the public site is | `PUBLIC_SITE` in `lib/publish_client.php`, or `$T4T_PUBLIC_URL` |
