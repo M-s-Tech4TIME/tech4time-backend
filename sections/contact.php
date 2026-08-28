@@ -246,10 +246,22 @@ function contact_row_controls(string $prefix, int $index, int $total, string $la
 
 $inStep = contact_footer_in_step($data);
 
+/* The rail's table of contents for this page — see COMPANY_OUTLINE. */
+const CONTACT_OUTLINE = [
+    'band-hero'    => 'The banner',
+    'band-form'    => 'The enquiry form',
+    'band-reach'   => 'Reach us directly',
+    'band-offices' => 'Our offices',
+    'band-meta'    => 'Search and sharing',
+];
+
 admin_head('contact', $user,
     'Editing <code>content/contact.json</code>. Changes go live on '
     . '<a href="' . h(public_url('/pages/contact/')) . '">the contact page</a> '
-    . 'within a second — as soon as the live site accepts the publish.');
+    . 'within a second — as soon as the live site accepts the publish.',
+    CONTACT_OUTLINE,
+    ['form' => 'contact-form', 'label' => 'Save the contact page',
+     'discard' => admin_url('contact')]);
 
 admin_notices($errors);
 
@@ -278,7 +290,8 @@ if (!$errors && $pending !== '') {
   </div>
 <?php endif; ?>
 
-<form class="admin__form" method="post" action="<?= h(admin_url('contact')) ?>">
+<form class="admin__form" id="contact-form" method="post" data-async
+      action="<?= h(admin_url('contact')) ?>">
   <?= admin_form_fields('contact') ?>
 
   <?php /* Pressing Enter in a text field submits the form using the first
@@ -288,7 +301,7 @@ if (!$errors && $pending !== '') {
           tabindex="-1" aria-hidden="true">Save</button>
 
   <!-- ========================= banner ========================= -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-hero">
     <legend class="admin__section-title">The banner</legend>
     <p class="admin__blurb">The band at the top of the page, with the circuitry around it.</p>
 
@@ -310,7 +323,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ========================== form ========================== -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-form">
     <legend class="admin__section-title">The enquiry form</legend>
     <p class="admin__blurb">
       The words around the form. The fields themselves — name, phone, email,
@@ -361,7 +374,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ========================== reach ========================== -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-reach">
     <legend class="admin__section-title">Reach us directly</legend>
     <p class="admin__blurb">
       The short list beside the form. A row becomes a link when its kind says
@@ -454,7 +467,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ========================= offices ========================= -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-offices">
     <legend class="admin__section-title">Our offices</legend>
     <p class="admin__blurb">The band at the foot of the page, one card per office.</p>
 
@@ -611,7 +624,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ==================== search and sharing ==================== -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-meta">
     <legend class="admin__section-title">Search results and shared links</legend>
     <p class="admin__blurb">
       What Google shows, and what appears when someone pastes the address of
@@ -644,10 +657,6 @@ if (!$errors && $pending !== '') {
     </div>
   </fieldset>
 
-  <div class="admin__actions admin__actions--sticky">
-    <button class="btn btn--primary btn--lg" type="submit" name="do" value="save">Save the contact page</button>
-    <a class="btn btn--ghost btn--lg" href="<?= h(admin_url('contact')) ?>">Discard changes</a>
-  </div>
 </form>
 
 <?php

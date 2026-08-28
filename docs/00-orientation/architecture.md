@@ -274,15 +274,25 @@ theme-init.js     ← the ONLY synchronous script, in <head>: which theme to pai
 
 … page renders …
 
-admin-nav.js      ← the rail's narrow/wide control, and remembering the choice
+admin-nav.js      ← the rail's narrow/wide control, and closing the account menu
 editor.js         ← the rich-text toolbar over a contenteditable surface
+admin-forms.js    ← posts the editors without navigating, and puts the answer back
 theme-toggle.js   ← the theme switch
 admin-init.js     ← runs last, calls each init() in a try/catch
 ```
 
-Without JavaScript the rail stays wide and fully labelled, the theme follows the operating system,
-and the rich-text fields are plain `<textarea>`s that save exactly what is typed. **Every editor
-still works.** `editor.js` is a surface over the textarea, not a replacement for it — the hidden
+Without JavaScript the rail stays wide and fully labelled, the account menu is a `<details>` the
+browser opens by itself, every form navigates the way it always did, the theme follows the
+operating system, and the rich-text fields are plain `<textarea>`s that save exactly what is typed.
+**Every editor still works.**
+
+`admin-forms.js` is worth understanding, because it looks like the kind of thing that usually
+introduces a second truth. It does not: it posts the same form to the same URL, follows the
+redirect the way the browser would, and swaps the returned `#admin-main` into the page. There is no
+JSON endpoint, no partial-render path and no server-side branch — **nothing on the server knows or
+cares whether the request came from it.** What it buys is that pressing "Move down" on the fiftieth
+technology logo leaves you looking at the fiftieth technology logo, instead of at the top of a
+quarter-megabyte form. Deleting the file restores the old behaviour exactly. `editor.js` is a surface over the textarea, not a replacement for it — the hidden
 field is what posts, and `test_editor.py` asserts the two stay in step.
 
 Alignment is a **class**, never an inline style: the CSP is `style-src 'self'`, so a `style=`

@@ -86,7 +86,8 @@ passes or fails, and against a private store in a throwaway directory under `/tm
 | Script | Proves |
 |---|---|
 | `test_editor.py` | the rich-text editor driven as a person drives it, including a real sign-in: the toolbar, the selection, and that alignment is a class and never an inline style |
-| `check_admin_a11y.py` | the **signed-in** admin: that a focus ring can be seen at every tab stop and is not hidden behind the sticky save bar (SC 2.4.7, 2.4.11), that 320px neither scrolls sideways nor leaves a control under 24×24 (SC 1.4.10, 2.5.8), that dark mode paints, and that every kind of control answers a pointer |
+| `test_admin_forms.py` | that the editors submit **without navigating** — a row added, moved and removed, and a save, each one keeping the scroll position and moving the focus to the right place; then the same edits again with JavaScript switched off in the browser |
+| `check_admin_a11y.py` | the **signed-in** admin: that a focus ring can be seen at every tab stop and is not hidden behind the bar across the top (SC 2.4.7, 2.4.11), that `html{scroll-padding}` still matches the bar it was measured against, that 320px neither scrolls sideways nor leaves a control under 24×24 (SC 1.4.10, 2.5.8), that dark mode paints, and that every kind of control answers a pointer |
 
 **This used to say the admin had never been checked.** `tech4time-website-frontend/tools/check_focus.py`,
 `tech4time-website-frontend/tools/check_dark_mode.py`, `tech4time-website-frontend/tools/check_responsive.py` and

@@ -450,7 +450,12 @@
 
   api.editor = {
     init: function () {
-      var fields = doc.querySelectorAll("textarea[data-editor]");
+      /* :not(.rte__source) because admin-forms.js calls this again after it
+         swaps a page in, and the textareas that survived the swap already
+         have an editor above them. Building a second one would leave two
+         surfaces writing to the same field, and the one that lost the race
+         would win. build() adds that class. */
+      var fields = doc.querySelectorAll("textarea[data-editor]:not(.rte__source)");
 
       Array.prototype.forEach.call(fields, function (textarea) {
         var editor = new Editor(textarea);

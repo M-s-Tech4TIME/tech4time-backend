@@ -105,7 +105,7 @@ const ADMIN_ICONS = [
     /* Signing in: the rail's account entry, the sign-out control, and the
        enrolment and recovery panels on the account page. */
     'user-shield', 'user-lock', 'shield-alt', 'check-circle',
-    'exclamation-circle', 'question-circle',
+    'exclamation-circle', 'question-circle', 'angle-right',
     /* The company profile: the icons a principle card may carry, plus the one
        its picture rows use for "upload". Kept in step with COMPANY_ICONS —
        every name there must be inlined here, or the editor's live preview
@@ -425,7 +425,8 @@ function admin_icon(string $name, string $class = 'icon'): string
  * Everything from <!DOCTYPE> down to the opening of the section's own markup:
  * the head, the icon rail, and the header strip above the section.
  */
-function admin_head(string $section, string $user, string $lede = ''): void
+function admin_head(string $section, string $user, string $lede = '',
+                    array $outline = [], array $save = []): void
 {
     $meta = ADMIN_SECTIONS[$section];
     $title = $meta['label'] . ' | Tech4TIME admin';
@@ -459,6 +460,17 @@ function admin_head(string $section, string $user, string $lede = ''): void
            down the side of a phone leaves no room for the thing being
            edited. */ ?>
   <aside class="rail" data-rail id="admin-rail">
+    <?php /* THE BRAND AND THE CONTROL THAT NARROWS THE RAIL SHARE THIS ROW.
+
+             The control used to live in the bar across the top, on the
+             reasoning that it would then be in one place whatever shape the
+             rail was in. In use that reads as a button belonging to the page
+             rather than to the menu it operates, and it is nowhere near the
+             thing it changes. It is here now, at the rail's own top edge,
+             which is where a rail's collapse control is looked for.
+
+             Below 60em the whole head is display:none — the rail is a
+             horizontal strip there and there is no width to narrow. */ ?>
     <div class="rail__head">
       <a class="rail__brand" href="<?= h(public_url('/')) ?>" aria-label="Tech4TIME — view the site">
         <picture class="rail__logo-wrap theme-swap--light">
@@ -471,8 +483,18 @@ function admin_head(string $section, string $user, string $lede = ''): void
           <img class="rail__logo" src="/assets/images/logo/logo-dark-180.png"
                alt="Tech4TIME" width="180" height="64" loading="lazy" decoding="async">
         </picture>
+        <span class="rail__kicker">Admin</span>
       </a>
-      <span class="rail__kicker">Admin</span>
+
+      <?php /* Starts hidden and admin-nav.js unhides it: with no script the
+               rail cannot narrow, and a control that does nothing is worse
+               than no control. */ ?>
+      <button class="rail__toggle" type="button" hidden
+              data-rail-toggle aria-controls="admin-rail" aria-expanded="true">
+        <?= admin_icon('chevron-left', 'icon rail-toggle__icon--narrow') ?>
+        <?= admin_icon('chevron-right', 'icon rail-toggle__icon--wide') ?>
+        <span class="visually-hidden">Narrow the menu</span>
+      </button>
     </div>
 
     <nav class="rail__nav" aria-label="Pages you can edit">
@@ -487,61 +509,150 @@ function admin_head(string $section, string $user, string $lede = ''): void
               <span class="rail__desc"><?= h($item['desc']) ?></span>
             </span>
           </a>
+<?php if ($current && $outline): ?>
+          <?php /* WHAT THIS PAGE CONTAINS, LISTED WHERE IT CAN BE SEEN.
+
+                   The company editor is a quarter of a megabyte of form: ten
+                   bands, 282 rows, 448 fields, one under the next. All of it
+                   was always there and none of it was visible, because the
+                   only way to learn that a section existed was to scroll far
+                   enough to reach it — and every button press put you back at
+                   the top. Somebody reasonably concluded the data was
+                   missing.
+
+                   These are plain in-page anchors, so they work with script
+                   off and they cost the editing column no height at all. */ ?>
+          <ul class="rail__sub" role="list">
+<?php foreach ($outline as $anchor => $label): ?>
+            <li>
+              <a class="rail__subitem" href="#<?= h((string)$anchor) ?>"><?= h((string)$label) ?></a>
+            </li>
+<?php endforeach; ?>
+          </ul>
+<?php endif; ?>
         </li>
 <?php endforeach; ?>
       </ul>
     </nav>
 
+    <?php /* THE FOOT OF THE RAIL IS WHO YOU ARE.
+
+             It held the two links to the public site, which are about the page
+             being edited and now sit beside its heading where that is what
+             they read as. What belongs at the bottom of a rail is the account:
+             it is the one thing on this screen that is about the person rather
+             than the page, and the bottom of the menu is where every tool that
+             has one puts it.
+
+             The menu opens UPWARDS, because there is nothing below it. */ ?>
     <div class="rail__foot">
-<?php if ($meta['view'] !== ''): ?>
-      <a class="rail__link" href="<?= h(public_url($meta['view'])) ?>" target="_blank" rel="noopener">
-        <span class="rail__icon"><?= admin_icon('eye') ?></span>
-        <span class="rail__text"><span class="rail__label">View the page</span></span>
-      </a>
+<?php if ($user !== ''): ?>
+      <?php /* A <details>, not a scripted dropdown. The browser opens it,
+               moves focus into it and closes it on Escape with no JavaScript
+               whatsoever, which is what lets a menu exist at all under the
+               rule that every page works with script off. admin-nav.js adds
+               only the one thing <details> does not do by itself: closing when
+               a click lands outside. Take the script away and it still opens
+               and still signs out; it merely waits to be pressed again. */ ?>
+      <details class="account" data-account>
+        <summary class="account__toggle" title="<?= h($user) ?>">
+          <span class="account__avatar"><?= admin_icon('user', 'icon') ?></span>
+          <span class="account__text">
+            <span class="account__label"><?= h($user) ?></span>
+            <span class="account__hint">Signed in</span>
+          </span>
+          <?= admin_icon('angle-right', 'icon account__caret') ?>
+          <span class="visually-hidden">Account menu</span>
+        </summary>
+
+        <div class="account__menu">
+          <div class="account__who">
+            <span class="account__name"><?= h($user) ?></span>
+            <span class="account__hint">Signed in</span>
+          </div>
+
+          <a class="account__item" href="<?= h(admin_url('account')) ?>">
+            <?= admin_icon('user-shield', 'icon icon--sm') ?>
+            <span>Your account</span>
+          </a>
+
+          <?php /* A form, not a link. A GET that ends a session can be fired
+                   by any <img src> on any page the browser happens to load, so
+                   signing out is a POST with a token like every other
+                   action. */ ?>
+          <form class="account__signout" method="post" action="<?= h(ADMIN_BASE) ?>logout.php">
+            <input type="hidden" name="csrf" value="<?= h(admin_csrf()) ?>">
+            <button class="account__item account__item--danger" type="submit">
+              <?= admin_icon('lock', 'icon icon--sm') ?>
+              <span>Sign out</span>
+            </button>
+          </form>
+        </div>
+      </details>
 <?php endif; ?>
-      <a class="rail__link" href="<?= h(public_url('/')) ?>" target="_blank" rel="noopener">
-        <span class="rail__icon"><?= admin_icon('link') ?></span>
-        <span class="rail__text"><span class="rail__label">Open the site</span></span>
-      </a>
     </div>
   </aside>
 
   <div class="admin-shell__body">
     <header class="admin-bar">
+      <?php /* The heading only. The line under it used to be here too, and it
+               is two lines of wrapped text on every editor — pinned to the top
+               of the viewport, on a page whose whole problem is that there is
+               no room to see the form. It is read once and it never changes,
+               so it now scrolls with the page, below. */ ?>
+      <?php /* The heading, and the two ways to look at what is being edited.
+
+               Those two links were at the foot of the rail, where they sat
+               under the section list and read as more navigation. They are
+               about THIS page, so they belong beside its name. */ ?>
       <div class="admin-bar__titles">
         <h1 class="admin-bar__title"><?= h($meta['label']) ?></h1>
-<?php if ($lede !== ''): ?>
-        <p class="admin-bar__lede"><?= $lede ?></p>
+
+        <div class="admin-bar__views">
+<?php if ($meta['view'] !== ''): ?>
+          <a class="admin-bar__view" href="<?= h(public_url($meta['view'])) ?>"
+             target="_blank" rel="noopener">
+            <?= admin_icon('eye', 'icon icon--sm') ?>
+            <span>View the page</span>
+          </a>
 <?php endif; ?>
+          <a class="admin-bar__view" href="<?= h(public_url('/')) ?>"
+             target="_blank" rel="noopener">
+            <?= admin_icon('link', 'icon icon--sm') ?>
+            <span>Open the site</span>
+          </a>
+        </div>
       </div>
 
+      <?php /* SAVE LIVES HERE, AND THE FORM IS SEVERAL SCREENS BELOW.
+
+               It was a bar pinned across the foot of the editing column, which
+               cost 101px of every screen to hold one button — on a page whose
+               difficulty is that there is not enough room to see the form. Up
+               here it costs nothing: the bar was already pinned, and the right
+               end of it was holding a name that does not change.
+
+               The button reaches its form with the `form` attribute, which is
+               plain HTML and needs no script: a submit button anywhere in the
+               document may name the form it belongs to. So this still works
+               with JavaScript off, and admin-forms.js does not have to know
+               that the button is not inside the form it submits. */ ?>
       <div class="admin-bar__actions">
-        <?php /* The narrow/wide control sits here rather than in the rail so
-                 that it is in the same place whichever shape the rail is in,
-                 including the horizontal strip on a phone. admin-nav.js
-                 unhides it; without script the rail stays wide and there is
-                 nothing to press. */ ?>
-        <button class="btn btn--icon rail-toggle" type="button" hidden
-                data-rail-toggle aria-controls="admin-rail" aria-expanded="true">
-          <?= admin_icon('chevron-left', 'icon rail-toggle__icon--narrow') ?>
-          <?= admin_icon('chevron-right', 'icon rail-toggle__icon--wide') ?>
-          <span class="visually-hidden">Narrow the menu</span>
+<?php if ($save): ?>
+        <p class="admin__status" data-form-status role="status" aria-live="polite"></p>
+<?php if (!empty($save['discard'])): ?>
+        <a class="btn btn--ghost" href="<?= h($save['discard']) ?>">Discard</a>
+<?php endif; ?>
+        <?php /* Two labels, one shown. "Save the company profile" is 200px of
+                 a 320px screen and the bar cannot wrap a single word, so at
+                 that width the button says "Save" instead. display:none on
+                 the other means a screen reader is offered one name, not
+                 two. */ ?>
+        <button class="btn btn--primary" type="submit" name="do" value="save"
+                form="<?= h($save['form']) ?>">
+          <span class="admin-bar__save-long"><?= h($save['label']) ?></span>
+          <span class="admin-bar__save-short"><?= h($save['short'] ?? 'Save') ?></span>
         </button>
-<?php if ($user !== ''): ?>
-        <p class="admin-bar__user">
-          <?= admin_icon('user', 'icon icon--sm') ?>
-          <span><?= h($user) ?></span>
-        </p>
-        <?php /* A form, not a link. A GET that ends a session can be fired by
-                 any <img src> on any page the browser happens to load, so
-                 signing out is a POST with a token like every other action. */ ?>
-        <form class="admin-bar__signout" method="post" action="<?= h(ADMIN_BASE) ?>logout.php">
-          <input type="hidden" name="csrf" value="<?= h(admin_csrf()) ?>">
-          <button class="btn btn--ghost admin-bar__signout-btn" type="submit">
-            <?= admin_icon('lock', 'icon icon--sm') ?>
-            <span>Sign out</span>
-          </button>
-        </form>
 <?php endif; ?>
         <button class="btn btn--icon" type="button" data-theme-toggle
                 aria-label="Switch to dark mode" aria-pressed="false">
@@ -553,6 +664,9 @@ function admin_head(string $section, string $user, string $lede = ''): void
 
     <main class="admin" id="admin-main">
       <div class="admin__inner">
+<?php if ($lede !== ''): ?>
+        <p class="admin__lede"><?= $lede ?></p>
+<?php endif; ?>
 <?php
 }
 
@@ -604,7 +718,7 @@ function admin_publish_notice(): void
   <p><strong>Saved here, but the live site does not have it yet.</strong></p>
   <p><?= h((string)($failed['error'] ?? '')) ?></p>
 <?php if (in_array($section, CONTRACT_DOCUMENTS, true)): ?>
-  <form method="post" action="<?= h(admin_url($section)) ?>">
+  <form method="post" data-async action="<?= h(admin_url($section)) ?>">
     <?= admin_form_fields($section) ?>
     <input type="hidden" name="action" value="republish">
     <button class="btn btn--primary" type="submit">Publish again</button>
@@ -633,6 +747,7 @@ function admin_foot(string $note = ''): void
 <script src="/assets/js/theme-toggle.js" defer></script>
 <script src="/assets/js/admin-nav.js" defer></script>
 <script src="/assets/js/editor.js" defer></script>
+<script src="/assets/js/admin-forms.js" defer></script>
 <script src="/assets/js/admin-init.js" defer></script>
 </body>
 </html>

@@ -255,7 +255,7 @@ admin_notices($errors);
 <?php endif; ?>
     </p>
 
-    <form class="admin__form admin__form--stack" method="post" action="<?= h(admin_url('account')) ?>">
+    <form class="admin__form admin__form--stack" data-async method="post" action="<?= h(admin_url('account')) ?>">
       <?= admin_form_fields('account') ?>
       <input type="hidden" name="do" value="password">
 
@@ -314,7 +314,7 @@ admin_notices($errors);
       <p class="signin__uri"><?= h(totp_uri('Tech4TIME', $account['user'] . '@tech4time.bd', (string)$shown['totp'])) ?></p>
     </details>
 
-    <form class="admin__form admin__form--stack" method="post" action="<?= h(admin_url('account')) ?>">
+    <form class="admin__form admin__form--stack" data-async method="post" action="<?= h(admin_url('account')) ?>">
       <?= admin_form_fields('account') ?>
       <input type="hidden" name="do" value="totp-confirm">
 
@@ -347,7 +347,7 @@ admin_notices($errors);
 <?php endif; ?>
     </p>
 
-    <form class="admin__form admin__form--stack" method="post" action="<?= h(admin_url('account')) ?>">
+    <form class="admin__form admin__form--stack" data-async method="post" action="<?= h(admin_url('account')) ?>">
       <?= admin_form_fields('account') ?>
       <input type="hidden" name="do" value="totp-begin">
 
@@ -387,7 +387,7 @@ admin_notices($errors);
 <?php endif; ?>
     </p>
 
-    <form class="admin__form admin__form--stack" method="post" action="<?= h(admin_url('account')) ?>">
+    <form class="admin__form admin__form--stack" data-async method="post" action="<?= h(admin_url('account')) ?>">
       <?= admin_form_fields('account') ?>
       <input type="hidden" name="do" value="recovery">
 
@@ -418,7 +418,7 @@ admin_notices($errors);
       sold — end them all here. You will stay signed in on this one.
     </p>
 
-    <form class="admin__form admin__form--stack" method="post" action="<?= h(admin_url('account')) ?>">
+    <form class="admin__form admin__form--stack" data-async method="post" action="<?= h(admin_url('account')) ?>">
       <?= admin_form_fields('account') ?>
       <input type="hidden" name="do" value="sign-out-others">
 

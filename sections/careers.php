@@ -184,7 +184,7 @@ admin_notices($errors);
 
 <?php if ($editing !== null): ?>
     <!-- ============================ editor ============================ -->
-    <form class="admin__form" method="post" action="<?= h(admin_url('careers')) ?>">
+    <form class="admin__form" data-async method="post" action="<?= h(admin_url('careers')) ?>">
       <?= admin_form_fields('careers') ?>
       <input type="hidden" name="action" value="save">
       <input type="hidden" name="id" value="<?= h((string)($editing['id'] ?? '')) ?>">
@@ -323,7 +323,7 @@ admin_notices($errors);
           <div class="admin-row__actions">
             <a class="btn btn--secondary" href="<?= h(admin_url('careers', ['action' => 'edit', 'id' => (string)($job['id'] ?? '')])) ?>">Edit</a>
 
-            <form method="post" action="<?= h(admin_url('careers')) ?>">
+            <form data-async method="post" action="<?= h(admin_url('careers')) ?>">
               <?= admin_form_fields('careers') ?>
               <input type="hidden" name="action" value="toggle">
               <input type="hidden" name="id" value="<?= h((string)($job['id'] ?? '')) ?>">
@@ -332,7 +332,7 @@ admin_notices($errors);
               </button>
             </form>
 
-            <form method="post" action="<?= h(admin_url('careers')) ?>">
+            <form data-async method="post" action="<?= h(admin_url('careers')) ?>">
               <?= admin_form_fields('careers') ?>
               <input type="hidden" name="action" value="move">
               <input type="hidden" name="id" value="<?= h((string)($job['id'] ?? '')) ?>">
@@ -342,8 +342,14 @@ admin_notices($errors);
                       aria-label="Move down"<?= $index === count($data['jobs']) - 1 ? ' disabled' : '' ?>>↓</button>
             </form>
 
-            <form method="post" action="<?= h(admin_url('careers')) ?>"
-                  onsubmit="return confirm('Delete this post permanently?');">
+            <?php /* data-confirm, and not an inline handler attribute. This
+                     carried one from before the CSP existed, calling
+                     confirm() from the markup, and script-src 'self' refuses
+                     exactly that: the browser dropped it, the question was
+                     never asked, and Delete has been deleting on the first
+                     press ever since. admin-forms.js asks now. */ ?>
+            <form data-async method="post" action="<?= h(admin_url('careers')) ?>"
+                  data-confirm="Delete this post permanently?">
               <?= admin_form_fields('careers') ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="id" value="<?= h((string)($job['id'] ?? '')) ?>">
@@ -355,7 +361,7 @@ admin_notices($errors);
     </ul>
 
     <!-- =========================== settings =========================== -->
-    <form class="admin__settings" method="post" action="<?= h(admin_url('careers')) ?>">
+    <form class="admin__settings" data-async method="post" action="<?= h(admin_url('careers')) ?>">
       <?= admin_form_fields('careers') ?>
       <input type="hidden" name="action" value="settings">
 

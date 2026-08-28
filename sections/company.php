@@ -521,10 +521,32 @@ function company_add_button(string $band, string $label): void
     <?php
 }
 
+/* What the rail lists under "Company Profile". The keys are the ids on the
+   <fieldset>s below and the order is the order of the page, so this doubles as
+   the table of contents for a form that is otherwise ten screens of scrolling
+   with no way to see what is in it. Add a band, add a line here. */
+const COMPANY_OUTLINE = [
+    'band-hero'        => 'The banner',
+    'band-milestones'  => 'Milestones',
+    'band-background'  => 'Our Background',
+    'band-experience'  => 'The figures',
+    'band-clients'     => 'Proud Clients',
+    'band-journey'     => 'Our Journey of Growth',
+    'band-excellence'  => 'Professional Excellence',
+    'band-technology'  => 'Technology',
+    'band-principles'  => 'Principles',
+    'band-cta'         => 'The closing band',
+    'band-uploads'     => 'Stored pictures',
+    'band-meta'        => 'Search and sharing',
+];
+
 admin_head('company', $user,
     'Editing <code>content/company.json</code>. Changes go live on '
     . '<a href="' . h(public_url('/pages/company-profile/')) . '">the company profile</a> '
-    . 'within a second — as soon as the live site accepts the publish.');
+    . 'within a second — as soon as the live site accepts the publish.',
+    COMPANY_OUTLINE,
+    ['form' => 'company-form', 'label' => 'Save the company profile',
+     'discard' => admin_url('company')]);
 
 admin_notices($errors);
 
@@ -535,7 +557,8 @@ if (!$errors && $pending !== '') {
 
 <?php /* multipart, because this form carries pictures. Everything else about
          it is an ordinary POST. */ ?>
-<form class="admin__form" method="post" enctype="multipart/form-data"
+<form class="admin__form" id="company-form" method="post"
+      enctype="multipart/form-data" data-async
       action="<?= h(admin_url('company')) ?>">
   <?= admin_form_fields('company') ?>
 
@@ -546,7 +569,7 @@ if (!$errors && $pending !== '') {
           tabindex="-1" aria-hidden="true">Save</button>
 
   <!-- ========================= the banner ========================= -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-hero">
     <legend class="admin__section-title">The banner</legend>
     <p class="admin__blurb">The band at the top of the page, with the circuitry around it.</p>
 
@@ -568,7 +591,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ========================= milestones ========================= -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-milestones">
     <?php company_band_header($data, 'milestones', 'Milestones',
         'The timeline. Entries alternate left and right down the page, so the '
         . 'order decides which side each one lands on.'); ?>
@@ -637,7 +660,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ===================== the background band ===================== -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-background">
     <?php company_band_header($data, 'background', 'Our Background',
         'The surface the three blocks below sit on. Hiding this hides all '
         . 'three of them, whatever their own switches say.'); ?>
@@ -658,7 +681,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ========================= the figures ========================= -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-experience">
     <?php company_band_header($data, 'experience', 'The figures',
         'The four numbers that count up as the block comes into view.'); ?>
 
@@ -703,7 +726,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ========================= the clients ========================= -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-clients">
     <?php company_band_header($data, 'clients', 'Proud Clients',
         'The wall of logos. The name is what a screen reader announces, so it '
         . 'is not optional.'); ?>
@@ -738,7 +761,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ======================= the photographs ======================= -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-journey">
     <?php company_band_header($data, 'journey', 'Our Journey of Growth',
         'The slideshow. One photograph at a time, and the whole row without '
         . 'JavaScript.'); ?>
@@ -795,7 +818,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ==================== the excellence band ==================== -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-excellence">
     <?php company_band_header($data, 'excellence', 'Our Professional Excellence',
         'The band holding the technology list and the principles. Hiding this '
         . 'hides both of them.'); ?>
@@ -822,7 +845,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ======================== the technology ======================== -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-technology">
     <?php company_band_header($data, 'technology', 'The Technology We Work With',
         'The logos that become the rotating sphere on a wide screen, and an '
         . 'ordinary grid on a narrow one or with JavaScript off. Position '
@@ -859,7 +882,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ======================== the principles ======================== -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-principles">
     <?php company_band_header($data, 'principles', 'The Principles That Guide Us',
         'Four cards, each with an icon.'); ?>
 
@@ -917,7 +940,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ========================= the closing band ========================= -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-cta">
     <?php company_band_header($data, 'cta', 'The closing band',
         'The dark strip at the bottom with the button.'); ?>
 
@@ -962,7 +985,7 @@ if (!$errors && $pending !== '') {
 
   <!-- ========================== stored pictures ========================== -->
 <?php $unused = upload_problem() === '' ? upload_unused(company_images($data)) : []; ?>
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-uploads">
     <legend class="admin__section-title">Stored pictures</legend>
     <p class="admin__blurb">
       Every picture uploaded through this page is kept here, named after its own
@@ -993,7 +1016,7 @@ if (!$errors && $pending !== '') {
   </fieldset>
 
   <!-- ============================ search ============================ -->
-  <fieldset class="admin__block">
+  <fieldset class="admin__block" id="band-meta">
     <legend class="admin__section-title">How it appears elsewhere</legend>
     <p class="admin__blurb">
       What a search engine shows, and what appears when somebody pastes a link
@@ -1022,11 +1045,6 @@ if (!$errors && $pending !== '') {
     </div>
   </fieldset>
 
-  <div class="admin__actions admin__actions--sticky">
-    <button class="btn btn--primary btn--lg" type="submit" name="do" value="save">
-      Save the company profile
-    </button>
-  </div>
 
   <?php /* The last control in the form, and the only reason it exists is that
            its ABSENCE is readable. See admin_form_tail(). */ ?>
