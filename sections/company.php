@@ -383,8 +383,8 @@ if (!$errors && $pending !== '') {
 
   <!-- ========================= the banner ========================= -->
   <fieldset class="admin__block" id="band-hero">
-    <legend class="admin__section-title">The banner</legend>
-    <p class="admin__blurb">The band at the top of the page, with the circuitry around it.</p>
+    <?php admin_band_head('The banner',
+        'The band at the top of the page, with the circuitry around it.'); ?>
 
     <div class="admin__grid">
       <label class="admin__field admin__field--wide">
@@ -827,11 +827,9 @@ if (!$errors && $pending !== '') {
   <!-- ========================== stored pictures ========================== -->
 <?php $unused = upload_problem() === '' ? upload_unused(company_images($data)) : []; ?>
   <fieldset class="admin__block" id="band-uploads">
-    <legend class="admin__section-title">Stored pictures</legend>
-    <p class="admin__blurb">
-      Every picture uploaded through this page is kept here, named after its own
-      contents. Uploading the same one twice stores it once.
-    </p>
+    <?php admin_band_head('Stored pictures',
+        'Every picture uploaded through this page is kept here, named after '
+        . 'its own contents. Uploading the same one twice stores it once.'); ?>
 
 <?php if (upload_problem() !== ''): ?>
     <p class="admin__hint"><?= h(upload_problem()) ?></p>
@@ -858,11 +856,9 @@ if (!$errors && $pending !== '') {
 
   <!-- ============================ search ============================ -->
   <fieldset class="admin__block" id="band-meta">
-    <legend class="admin__section-title">How it appears elsewhere</legend>
-    <p class="admin__blurb">
-      What a search engine shows, and what appears when somebody pastes a link
-      to this page into a chat.
-    </p>
+    <?php admin_band_head('How it appears elsewhere',
+        'What a search engine shows, and what appears when somebody pastes a '
+        . 'link to this page into a chat.'); ?>
 
     <div class="admin__grid">
       <label class="admin__field admin__field--wide">

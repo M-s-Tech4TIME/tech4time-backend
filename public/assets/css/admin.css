@@ -879,7 +879,10 @@
    here so the row can reach the full width of the band and put the button at
    its far edge. */
 .admin__band {
-  display: block;
+  /* float, not display:block — see .admin__block > .admin__band below, and the
+     reason written there. .admin__block is display:flow-root so it contains
+     this. */
+  float: left;
   width: 100%;
   padding-inline: 0;
 }
@@ -892,9 +895,6 @@
   gap: var(--space-sm);
   margin-block-end: var(--space-md);
 }
-
-/* The title carries the row's spacing now, not its own. */
-.admin__band-row .admin__section-title { margin-block-end: 0; }
 
 .admin__band-add { flex: none; }
 
@@ -1155,13 +1155,37 @@
 /* A <legend> is laid out ON its fieldset's top border, which cuts a notch out
    of it and leaves the heading half in and half out of the box. Floating it
    puts it back into normal flow, which is where it belongs here: the border is
-   the block's, not the group of controls'. */
-.admin__block > .admin__section-title {
+   the block's, not the group of controls'.
+
+   THIS RULE ONCE NAMED .admin__section-title AND STOPPED MATCHING. The legend
+   became a row — a heading with the band's "Add a …" beside it — and was given
+   its own class, and this was left naming the old one. Every heading in every
+   editor went straight back onto the border, which is the exact failure the
+   paragraph above describes. There is one legend class now, emitted in one
+   place, so the two cannot part again. */
+.admin__block > .admin__band {
   float: left;
   width: 100%;
   padding-inline: 0;
+}
+
+/* The size a heading has inside one of these cards. .admin__section-title on
+   its own is --text-xl, which is right for a page heading and too big for a
+   band inside a card.
+
+   BOTH SELECTORS, because there are two shapes of block and only one of them
+   has a legend. The editors are <fieldset>s — groups of controls, so the
+   grouping is real — and the account page is <section>s with an <h2>, since
+   "Password" and "Recovery codes" are subjects rather than field groups. The
+   rule this replaced covered both by naming the direct child; splitting it
+   without noticing the second shape made every heading on the account page a
+   size larger. */
+.admin__band .admin__section-title,
+.admin__block > .admin__section-title {
   font-size: var(--text-lg);
 }
+
+.admin__band .admin__section-title { margin-block-end: 0; }
 
 .admin__blurb {
   margin-block-end: var(--space-md);
@@ -1683,7 +1707,18 @@ html { scroll-padding-block-start: var(--admin-bar-h); }
 /* ------------------------------------------------------------- the dialog */
 
 .dialog {
-  max-width: min(28rem, calc(100vw - 2 * var(--space-lg)));
+  /* MARGIN: AUTO IS WHAT CENTRES A MODAL <dialog>, and it comes from the
+     browser's own stylesheet — where `* { margin: 0 }` in base.css had already
+     taken it away. Without it the box is pinned to the top-left corner, which
+     is where it appeared. Restored here rather than by exempting dialogs from
+     the reset: the reset is right, and this is the one element that needs the
+     margin back. */
+  margin: auto;
+
+  /* Wide enough for both answers to sit on one line. At 28rem "Stay on this
+     screen" and "Leave and lose them" did not fit together and wrapped into a
+     stack, which reads as two unrelated buttons rather than a choice. */
+  max-width: min(32rem, calc(100vw - 2 * var(--space-md)));
   padding: 0;
   color: var(--text-primary);
   background-color: var(--bg-elevated);

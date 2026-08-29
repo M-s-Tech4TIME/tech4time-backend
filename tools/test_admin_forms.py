@@ -950,6 +950,63 @@ def improvements(b: Browser, base: str, r: Results) -> None:
         r.check(f"{screen}: every form holding a file input is multipart",
                 bad == [], f"{bad} — a file input here posts its filename only")
 
+    r.section("things are where they are supposed to be")
+    # MEASURED, NOT EYEBALLED. Both of these shipped and were reported from
+    # screenshots, and neither is something a check about focus rings, contrast
+    # or reflow would ever notice — the page was perfectly accessible with its
+    # headings sitting outside their cards.
+    for screen in ("/?s=contact", "/?s=company", "/?s=careers", "/?s=account"):
+        b.go(base + screen)
+        strays = b.js(r"""
+        var out = [];
+        document.querySelectorAll('.admin__block').forEach(function (block) {
+          /* Either shape: a <legend> in the editors, an <h2> on the account
+             page. Only a legend can escape its box, but measuring both means
+             the check does not have to know which screen it is on. */
+          var title = block.querySelector(
+            ':scope > legend, :scope > h2, :scope > .admin__section-title');
+          if (!title) { return; }
+          var box = block.getBoundingClientRect();
+          var head = title.getBoundingClientRect();
+          var pad = parseFloat(getComputedStyle(block).paddingTop);
+          if (head.top < box.top + pad - 2 ||
+              head.left < box.left - 2 || head.right > box.right + 2) {
+            out.push(title.textContent.replace(/\s+/g, ' ').trim().slice(0, 24)
+                     + ' sits ' + Math.round(head.top - box.top)
+                     + 'px into a ' + Math.round(pad) + 'px pad');
+          }
+        });
+        return out;""")
+
+        r.check(f"{screen}: every band heading is inside its card",
+                strays == [],
+                f"{strays} — a <legend> is laid out ON its fieldset's top "
+                f"border unless something puts it back in flow, so a heading "
+                f"at 0px into the padding is a heading hanging out of the box")
+
+    b.go(base + "/?s=contact")
+    b.type('input[name="hero[title]"]', "x")
+    b.click('.rail__item[href="?s=company"]')
+
+    where = b.js("""
+    var d = document.querySelector('dialog.dialog');
+    var r = d.getBoundingClientRect();
+    var pair = document.querySelectorAll('.dialog__actions .btn');
+    var a = pair[0].getBoundingClientRect(), c = pair[1].getBoundingClientRect();
+    return {x: Math.round((r.left + r.right) / 2 - window.innerWidth / 2),
+            y: Math.round((r.top + r.bottom) / 2 - window.innerHeight / 2),
+            oneLine: Math.abs((a.top + a.bottom) / 2 - (c.top + c.bottom) / 2) < 6};""")
+
+    r.check("the question box is in the middle of the screen",
+            abs(where["x"]) <= 20 and abs(where["y"]) <= 20,
+            f"it is {where['x']}px and {where['y']}px off centre. A modal "
+            f"<dialog> is centred by margin:auto from the browser's own "
+            f"stylesheet, and base.css's `* {{ margin: 0 }}` takes that away")
+    r.check("and both answers sit on one line", where["oneLine"] is True,
+            "wrapped into a stack, which reads as two unrelated buttons "
+            "rather than one choice")
+    b.click('.dialog__actions button[data-answer="no"]')
+
     r.section("switching mode does not animate the whole document")
     b.go(base + "/?s=company")
     cost = b.js("""
