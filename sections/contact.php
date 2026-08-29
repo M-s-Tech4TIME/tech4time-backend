@@ -598,7 +598,7 @@ if (!$errors && $pending !== '') {
         </label>
 
         <label class="admin__field">
-          <span class="admin__label">Or one of the flags that ship with the site</span>
+          <span class="admin__label">Choose from existing flags</span>
           <select class="admin__input" name="offices[items][<?= $i ?>][flag]">
             <option value="">None</option>
 <?php foreach ($flags as $flag): ?>
