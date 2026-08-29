@@ -311,6 +311,14 @@ They differ only in what is replaced and what that means for history:
 | `admin-forms.js` | `#admin-main` | `replaceState` | the bar holds the status line the post has just written to, and a save is not a place to press Back to |
 | `admin-swap.js` | `#admin-body` | `pushState` | the bar's title, lede and Save button all belong to the screen, and moving between screens is exactly what Back is for |
 
+**The Save button is outside what `admin-forms.js` replaces, and that has bitten once.** It sits in
+the title bar, above `<main>`, reaching its form through the HTML `form=` attribute — so a post
+that disables it against a double-press must re-enable it by hand. Every other submitter is inside
+`#admin-main` and arrives fresh from the swap, which is why a disable that was never undone looked
+like it worked everywhere: it did, except on the one button somebody presses first. `idle()` in
+`admin-forms.js` now runs on every path out, and `test_admin_forms.py` presses Save twice without
+reloading.
+
 Neither touches the rail. It is the same markup on every screen bar one attribute, so `admin-swap.js`
 brings `aria-current` across and leaves the element standing — which is what keeps the account
 menu's open state, the rail's own scroll position, and the width somebody chose. The rail being

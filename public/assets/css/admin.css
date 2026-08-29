@@ -1245,6 +1245,15 @@
    size it was uploaded at. --artwork-plate and not --bg-elevated for the same
    reason the public page uses it: a dark-ink logo on the dark theme's
    elevated surface falls to about 1.4:1. */
+/* A label standing on its own, naming the block below it rather than a control
+   inside it — the about page's logo pair uses two, one per colour mode.
+   .admin__label carries no bottom margin because inside a <label> the control
+   underneath supplies the gap; with a media box under it there is nothing to
+   supply one, and check_admin_a11y.py measured the two touching. */
+.admin__label + .admin-card__media {
+  margin-block-start: var(--space-xs);
+}
+
 .admin-card__media {
   display: flex;
   flex-wrap: wrap;

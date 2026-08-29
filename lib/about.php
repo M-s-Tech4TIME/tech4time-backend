@@ -118,14 +118,25 @@ function about_validate(array $data): array
             $errors[] = "$where was given a side that is neither left nor right.";
         }
 
-        /* A row drawn as the logo lockup needs no picture of its own — the
-           lockup ships with the site. It still needs a description, because
-           the lockup is what gets announced. */
+        /* Whatever the layout, the picture has to be described: a logo row
+           announces its lockup the same way a photograph row announces its
+           photograph. */
         if (trim((string)$row['alt']) === '') {
             $errors[] = "$where has no picture description. Say what is in the "
                       . 'picture, so somebody who cannot see it is not left out.';
         }
-        if ((string)$row['layout'] !== 'logo') {
+
+        if ((string)$row['layout'] === 'logo') {
+            /* A logo row needs NO picture — it falls back to the lockup that
+               ships with the site. But one it has been given is checked like
+               any other, because a logo with no dimensions shifts the page as
+               it loads exactly as a photograph does. */
+            foreach (['image' => $where, 'image_dark' => "$where (dark mode)"] as $field => $label) {
+                if (trim((string)$row[$field]['src']) !== '') {
+                    $errors = array_merge($errors, about_validate_image($row[$field], $label));
+                }
+            }
+        } else {
             $errors = array_merge($errors, about_validate_image($row['image'], $where));
         }
     }

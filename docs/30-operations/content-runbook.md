@@ -210,10 +210,17 @@ developer.
 
 Two things are chosen per section rather than fixed:
 
-**Picture** — *A photograph*, or *The Tech4TIME logo lockup*. The lockup is the wordmark that ships
-with the site and swaps itself for light and dark mode; choosing it ignores any picture on that
-row, and the picture is kept rather than thrown away, so switching back does not lose it. Only "The
-Company" uses the lockup today.
+**Picture** — *A photograph*, or *The Tech4TIME logo lockup*. The lockup swaps itself for light and
+dark mode, and a section using it gets **two upload slots**, one per mode. Leave them empty and the
+logo that ships with the site is used. Upload only the light one and it is used in both modes —
+that is on purpose, because the alternative is the old logo showing beside the new one; upload a
+dark version too if the light one does not read on a dark background.
+
+**This replaces the logo in that section only.** The one in the header, the footer, the browser tab
+and on a shared link is part of the site itself and still needs a developer.
+
+A picture is kept rather than thrown away when you switch a section to the lockup, so switching
+back does not lose it. Only "The Company" uses the lockup today.
 
 **Which side** — the picture sits left or right. On a narrow screen it is always on top, whatever
 you choose.

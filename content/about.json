@@ -1,218 +1,248 @@
 {
-  "updated": "",
-  "revision": 0,
-  "meta": {
-    "title": "About Tech4TIME | Trusted IT & Cybersecurity Solutions",
-    "description": "Founded in 2018, Tech4TIME delivers cybersecurity, software development, cloud infrastructure, HRaaS and IT training — orchestrating technology with time.",
-    "share_title": "About Tech4TIME"
-  },
-  "hero": {
-    "title": "About Us",
-    "subtitle": "Orchestrating Technology with Time"
-  },
-  "story": {
-    "status": "shown",
-    "items": [
-      {
-        "id": "the-company",
-        "heading": "The Company",
-        "body": "<p>At Tech4TIME, we believe in “Orchestrating Technology with Time” to deliver innovative and impactful solutions. Founded on 15 May 2018, our journey has been defined by a relentless commitment to excellence and pioneering advancements in the tech industry.</p>",
-        "layout": "logo",
-        "side": "left",
-        "alt": "Tech4TIME wordmark and clock emblem",
-        "image": {
-          "src": "",
-          "webp": "",
-          "width": 0,
-          "height": 0
-        },
-        "status": "shown"
-      },
-      {
-        "id": "our-goal",
-        "heading": "Our Goal",
-        "body": "<p>Our goal is to reshape the digital landscape with visionary solutions that blend innovation with unyielding security. We empower businesses to transcend boundaries by delivering bespoke technological services tailored to their evolving needs. With an unwavering commitment to excellence, we leverage our core strengths in cybersecurity, software development, and IT training to drive transformative change.</p><p>Guided by integrity, client satisfaction, and future-focused strategies, we aspire to cultivate a secure, dynamic ecosystem where businesses thrive and communities flourish. Through a holistic approach, we seamlessly integrate diverse technological needs, ensuring our partners navigate the digital world with unmatched confidence and security.</p>",
-        "layout": "photograph",
-        "side": "right",
-        "alt": "Illustration representing Tech4TIME's goal of secure, visionary digital solutions",
-        "image": {
-          "src": "/assets/images/sections/our-goal.jpg",
-          "webp": "/assets/images/sections/our-goal.webp",
-          "width": 818,
-          "height": 810
-        },
-        "status": "shown"
-      },
-      {
-        "id": "our-mission",
-        "heading": "Our Mission",
-        "body": "<p>Our mission is to become the beacon of technological evolution by delivering bespoke, secure, and innovative solutions that propel businesses toward enduring success. We stand at the intersection of cybersecurity, software craftsmanship, and knowledge empowerment through IT training, ensuring that our clients achieve their digital aspirations with precision and peace of mind.</p><p>Driven by an ethos of integrity and foresight, we endeavour to craft secure digital futures for businesses and societies alike. With a comprehensive suite of services under one roof, Tech4TIME eliminates fragmentation and complexity, providing clients with a unified pathway to digital transformation.</p>",
-        "layout": "photograph",
-        "side": "left",
-        "alt": "Illustration representing Tech4TIME's mission of bespoke, secure technology delivery",
-        "image": {
-          "src": "/assets/images/sections/our-mission.jpg",
-          "webp": "/assets/images/sections/our-mission.webp",
-          "width": 812,
-          "height": 810
-        },
-        "status": "shown"
-      },
-      {
-        "id": "our-vision",
-        "heading": "Our Vision",
-        "body": "<p>Our vision is to be the harbinger of a secure digital renaissance — where innovation meets resilience, and businesses conquer the complexities of the digital age with confidence. We envision a world where our expertise in cybersecurity, software solutions, and IT training elevates industries to new heights of achievement and sustainability.</p><p>By steadfastly upholding values of integrity, continuous learning, and client-centric strategies, we aim to pioneer new paradigms in technological excellence. With a focus on holistic service integration, we aspire to craft seamless, secure journeys for businesses navigating the ever-evolving digital terrain.</p>",
-        "layout": "photograph",
-        "side": "right",
-        "alt": "Illustration representing Tech4TIME's vision of a secure digital renaissance",
-        "image": {
-          "src": "/assets/images/sections/our-vision.jpg",
-          "webp": "/assets/images/sections/our-vision.webp",
-          "width": 812,
-          "height": 810
-        },
-        "status": "shown"
-      },
-      {
-        "id": "our-ambition",
-        "heading": "Our Ambition",
-        "body": "<p>Our ambition is to lead the digital frontier with avant-garde solutions that epitomize security, innovation, and transformative growth. We aim to redefine industry benchmarks through relentless pursuit of excellence in cybersecurity, cutting-edge software development, and IT training that equips businesses to excel in a hyperconnected world.</p><p>By fostering a culture of integrity and forward-thinking innovation, we are committed to crafting secure, sustainable futures for our clients and the communities they touch. Through our all-encompassing service model, we empower businesses to traverse the digital landscape with clarity, agility, and confidence, making security and progress synonymous.</p>",
-        "layout": "photograph",
-        "side": "left",
-        "alt": "Illustration representing Tech4TIME's ambition to lead the digital frontier",
-        "image": {
-          "src": "/assets/images/sections/our-ambition.jpg",
-          "webp": "/assets/images/sections/our-ambition.webp",
-          "width": 854,
-          "height": 814
-        },
-        "status": "shown"
-      }
-    ]
-  },
-  "specialties": {
-    "status": "shown",
-    "title": "Our Specialities",
-    "interval": 10000,
-    "items": [
-      {
-        "id": "cybersecurity",
-        "icon": "shield-alt",
-        "title": "Cybersecurity",
-        "text": "We deliver comprehensive cybersecurity solutions to protect organizations from evolving digital threats. Our services include threat intelligence, risk assessment, vulnerability management, and incident response, ensuring continuous protection of critical assets. Through SOC monitoring, penetration testing, and network security, we help strengthen digital defenses. With a focus on prevention, response, and compliance, we empower businesses to stay secure in a rapidly changing cyber landscape.",
-        "status": "shown"
-      },
-      {
-        "id": "software-development",
-        "icon": "code",
-        "title": "Software Development",
-        "text": "We deliver custom software solutions that enhance productivity and streamline operations. Our expertise includes web and mobile app development, enterprise software, and systems integration to optimize workflows. Whether building scalable applications or secure platforms, we focus on delivering robust, efficient, and future-ready software to help organizations stay competitive in an evolving digital world.",
-        "status": "shown"
-      },
-      {
-        "id": "cloud-infrastructure-platform",
-        "icon": "cloud",
-        "title": "Cloud Infrastructure & Platform",
-        "text": "We engineer and deploy custom cloud infrastructure and platforms designed to serve as the backbone of modern organizations. From the ground up, we build dedicated private and hybrid cloud environments that provide the perfect balance of localized control and scalable power. Our approach focuses on architecting a secure, high-performance foundation tailored to your specific operational needs, ensuring your data remains protected while your services remain accessible. By bridging the gap between physical hardware and digital agility, we empower businesses to own their innovation through a robust, purpose-built cloud ecosystem.",
-        "status": "shown"
-      },
-      {
-        "id": "human-resource-as-a-service-hraas",
-        "icon": "users",
-        "title": "Human Resource as a Service (HRaaS)",
-        "text": "We provide comprehensive HR solutions including talent acquisition, performance management, training & development, and HR consultancy. Our expertise in recruiting top-tier technology professionals, developing performance evaluation systems, and strategic HR planning ensures your organization has the right people to drive success. We integrate HR services with our technological solutions to create holistic workforce strategies for sustainable growth.",
-        "status": "shown"
-      },
-      {
-        "id": "it-equipment-supply",
-        "icon": "server",
-        "title": "IT Equipment Supply",
-        "text": "We provide secure, on-demand IT equipment to support your business’s evolving technological needs. Our offerings include high-performance servers, firewalls, networking devices, and secure storage solutions, all optimized for network security and operational efficiency. We focus on delivering scalable and security-enhanced IT infrastructure that ensures reliability, data integrity, and seamless integration. With Tech4TIME, your business is equipped with the right tools to grow securely and sustainably.",
-        "status": "shown"
-      },
-      {
-        "id": "it-consultancy-and-training",
-        "icon": "graduation-cap",
-        "title": "IT Consultancy and Training",
-        "text": "Our commitment to knowledge-sharing and skill-building sets us apart. We offer specialized consultancy services and training programs to empower your workforce and strengthen your organization’s security framework. We are dedicated to creating technology-driven solutions that inspire trust, build resilience, and ensure a brighter, more secure future for our clients.",
-        "status": "shown"
-      }
-    ]
-  },
-  "whyus": {
-    "status": "shown",
-    "title": "Why Us?",
-    "items": [
-      {
-        "id": "established-expertise",
-        "icon": "trophy",
-        "title": "Established Expertise",
-        "text": "Founded in 2018 with proven track record",
-        "status": "shown"
-      },
-      {
-        "id": "diverse-services",
-        "icon": "layer-group",
-        "title": "Diverse Services",
-        "text": "Comprehensive suite of technological solutions",
-        "status": "shown"
-      },
-      {
-        "id": "innovative-paradigms",
-        "icon": "lightbulb",
-        "title": "Innovative Paradigms",
-        "text": "Pioneering new approaches to tech",
-        "status": "shown"
-      },
-      {
-        "id": "unwavering-integrity",
-        "icon": "handshake",
-        "title": "Unwavering Integrity",
-        "text": "Ethical and transparent business practices",
-        "status": "shown"
-      },
-      {
-        "id": "tailored-solutions",
-        "icon": "cogs",
-        "title": "Tailored Solutions",
-        "text": "Customized approaches for each client",
-        "status": "shown"
-      },
-      {
-        "id": "robust-security",
-        "icon": "lock",
-        "title": "Robust Security",
-        "text": "Enterprise-grade security measures",
-        "status": "shown"
-      },
-      {
-        "id": "client-centric-approach",
-        "icon": "users",
-        "title": "Client-Centric Approach",
-        "text": "Putting client needs first",
-        "status": "shown"
-      },
-      {
-        "id": "holistic-methodology",
-        "icon": "project-diagram",
-        "title": "Holistic Methodology",
-        "text": "Integrated approach to technology",
-        "status": "shown"
-      },
-      {
-        "id": "progressive-vision",
-        "icon": "eye",
-        "title": "Progressive Vision",
-        "text": "Future-focused strategies",
-        "status": "shown"
-      }
-    ]
-  },
-  "cta": {
-    "status": "shown",
-    "title": "Curious About our Services?",
-    "label": "Explore All Services",
-    "href": "/pages/services/",
-    "icon": "arrow-right"
-  }
+    "updated": "",
+    "revision": 0,
+    "meta": {
+        "title": "About Tech4TIME | Trusted IT & Cybersecurity Solutions",
+        "description": "Founded in 2018, Tech4TIME delivers cybersecurity, software development, cloud infrastructure, HRaaS and IT training — orchestrating technology with time.",
+        "share_title": "About Tech4TIME"
+    },
+    "hero": {
+        "title": "About Us",
+        "subtitle": "Orchestrating Technology with Time"
+    },
+    "story": {
+        "status": "shown",
+        "items": [
+            {
+                "id": "the-company",
+                "heading": "The Company",
+                "body": "<p>At Tech4TIME, we believe in “Orchestrating Technology with Time” to deliver innovative and impactful solutions. Founded on 15 May 2018, our journey has been defined by a relentless commitment to excellence and pioneering advancements in the tech industry.</p>",
+                "layout": "logo",
+                "side": "left",
+                "alt": "Tech4TIME wordmark and clock emblem",
+                "image": {
+                    "src": "",
+                    "webp": "",
+                    "width": 0,
+                    "height": 0
+                },
+                "status": "shown",
+                "image_dark": {
+                    "src": "",
+                    "webp": "",
+                    "width": 0,
+                    "height": 0
+                }
+            },
+            {
+                "id": "our-goal",
+                "heading": "Our Goal",
+                "body": "<p>Our goal is to reshape the digital landscape with visionary solutions that blend innovation with unyielding security. We empower businesses to transcend boundaries by delivering bespoke technological services tailored to their evolving needs. With an unwavering commitment to excellence, we leverage our core strengths in cybersecurity, software development, and IT training to drive transformative change.</p><p>Guided by integrity, client satisfaction, and future-focused strategies, we aspire to cultivate a secure, dynamic ecosystem where businesses thrive and communities flourish. Through a holistic approach, we seamlessly integrate diverse technological needs, ensuring our partners navigate the digital world with unmatched confidence and security.</p>",
+                "layout": "photograph",
+                "side": "right",
+                "alt": "Illustration representing Tech4TIME's goal of secure, visionary digital solutions",
+                "image": {
+                    "src": "/assets/images/sections/our-goal.jpg",
+                    "webp": "/assets/images/sections/our-goal.webp",
+                    "width": 818,
+                    "height": 810
+                },
+                "status": "shown",
+                "image_dark": {
+                    "src": "",
+                    "webp": "",
+                    "width": 0,
+                    "height": 0
+                }
+            },
+            {
+                "id": "our-mission",
+                "heading": "Our Mission",
+                "body": "<p>Our mission is to become the beacon of technological evolution by delivering bespoke, secure, and innovative solutions that propel businesses toward enduring success. We stand at the intersection of cybersecurity, software craftsmanship, and knowledge empowerment through IT training, ensuring that our clients achieve their digital aspirations with precision and peace of mind.</p><p>Driven by an ethos of integrity and foresight, we endeavour to craft secure digital futures for businesses and societies alike. With a comprehensive suite of services under one roof, Tech4TIME eliminates fragmentation and complexity, providing clients with a unified pathway to digital transformation.</p>",
+                "layout": "photograph",
+                "side": "left",
+                "alt": "Illustration representing Tech4TIME's mission of bespoke, secure technology delivery",
+                "image": {
+                    "src": "/assets/images/sections/our-mission.jpg",
+                    "webp": "/assets/images/sections/our-mission.webp",
+                    "width": 812,
+                    "height": 810
+                },
+                "status": "shown",
+                "image_dark": {
+                    "src": "",
+                    "webp": "",
+                    "width": 0,
+                    "height": 0
+                }
+            },
+            {
+                "id": "our-vision",
+                "heading": "Our Vision",
+                "body": "<p>Our vision is to be the harbinger of a secure digital renaissance — where innovation meets resilience, and businesses conquer the complexities of the digital age with confidence. We envision a world where our expertise in cybersecurity, software solutions, and IT training elevates industries to new heights of achievement and sustainability.</p><p>By steadfastly upholding values of integrity, continuous learning, and client-centric strategies, we aim to pioneer new paradigms in technological excellence. With a focus on holistic service integration, we aspire to craft seamless, secure journeys for businesses navigating the ever-evolving digital terrain.</p>",
+                "layout": "photograph",
+                "side": "right",
+                "alt": "Illustration representing Tech4TIME's vision of a secure digital renaissance",
+                "image": {
+                    "src": "/assets/images/sections/our-vision.jpg",
+                    "webp": "/assets/images/sections/our-vision.webp",
+                    "width": 812,
+                    "height": 810
+                },
+                "status": "shown",
+                "image_dark": {
+                    "src": "",
+                    "webp": "",
+                    "width": 0,
+                    "height": 0
+                }
+            },
+            {
+                "id": "our-ambition",
+                "heading": "Our Ambition",
+                "body": "<p>Our ambition is to lead the digital frontier with avant-garde solutions that epitomize security, innovation, and transformative growth. We aim to redefine industry benchmarks through relentless pursuit of excellence in cybersecurity, cutting-edge software development, and IT training that equips businesses to excel in a hyperconnected world.</p><p>By fostering a culture of integrity and forward-thinking innovation, we are committed to crafting secure, sustainable futures for our clients and the communities they touch. Through our all-encompassing service model, we empower businesses to traverse the digital landscape with clarity, agility, and confidence, making security and progress synonymous.</p>",
+                "layout": "photograph",
+                "side": "left",
+                "alt": "Illustration representing Tech4TIME's ambition to lead the digital frontier",
+                "image": {
+                    "src": "/assets/images/sections/our-ambition.jpg",
+                    "webp": "/assets/images/sections/our-ambition.webp",
+                    "width": 854,
+                    "height": 814
+                },
+                "status": "shown",
+                "image_dark": {
+                    "src": "",
+                    "webp": "",
+                    "width": 0,
+                    "height": 0
+                }
+            }
+        ]
+    },
+    "specialties": {
+        "status": "shown",
+        "title": "Our Specialities",
+        "interval": 10000,
+        "items": [
+            {
+                "id": "cybersecurity",
+                "icon": "shield-alt",
+                "title": "Cybersecurity",
+                "text": "We deliver comprehensive cybersecurity solutions to protect organizations from evolving digital threats. Our services include threat intelligence, risk assessment, vulnerability management, and incident response, ensuring continuous protection of critical assets. Through SOC monitoring, penetration testing, and network security, we help strengthen digital defenses. With a focus on prevention, response, and compliance, we empower businesses to stay secure in a rapidly changing cyber landscape.",
+                "status": "shown"
+            },
+            {
+                "id": "software-development",
+                "icon": "code",
+                "title": "Software Development",
+                "text": "We deliver custom software solutions that enhance productivity and streamline operations. Our expertise includes web and mobile app development, enterprise software, and systems integration to optimize workflows. Whether building scalable applications or secure platforms, we focus on delivering robust, efficient, and future-ready software to help organizations stay competitive in an evolving digital world.",
+                "status": "shown"
+            },
+            {
+                "id": "cloud-infrastructure-platform",
+                "icon": "cloud",
+                "title": "Cloud Infrastructure & Platform",
+                "text": "We engineer and deploy custom cloud infrastructure and platforms designed to serve as the backbone of modern organizations. From the ground up, we build dedicated private and hybrid cloud environments that provide the perfect balance of localized control and scalable power. Our approach focuses on architecting a secure, high-performance foundation tailored to your specific operational needs, ensuring your data remains protected while your services remain accessible. By bridging the gap between physical hardware and digital agility, we empower businesses to own their innovation through a robust, purpose-built cloud ecosystem.",
+                "status": "shown"
+            },
+            {
+                "id": "human-resource-as-a-service-hraas",
+                "icon": "users",
+                "title": "Human Resource as a Service (HRaaS)",
+                "text": "We provide comprehensive HR solutions including talent acquisition, performance management, training & development, and HR consultancy. Our expertise in recruiting top-tier technology professionals, developing performance evaluation systems, and strategic HR planning ensures your organization has the right people to drive success. We integrate HR services with our technological solutions to create holistic workforce strategies for sustainable growth.",
+                "status": "shown"
+            },
+            {
+                "id": "it-equipment-supply",
+                "icon": "server",
+                "title": "IT Equipment Supply",
+                "text": "We provide secure, on-demand IT equipment to support your business’s evolving technological needs. Our offerings include high-performance servers, firewalls, networking devices, and secure storage solutions, all optimized for network security and operational efficiency. We focus on delivering scalable and security-enhanced IT infrastructure that ensures reliability, data integrity, and seamless integration. With Tech4TIME, your business is equipped with the right tools to grow securely and sustainably.",
+                "status": "shown"
+            },
+            {
+                "id": "it-consultancy-and-training",
+                "icon": "graduation-cap",
+                "title": "IT Consultancy and Training",
+                "text": "Our commitment to knowledge-sharing and skill-building sets us apart. We offer specialized consultancy services and training programs to empower your workforce and strengthen your organization’s security framework. We are dedicated to creating technology-driven solutions that inspire trust, build resilience, and ensure a brighter, more secure future for our clients.",
+                "status": "shown"
+            }
+        ]
+    },
+    "whyus": {
+        "status": "shown",
+        "title": "Why Us?",
+        "items": [
+            {
+                "id": "established-expertise",
+                "icon": "trophy",
+                "title": "Established Expertise",
+                "text": "Founded in 2018 with proven track record",
+                "status": "shown"
+            },
+            {
+                "id": "diverse-services",
+                "icon": "layer-group",
+                "title": "Diverse Services",
+                "text": "Comprehensive suite of technological solutions",
+                "status": "shown"
+            },
+            {
+                "id": "innovative-paradigms",
+                "icon": "lightbulb",
+                "title": "Innovative Paradigms",
+                "text": "Pioneering new approaches to tech",
+                "status": "shown"
+            },
+            {
+                "id": "unwavering-integrity",
+                "icon": "handshake",
+                "title": "Unwavering Integrity",
+                "text": "Ethical and transparent business practices",
+                "status": "shown"
+            },
+            {
+                "id": "tailored-solutions",
+                "icon": "cogs",
+                "title": "Tailored Solutions",
+                "text": "Customized approaches for each client",
+                "status": "shown"
+            },
+            {
+                "id": "robust-security",
+                "icon": "lock",
+                "title": "Robust Security",
+                "text": "Enterprise-grade security measures",
+                "status": "shown"
+            },
+            {
+                "id": "client-centric-approach",
+                "icon": "users",
+                "title": "Client-Centric Approach",
+                "text": "Putting client needs first",
+                "status": "shown"
+            },
+            {
+                "id": "holistic-methodology",
+                "icon": "project-diagram",
+                "title": "Holistic Methodology",
+                "text": "Integrated approach to technology",
+                "status": "shown"
+            },
+            {
+                "id": "progressive-vision",
+                "icon": "eye",
+                "title": "Progressive Vision",
+                "text": "Future-focused strategies",
+                "status": "shown"
+            }
+        ]
+    },
+    "cta": {
+        "status": "shown",
+        "title": "Curious About our Services?",
+        "label": "Explore All Services",
+        "href": "/pages/services/",
+        "icon": "arrow-right"
+    }
 }

@@ -412,6 +412,68 @@ def run(client, r, site):
     r.check("and what was typed is still in the form after a refusal",
             'value="javascript:alert(1)"' in body)
 
+    print("\nthe logo section can be given a logo of its own")
+    _, html = client.get(ADMIN)
+    logo = next(i for i, x in enumerate(rows_sent(site, "story"))
+                if x["layout"] == "logo")
+    # A host without GD cannot accept a picture at all, and admin_image_fields()
+    # replaces the file input with the sentence saying so. That is the state of
+    # most development machines and of none of the servers, so this asks for
+    # whichever is right here rather than failing on a difference that is not
+    # the editor's.
+    can_upload = 'type="file"' in html
+    r.check("it offers a slot for each colour mode",
+            (f'name="upload[story][{logo}]"' in html
+             and f'name="upload[story_dark][{logo}]"' in html) if can_upload
+            else (f'name="story[items][{logo}][image][src]"' in html
+                  and f'name="story[items][{logo}][image_dark][src]"' in html),
+            "a company that changes its mark should not need a deploy"
+            + ("" if can_upload else "  [no GD here: checked the record halves, "
+                                     "not the file inputs]"))
+    r.check("and says the rest of the site's logo is not this control's job",
+            "in this section only" in html,
+            "the header, footer, tab icon and share card are still markup")
+
+    fields = dict(form_fields(html), csrf=token, do="save")
+    fields[f"story[items][{logo}][image][src]"] = "/uploads/1111111111111111.webp"
+    fields[f"story[items][{logo}][image][width]"] = "540"
+    fields[f"story[items][{logo}][image][height]"] = "192"
+    fields[f"story[items][{logo}][image_dark][src]"] = "/uploads/2222222222222222.webp"
+    fields[f"story[items][{logo}][image_dark][width]"] = "540"
+    fields[f"story[items][{logo}][image_dark][height]"] = "192"
+    status, _, _ = client.post(ADMIN, fields)
+    r.check("both halves save", status == 302, f"status {status}")
+    row = rows_sent(site, "story")[logo]
+    r.check("and both reach the live site",
+            row["image"]["src"].endswith("1111111111111111.webp")
+            and row["image_dark"]["src"].endswith("2222222222222222.webp"),
+            str([row["image"], row["image_dark"]]))
+
+    print("\nand is checked like any other picture")
+    _, html = client.get(ADMIN)
+    fields = dict(form_fields(html), csrf=token, do="save")
+    fields[f"story[items][{logo}][image_dark][width]"] = "0"
+    fields[f"story[items][{logo}][image_dark][height]"] = "0"
+    status, _, body = client.post(ADMIN, fields)
+    r.check("a logo with no dimensions is refused",
+            status == 200 and "no width and height" in body,
+            "a logo with no size shifts the page exactly as a photograph does")
+    r.check("and the refusal names the half it means",
+            "(dark mode)" in body)
+
+    print("\na logo section still needs no picture at all")
+    _, html = client.get(ADMIN)
+    fields = dict(form_fields(html), csrf=token, do="save")
+    for half in ("image", "image_dark"):
+        for k in ("src", "webp", "width", "height"):
+            fields[f"story[items][{logo}][{half}][{k}]"] = "" if k in ("src", "webp") else "0"
+    status, _, _ = client.post(ADMIN, fields)
+    r.check("clearing both is allowed", status == 302, f"status {status}")
+    row = rows_sent(site, "story")[logo]
+    r.check("and it falls back to the lockup that ships with the site",
+            row["image"]["src"] == "" and row["image_dark"]["src"] == "",
+            str([row["image"], row["image_dark"]]))
+
     print("\nvalues the form never offers")
     _, html = client.get(ADMIN)
 

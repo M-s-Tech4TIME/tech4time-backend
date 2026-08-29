@@ -161,13 +161,30 @@ which is what lets a section be added, reordered or hidden on its own.
 | `layout` | `photograph`, or `logo` for the light/dark wordmark lockup |
 | `side` | `left` or `right`; `right` renders `.about-split--reverse` |
 | `alt` | what the picture shows. Required even for `logo`, because the lockup is what gets announced |
-| `image` | `{ src, webp, width, height }` — ignored when `layout` is `logo` |
+| `image` | `{ src, webp, width, height }`. The picture, or the light half of a logo pair |
+| `image_dark` | the dark half of a logo pair. Only `layout: "logo"` draws it |
 | `status` | `shown` or `hidden` |
 
-**`layout: "logo"` ignores `image`.** The wordmark ships with the site and changes with a deploy,
-so it is a layout an editor may choose and not a file an editor may replace. The picture record is
-kept rather than cleared, so switching back does not lose it — which is also why
-`about_images()` still counts it when the unused-upload sweep asks what is in use.
+**A `logo` row draws a pair, and each half falls back on its own:**
+
+| uploaded | light mode | dark mode |
+|---|---|---|
+| nothing | the shipped lockup | the shipped lockup |
+| `image` only | the upload | **the same upload** |
+| both | `image` | `image_dark` |
+
+The middle row is the one worth explaining. Falling back to the shipped *dark* logo there would
+put the old mark beside the new one, which is the one outcome nobody wants from "we changed our
+logo". A new light logo may read poorly on a dark background; the previous brand does not read
+poorly, it is wrong. The editor says so and offers the second slot.
+
+**This is the logo in that section and nowhere else.** The header, the footer, the browser tab,
+the social share card and `Organization.logo` in the structured data are shared markup and build
+artefacts, not content, and still need a developer and a deploy.
+
+A picture record is kept rather than cleared on a row whose layout is not `logo`, so switching back
+does not lose it — which is also why `about_images()` counts both halves when the unused-upload
+sweep asks what is in use.
 
 **The light and shaded backgrounds alternate by position, not by a stored field.** It is a rhythm
 down the page, so a reordered or added section keeps the stripe instead of carrying a stale copy

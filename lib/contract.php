@@ -1122,10 +1122,16 @@ const ABOUT_ICONS = [
 /**
  * How a story row draws its picture.
  *
- * 'logo' emits the light/dark Tech4TIME lockup and ignores the row's picture
- * record entirely. That is deliberate: the logo is a brand asset that ships
- * with the site and changes with a deploy, so it is a LAYOUT an editor may
- * choose and not a file an editor may replace.
+ * 'logo' draws a light/dark pair rather than one picture. The Tech4TIME
+ * lockup that ships with the site is the fallback, so a row switched to this
+ * layout works with nothing uploaded — but a new logo CAN be uploaded, per
+ * row, because a company that changes its mark should not need a deploy to
+ * show it.
+ *
+ * WHAT THIS DOES NOT CHANGE: the logo in the header, the footer, the browser
+ * tab, the social share card and the Organization structured data. Those are
+ * shared markup and build artefacts, not content — see
+ * docs/40-reference/content-schemas.md.
  */
 const ABOUT_LAYOUTS = [
     'photograph' => 'A photograph',
@@ -1338,6 +1344,11 @@ function about_story_defaults(array $row): array
     $row['side']   = isset(ABOUT_SIDES[$row['side']]) ? $row['side'] : 'left';
     $row['image']  = contract_image_defaults($row['image'] ?? []);
 
+    /* The second half of a logo lockup. Only a row laid out as 'logo' draws
+       it, and it is kept rather than cleared on a row that is not, for the
+       same reason the first picture is: the layout can be switched back. */
+    $row['image_dark'] = contract_image_defaults($row['image_dark'] ?? []);
+
     return $row;
 }
 
@@ -1394,7 +1405,8 @@ function about_images(array $data): array
     $seen = [];
 
     foreach ($data['story']['items'] ?? [] as $row) {
-        foreach ([$row['image']['src'] ?? '', $row['image']['webp'] ?? ''] as $path) {
+        foreach ([$row['image']['src'] ?? '',      $row['image']['webp'] ?? '',
+                  $row['image_dark']['src'] ?? '', $row['image_dark']['webp'] ?? ''] as $path) {
             $path = trim((string)$path);
             if ($path !== '') {
                 $seen[$path] = true;
