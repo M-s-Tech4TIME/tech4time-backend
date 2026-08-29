@@ -296,6 +296,26 @@
     }
     status("Working…", BUSY);
 
+    /* Undoing the busy state, on EVERY path out of here and not only the
+       failing one.
+
+       Most of the buttons that submit this form live inside #admin-main and
+       are therefore replaced wholesale by the swap, arriving fresh and
+       enabled — which is why this was invisible for so long. The page-level
+       Save button does not: admin_head() renders it in the title bar, ABOVE
+       <main>, and wires it to the form with the HTML form= attribute. The swap
+       never touches it, so a disable that was never undone left it dead until
+       the operator navigated away or reloaded.
+
+       Re-enabling a node the swap has already detached is harmless, so this
+       does not need to know which kind of button it was holding. */
+    function idle() {
+      form.removeAttribute("aria-busy");
+      if (submitter) {
+        submitter.disabled = false;
+      }
+    }
+
     global
       .fetch(form.action || global.location.href, {
         method: "POST",
@@ -329,8 +349,13 @@
         }
 
         if (!swap(result.html, result.url)) {
+          idle();
           return;
         }
+
+        /* After the swap, not before: a second press while the request was in
+           flight would post the same form twice. */
+        idle();
 
         /* WHAT IS STILL ONLY IN THE FORM. admin_redirect() puts ?saved= on the
            URL it sends back, and it is the one thing that says the document on
@@ -340,22 +365,12 @@
            not, and admin-swap.js asks about it before following a link away. */
         global.Tech4Time.adminSwap.touched(!/[?&]saved=/.test(result.url));
 
-        /* WHAT IS STILL ONLY IN THE FORM. admin_redirect() puts ?saved= on the
-           URL it sends back, and it is the one thing that says the document on
-           disk now matches what is on screen. Everything else that comes
-           through here — a row added, a row moved, a save that failed
-           validation — leaves the form holding something content/*.json does
-           not, and admin-swap.js asks about it before following a link away. */
-
         if (!showProblem(standing)) {
           restore(shot, plan);
         }
       })
       .catch(function (error) {
-        form.removeAttribute("aria-busy");
-        if (submitter) {
-          submitter.disabled = false;
-        }
+        idle();
         status(
           "Not sent — " + (error && error.message ? error.message : "the connection failed") +
             " Nothing was lost; press again.",

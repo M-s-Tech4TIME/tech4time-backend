@@ -92,8 +92,9 @@ function about_row_from_post(string $band, array $row): array
             'body'    => rt_sanitise_html((string)($row['body'] ?? '')),
             'layout'  => isset(ABOUT_LAYOUTS[$row['layout'] ?? '']) ? (string)$row['layout'] : 'photograph',
             'side'    => isset(ABOUT_SIDES[$row['side'] ?? '']) ? (string)$row['side'] : 'left',
-            'alt'     => trim((string)($row['alt'] ?? '')),
-            'image'   => about_image_from_post($row['image'] ?? []),
+            'alt'        => trim((string)($row['alt'] ?? '')),
+            'image'      => about_image_from_post($row['image'] ?? []),
+            'image_dark' => about_image_from_post($row['image_dark'] ?? []),
         ];
     }
 
@@ -208,25 +209,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  */
 function about_take_uploads(array $data, array &$errors): array
 {
+    /* Two file inputs can land on one row: a logo row has a light half and a
+       dark one. admin_uploaded_files() keys them by the name the input was
+       given, so they arrive as two pseudo-bands and land in two fields. */
+    $slots = ['story' => 'image', 'story_dark' => 'image_dark'];
+
     foreach (admin_uploaded_files() as [$band, $index, $file]) {
-        if ($band !== 'story' || !isset($data['story']['items'][$index])) {
+        if (!isset($slots[$band]) || !isset($data['story']['items'][$index])) {
             continue;
         }
+
+        $where = 'Section ' . ($index + 1)
+               . ($band === 'story_dark' ? ' (dark mode)' : '');
 
         $stored = upload_accept($file);
 
         if (isset($stored['error'])) {
-            $errors[] = 'Section ' . ($index + 1) . ': ' . $stored['error'];
+            $errors[] = $where . ': ' . $stored['error'];
             continue;
         }
 
         $sent = admin_send_picture($stored);
         if ($sent !== '') {
-            $errors[] = 'Section ' . ($index + 1) . ': ' . $sent;
+            $errors[] = $where . ': ' . $sent;
             continue;
         }
 
-        $data['story']['items'][$index]['image'] = contract_image_defaults($stored);
+        $data['story']['items'][$index][$slots[$band]] = contract_image_defaults($stored);
     }
 
     return $data;
@@ -464,7 +473,43 @@ if (!$errors && $pending !== '') {
         </label>
       </div>
 
-<?php if ($row['layout'] !== 'logo'): ?>
+<?php if ($row['layout'] === 'logo'): ?>
+      <?php /* A logo row carries a pair. Each half falls back to the lockup
+               that ships with the site, so a row switched to this layout works
+               with nothing uploaded — and a new mark can be put here without a
+               deploy, which is the whole point of the slot existing. */ ?>
+      <p class="admin__label">Logo for light mode</p>
+      <?php admin_image_fields(
+          "story[items][$i][image]",
+          "upload[story][$i]",
+          $row['image'],
+          'logo',
+          '',
+          ['src'  => '/assets/images/logo/logo-light-540.png',
+           'note' => 'The logo that ships with the site. Upload one to replace it here.']
+      ); ?>
+
+      <p class="admin__label">Logo for dark mode</p>
+      <?php admin_image_fields(
+          "story[items][$i][image_dark]",
+          "upload[story_dark][$i]",
+          $row['image_dark'],
+          'dark-mode logo',
+          '',
+          trim((string)$row['image']['src']) !== ''
+              ? ['src'  => (string)$row['image']['src'],
+                 'note' => 'Using the light-mode logo above. Upload one here if '
+                         . 'it does not read on a dark background.']
+              : ['src'  => '/assets/images/logo/logo-dark-540.png',
+                 'note' => 'The logo that ships with the site.']
+      ); ?>
+
+      <p class="admin__hint">
+        This replaces the logo <strong>in this section only</strong>. The one in
+        the header, the footer, the browser tab and on a shared link is part of
+        the site itself and still needs a developer.
+      </p>
+<?php else: ?>
       <?php admin_image_fields("story[items][$i][image]",
                                 "upload[story][$i]",
                                 $row['image']); ?>

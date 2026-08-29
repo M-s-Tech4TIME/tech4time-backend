@@ -465,6 +465,33 @@ def run(b: Browser, base: str, r: Results) -> None:
                 "var n = document.querySelector('.admin__notice');"
                 "return n ? n.textContent : '';") or ""))
 
+    # The save button is the one submitter the swap does NOT replace: it lives
+    # in the title bar, above <main>, and reaches the form with form=. So the
+    # disable that guards against a double-press had nothing to undo it, and
+    # the button stayed dead until the operator navigated away or reloaded --
+    # which is exactly the state somebody is in after their first save.
+    r.check("and the save button still works afterwards",
+            b.js("var b = document.querySelector('.admin-bar__actions "
+                 "button[name=do][value=save]');"
+                 "return !!b && b.disabled === false;"),
+            "a save must not be the last thing you can do on a screen")
+    r.check("the form is not left marked busy either",
+            b.js("var f = document.querySelector('form[data-async]');"
+                 "return !!f && !f.hasAttribute('aria-busy');"))
+
+    # getElementsByName, not a selector: a field name holding brackets, inside
+    # a JS string, inside a Python string is three levels of escaping, and
+    # this file has got one of them wrong before.
+    b.js("var i = document.getElementsByName('hero[title]')[0];"
+         "if (i) { i.value = 'Saved twice'; }")
+    b.click('.admin-bar__actions button[name="do"][value="save"]')
+    twice = b.js(STATE)
+    r.check("a second save on the same screen goes through",
+            twice["marked"] is True
+            and "Saved" in (b.js("var n = document.querySelector('.admin__notice');"
+                                 "return n ? n.textContent : '';") or ""),
+            "the second save never left the browser")
+
     r.section("the account menu")
     r.check("it is a <details>, so it opens with no script",
             b.js("return !!document.querySelector('.rail__foot details.account "
