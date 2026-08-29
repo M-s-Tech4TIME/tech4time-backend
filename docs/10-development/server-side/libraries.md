@@ -19,6 +19,7 @@ store they read from is outside the document root entirely.
 | [`careers.php`](#careersphp) | what this side does with a job post | `contract`, `store` |
 | [`contact.php`](#contactphp) | what this side does with the contact page | `contract`, `store` |
 | [`company.php`](#companyphp) | what this side does with the company profile | `contract`, `store` |
+| [`about.php`](#aboutphp) | what this side does with the about page | `contract`, `store` |
 | [`upload.php`](#uploadphp) *(backend)* | a file somebody chose, turned into a picture this site will show | `publish` |
 | [`publish.php`](#publishphp) **shared** | how a document is signed and checked on the wire | `private`, `contract` |
 | [`publish_client.php`](#publish_clientphp) *(backend)* | sending one | `publish` |
@@ -395,7 +396,7 @@ means an ordinary reload will not fix it. That has happened. `check_secrets.py` 
 any other way.
 
 `contract_path()` gives a document's record path — `content/<name>.json`, the same rule in both
-repositories. `lib/careers.php`, `lib/contact.php` and `lib/company.php` each still write their own
+repositories. `lib/careers.php`, `lib/contact.php`, `lib/company.php` and `lib/about.php` each still write their own
 constant; this exists for the things that have to work over *all* the documents without knowing
 their names: the deploy's seed, and the editor's warning when a host has no record for the page
 being edited.

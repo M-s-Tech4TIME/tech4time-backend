@@ -165,6 +165,7 @@ def banner(base: str, secret: str, drove: bool) -> None:
     print(f"  the admin      {base}/")
     print(f"  the overview   {base}/?s=overview")
     print(f"  company        {base}/?s=company")
+    print(f"  about          {base}/?s=about")
     print(f"  contact        {base}/?s=contact")
     print(f"  careers        {base}/?s=careers")
     print(f"  your account   {base}/?s=account")

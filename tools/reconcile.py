@@ -108,20 +108,47 @@ PROBE = """
 require_once 'lib/publish_client.php';
 require_once 'lib/careers.php';
 require_once 'lib/contact.php';
+require_once 'lib/company.php';
+require_once 'lib/about.php';
+
+/* A TABLE, AND NOT A TERNARY, for the reason contract_normalise() gives at
+   length. What stood here was
+
+       $data = $document === 'careers' ? careers_load() : contact_load();
+
+   three times over, and the documents come from CONTRACT_DOCUMENTS just below
+   — so reconciling 'company' loaded the CONTACT page, saved it, and published
+   it under the name 'company'. The one tool that exists to repair a host was
+   able to overwrite a second document while doing it. The refusal has to be
+   the default, not the fallthrough. */
+$models = [
+    'careers' => ['careers_load', 'careers_save'],
+    'contact' => ['contact_load', 'contact_save'],
+    'company' => ['company_load', 'company_save'],
+    'about'   => ['about_load',   'about_save'],
+];
 
 $document = $argv[1];
-$data = $document === 'careers' ? careers_load() : contact_load();
+if (!isset($models[$document])) {
+    echo json_encode(['mine' => 0, 'first' => false,
+                      'result' => ['ok' => false, 'code' => 'unknown-document',
+                                   'error' => 'No model here for ' . $document . '.']]);
+    exit;
+}
+[$load, $save] = $models[$document];
+
+$data = $load();
 
 /* A document that has never been saved carries revision 0, and the receiving
    side refuses anything below 1 — so a host whose content/ was put in place by
    hand could never publish it, which is exactly the case this tool exists for.
 
-   Minting a revision is careers_save()'s and contact_save()'s job and nobody
-   else's, so this asks THEM rather than doing it here. They write the record
-   and publish it in one step, which is what a first publish is. */
+   Minting a revision is each model's *_save()'s job and nobody else's, so this
+   asks THEM rather than doing it here. They write the record and publish it in
+   one step, which is what a first publish is. */
 if ((int)($data['revision'] ?? 0) < 1) {
-    $ok = $document === 'careers' ? careers_save($data) : contact_save($data);
-    $after = $document === 'careers' ? careers_load() : contact_load();
+    $ok = $save($data);
+    $after = $load();
 
     echo json_encode([
         'mine'    => (int)($after['revision'] ?? 0),
@@ -208,7 +235,8 @@ def reconcile(document: str) -> bool:
 
 
 ASSET_PROBE = """
-require 'lib/company.php';
+/* Every stored file, whichever editor put it there — upload_held() is the
+   store, not one page's view of it. No per-document model is needed. */
 require 'lib/upload.php';
 
 $sent = 0; $held = 0; $failed = [];
