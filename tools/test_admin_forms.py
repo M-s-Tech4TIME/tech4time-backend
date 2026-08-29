@@ -622,6 +622,49 @@ def navigate(b: Browser, base: str, r: Results) -> None:
             "loses it exactly as typing does")
     b.answer(True)
 
+    # BACK IS A WAY OUT OF A SCREEN TOO. It is answered by a swap, so no
+    # document is unloaded and the browser's own beforeunload prompt could
+    # never fire here — this is the only thing standing between the Back
+    # button and an hour of typing.
+    b.go(base + "/?s=company")
+    b.click('.rail__item[href="?s=contact"]')
+    b.type('input[name="reach[title]"]', " x")
+    # The entry number has to BE a number. It was
+    # "[object HTMLDivElement]1" for one run, because apply() has a local
+    # `here` and the counter was called `here` too — so no two entries ever
+    # compared unequal and Back never asked. Asserted rather than assumed,
+    # because that failure is silent in every other way.
+    r.check("history entries are numbered",
+            isinstance((b.js("return history.state && history.state.i;")), int),
+            f"history.state.i is "
+            f"{b.js('return JSON.stringify(history.state);')!r}")
+
+    b.js("window.history.back(); return true;")
+    time.sleep(1.2)
+
+    asked_back = b.alert()
+    r.check("pressing Back with something unsaved asks as well",
+            asked_back is not None and "not been saved" in asked_back,
+            f"the dialog said {asked_back!r} — clicking a rail item asks and "
+            f"Back did not, which is the worse of the two to lose work to")
+
+    b.answer(False)
+    held = b.js(SHELL)
+    r.check("refusing puts the entry back", held["search"] == "?s=contact",
+            f"location.search is {held['search']!r} — the address bar and the "
+            f"page have to agree, or a reload lands somewhere else")
+    r.check("and the screen is untouched", held["heading"] == "Contact")
+    r.check("with the edit still in it",
+            (b.js("return document.querySelector('input[name=\"reach[title]\"]').value;")
+             or "").endswith(" x"))
+
+    b.js("window.history.back(); return true;")
+    time.sleep(1.2)
+    b.answer(True)
+    went = b.js(SHELL)
+    r.check("accepting goes back", went["heading"] == "Company Profile",
+            f"the heading reads {went['heading']!r}")
+
     # A field the model will accept, so that what is proved here is the guard
     # and not the validator. A save that FAILS leaves the form holding
     # something the file does not, so the guard is right to keep asking — and
@@ -641,6 +684,30 @@ def navigate(b: Browser, base: str, r: Results) -> None:
     r.check("and a save stops it asking", b.alert() is None,
             "the file and the form agree now, so there is nothing to lose "
             "and nothing to ask about")
+
+    # THE EXITS NOTHING IN THE PAGE CAN INTERCEPT — a reload, the tab closing,
+    # signing out. Asserted by dispatching the event and reading
+    # defaultPrevented rather than by provoking the real dialog: what is ours
+    # is the decision to interrupt, and the dialog itself belongs to the
+    # browser and cannot be driven reliably.
+    ASK_ON_UNLOAD = ("var e = new Event('beforeunload', {cancelable: true});"
+                     "window.dispatchEvent(e);"
+                     "return e.defaultPrevented;")
+
+    b.go(base + "/?s=company")
+    r.check("reloading an untouched screen is not interrupted",
+            b.js(ASK_ON_UNLOAD) is False,
+            "a page that asks on every exit is one people learn to click "
+            "through, and then no guard here means anything")
+
+    b.type('input[name="hero[subtitle]"]', " x")
+    r.check("reloading one with unsaved work is",
+            b.js(ASK_ON_UNLOAD) is True,
+            "F5 is the way out no link handler can see — nothing of ours runs "
+            "after it")
+
+    b.click('.admin-bar__actions button[name="do"][value="save"]')
+    r.check("and saving lifts it again", b.js(ASK_ON_UNLOAD) is False)
 
     r.section("the account menu")
     b.go(base + "/?s=company")
