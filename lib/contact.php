@@ -122,6 +122,32 @@ function contact_flags(): array
     return array_keys($found);
 }
 
+/**
+ * The web path of a built-in flag, or '' when there is no such file.
+ *
+ * The editor draws this rather than describing it. Found by looking on disk in
+ * the same order the public renderer looks, so the thumbnail beside an office
+ * and the flag on the live page are the same file — a slug naming something
+ * that is not there answers '', and the editor then says there is no flag,
+ * which is the truth.
+ */
+function contact_flag_file(string $slug): string
+{
+    $slug = trim($slug);
+
+    if ($slug === '' || !preg_match('/^[a-z0-9-]+$/', $slug)) {
+        return '';
+    }
+
+    foreach (CONTACT_FLAG_FORMATS as $ext) {
+        if (is_file(CONTACT_FLAG_DIR . '/' . $slug . '.' . $ext)) {
+            return '/assets/images/flags/' . $slug . '.' . $ext;
+        }
+    }
+
+    return '';
+}
+
 /* ------------------------------------------------------------- validation */
 
 /**

@@ -655,6 +655,20 @@
   border-color: var(--border-strong);
 }
 
+/* WHERE YOU ARE, AND IT STAYS THERE.
+
+   The same treatment as :hover above, on purpose — that is the one the eye has
+   already learned means "this entry" — plus a weight change and a marker on
+   the inline edge, because a colour alone is not a distinction somebody can
+   rely on (WCAG 1.4.1). admin-outline.js sets aria-current as the page is
+   scrolled; without it nothing here matches and the column is what it was. */
+.outline__link[aria-current="true"] {
+  color: var(--text-primary);
+  font-weight: 600;
+  background-color: var(--bg-elevated);
+  border-color: var(--border-strong);
+}
+
 .outline__link:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
@@ -855,6 +869,41 @@
 .admin__section-title {
   margin-block-end: var(--space-md);
   font-size: var(--text-xl);
+}
+
+/* THE BAND'S NAME AND THE BUTTON THAT ADDS TO IT, ON ONE LINE.
+
+   The <legend> is the row rather than a thing inside it, because a legend has
+   to be the fieldset's first child to be its accessible name. Browsers give
+   legends their own inline padding and a shrink-to-fit width; both are undone
+   here so the row can reach the full width of the band and put the button at
+   its far edge. */
+.admin__band {
+  display: block;
+  width: 100%;
+  padding-inline: 0;
+}
+
+.admin__band-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-block-end: var(--space-md);
+}
+
+/* The title carries the row's spacing now, not its own. */
+.admin__band-row .admin__section-title { margin-block-end: 0; }
+
+.admin__band-add { flex: none; }
+
+@media (max-width: 33.99em) {
+  /* Under the name rather than beside it: at this width "Add a photograph"
+     and the band's own title cannot share a line without one of them
+     breaking mid-word. Full width, so it is still a comfortable target. */
+  .admin__band-row { align-items: stretch; }
+  .admin__band-add { width: 100%; }
 }
 
 .admin__grid {
@@ -1520,6 +1569,160 @@ html { scroll-padding-block-start: var(--admin-bar-h); }
 .job__body .ta-right { text-align: right; }
 .rte__surface .ta-justify,
 .job__body .ta-justify { text-align: justify; }
+
+/* --------------------------------------------------------------------------
+   8. Saying what happened, and asking before doing it
+
+   Two overlays, and neither of them is the browser's.
+
+   THE TOAST replaces a line of small text at the top of the document. On an
+   editor several screens long, a confirmation printed at the top is a
+   confirmation nobody sees — and it was worse than invisible: reaching it was
+   the reason the page appeared to reload after every press.
+
+   THE DIALOG replaces window.confirm(). That box is drawn by the browser, in
+   the browser's colours, and never learned this theme; several browsers also
+   put the site's domain above the question, which reads as a warning about the
+   page rather than a question from it.
+   -------------------------------------------------------------------------- */
+
+.toasts {
+  position: fixed;
+  z-index: var(--z-modal);
+  inset-block-end: var(--space-lg);
+  inset-inline-end: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2xs);
+
+  /* The column is always there to receive a message; only the messages in it
+     can be pointed at. Without this it is an invisible sheet over the corner
+     of every editor. */
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2xs);
+  max-width: min(24rem, calc(100vw - 2 * var(--space-lg)));
+  padding: var(--space-xs) var(--space-sm);
+  pointer-events: auto;
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+
+  /* FROM BELOW. It starts under its resting place and rises into it, which is
+     the direction that reads as "this has just arrived" rather than "this was
+     always here and you missed it". base.css reduces the transition to nothing
+     under prefers-reduced-motion, so it simply appears. */
+  opacity: 0;
+  transform: translateY(1rem);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.toast--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+/* A failure stays until it is dismissed, so it needs a way to be. A success
+   leaves on its own and has none: a button that disappears while it is being
+   reached for is worse than no button. */
+.toast--bad {
+  border-color: var(--contrast-max);
+  border-inline-start-width: 3px;
+}
+
+.toast--busy .toast__text { color: var(--text-secondary); }
+
+.toast__close {
+  flex: none;
+  width: 1.5rem;
+  min-height: 1.5rem;
+  padding: 0;
+  font-size: var(--text-md);
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.toast__close:hover { color: var(--text-primary); }
+
+.toast__close:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 39.99em) {
+  /* A phone has no corner to spare. Across the bottom instead, above the
+     thumb rather than under it. */
+  .toasts {
+    inset-inline: var(--space-sm);
+    inset-block-end: var(--space-sm);
+    align-items: stretch;
+  }
+
+  .toast { max-width: none; }
+}
+
+/* ------------------------------------------------------------- the dialog */
+
+.dialog {
+  max-width: min(28rem, calc(100vw - 2 * var(--space-lg)));
+  padding: 0;
+  color: var(--text-primary);
+  background-color: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* THE BLURRED BACKDROP. ::backdrop is the browser's element and the browser's
+   to place; everything about how it looks is ours. backdrop-filter is a
+   progressive nicety — where it is not supported the tint alone still
+   separates the question from the page behind it. */
+.dialog::backdrop {
+  background-color: var(--backdrop);
+  backdrop-filter: blur(4px);
+}
+
+.dialog__card { padding: var(--space-lg); }
+
+.dialog__title {
+  margin: 0 0 var(--space-2xs);
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+}
+
+.dialog__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2xs);
+  margin-block-start: var(--space-lg);
+}
 
 /* --------------------------------------------------------------------------
    5. Signing in

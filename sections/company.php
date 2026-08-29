@@ -321,35 +321,17 @@ function company_apply_row_action(array $data, string $do): ?array
 
 
 /** A band's heading, its show/hide switch, and the blurb under it. */
-function company_band_header(array $data, string $band, string $legend, string $blurb): void
+function company_band_header(array $data, string $band, string $legend,
+                             string $blurb, string $add = ''): void
 {
-    ?>
-    <legend class="admin__section-title"><?= h($legend) ?></legend>
-    <p class="admin__blurb"><?= h($blurb) ?></p>
-    <div class="admin__grid">
-      <?php admin_status_field($band . '[status]',
-          (string)($data[$band]['status'] ?? 'shown'), 'this section'); ?>
-    </div>
-    <?php
-}
-
-/**
- * The "Add" button that closes every list.
- *
- * btn--secondary, the same as "Add a row" and "Add an office" on the contact
- * editor. It was btn--ghost -- no border, no fill -- which beside a stack of
- * bordered inputs does not read as a button at all, and there is no reason for
- * the two editors to answer the same question differently.
- */
-function company_add_button(string $band, string $label): void
-{
-    ?>
-      <div class="admin__actions">
-        <button class="btn btn--secondary" type="submit" name="do" value="<?= h($band) ?>-add:0">
-          <?= h($label) ?>
-        </button>
-      </div>
-    <?php
+    admin_band_head(
+        $legend,
+        $blurb,
+        $add !== '' ? ['do' => $band . '-add:0', 'label' => $add] : [],
+        ['name'  => $band . '[status]',
+         'value' => (string)($data[$band]['status'] ?? 'shown'),
+         'noun'  => 'this section']
+    );
 }
 
 /* What the rail lists under "Company Profile". The keys are the ids on the
@@ -425,7 +407,8 @@ if (!$errors && $pending !== '') {
   <fieldset class="admin__block" id="band-milestones">
     <?php company_band_header($data, 'milestones', 'Milestones',
         'The timeline. Entries alternate left and right down the page, so the '
-        . 'order decides which side each one lands on.'); ?>
+        . 'order decides which side each one lands on.',
+        'Add a milestone'); ?>
 
     <div class="admin__grid">
       <label class="admin__field">
@@ -491,7 +474,6 @@ if (!$errors && $pending !== '') {
     </div>
 <?php endforeach; ?>
 
-    <?php company_add_button('milestones', 'Add a milestone'); ?>
   </fieldset>
 
   <!-- ===================== the background band ===================== -->
@@ -518,7 +500,8 @@ if (!$errors && $pending !== '') {
   <!-- ========================= the figures ========================= -->
   <fieldset class="admin__block" id="band-experience">
     <?php company_band_header($data, 'experience', 'The figures',
-        'The four numbers that count up as the block comes into view.'); ?>
+        'The four numbers that count up as the block comes into view.',
+        'Add a figure'); ?>
 
     <label class="admin__field admin__field--wide">
       <span class="admin__label">Block heading</span>
@@ -561,14 +544,14 @@ if (!$errors && $pending !== '') {
     </div>
 <?php endforeach; ?>
 
-    <?php company_add_button('experience', 'Add a figure'); ?>
   </fieldset>
 
   <!-- ========================= the clients ========================= -->
   <fieldset class="admin__block" id="band-clients">
     <?php company_band_header($data, 'clients', 'Proud Clients',
         'The wall of logos. The name is what a screen reader announces, so it '
-        . 'is not optional.'); ?>
+        . 'is not optional.',
+        'Add a client'); ?>
 
     <label class="admin__field admin__field--wide">
       <span class="admin__label">Block heading</span>
@@ -601,14 +584,14 @@ if (!$errors && $pending !== '') {
     </div>
 <?php endforeach; ?>
 
-    <?php company_add_button('clients', 'Add a client'); ?>
   </fieldset>
 
   <!-- ======================= the photographs ======================= -->
   <fieldset class="admin__block" id="band-journey">
     <?php company_band_header($data, 'journey', 'Our Journey of Growth',
         'The slideshow. One photograph at a time, and the whole row without '
-        . 'JavaScript.'); ?>
+        . 'JavaScript.',
+        'Add a photograph'); ?>
 
     <div class="admin__grid">
       <label class="admin__field">
@@ -664,7 +647,6 @@ if (!$errors && $pending !== '') {
     </div>
 <?php endforeach; ?>
 
-    <?php company_add_button('journey', 'Add a photograph'); ?>
   </fieldset>
 
   <!-- ==================== the excellence band ==================== -->
@@ -700,7 +682,8 @@ if (!$errors && $pending !== '') {
         'The logos that become the rotating sphere on a wide screen, and an '
         . 'ordinary grid on a narrow one or with JavaScript off. Position '
         . 'decides where a logo sits on the sphere, so reordering moves '
-        . 'everything.'); ?>
+        . 'everything.',
+        'Add a technology'); ?>
 
     <label class="admin__field admin__field--wide">
       <span class="admin__label">Block heading</span>
@@ -733,13 +716,13 @@ if (!$errors && $pending !== '') {
     </div>
 <?php endforeach; ?>
 
-    <?php company_add_button('technology', 'Add a technology'); ?>
   </fieldset>
 
   <!-- ======================== the principles ======================== -->
   <fieldset class="admin__block" id="band-principles">
     <?php company_band_header($data, 'principles', 'The Principles That Guide Us',
-        'Four cards, each with an icon.'); ?>
+        'Four cards, each with an icon.',
+        'Add a principle'); ?>
 
     <label class="admin__field admin__field--wide">
       <span class="admin__label">Block heading</span>
@@ -795,7 +778,6 @@ if (!$errors && $pending !== '') {
     </div>
 <?php endforeach; ?>
 
-    <?php company_add_button('principles', 'Add a principle'); ?>
   </fieldset>
 
   <!-- ========================= the closing band ========================= -->

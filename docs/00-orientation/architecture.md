@@ -276,11 +276,22 @@ theme-init.js     ← the ONLY synchronous script, in <head>: which theme to pai
 
 admin-nav.js      ← the rail's narrow/wide control, and closing the account menu
 editor.js         ← the rich-text toolbar over a contenteditable surface
+admin-outline.js  ← marks which band you are in, in the "On this page" column
 admin-swap.js     ← puts a screen in place of the one on show; wires the links
+admin-toast.js    ← lifts what the server said into the corner of the page
+admin-dialog.js   ← the admin's own question box, instead of window.confirm()
 admin-forms.js    ← posts the editors without navigating, and puts the answer back
 theme-toggle.js   ← the theme switch
 admin-init.js     ← runs last, calls each init() in a try/catch
 ```
+
+**That last line was not true until it was checked.** The calls were bare, so
+anything thrown by one module stopped every module after it — and the order is
+the order of dependence, which made it the worst possible arrangement: a throw
+in the rich-text editor left the forms and the links unwired and every one of
+them a full page load, with nothing on screen to say why. Each `init()` is
+called in its own `try` now, and a failure is reported to the console and
+stepped over.
 
 Without JavaScript the rail stays wide and fully labelled — at whatever width the cookie says, see
 below — the account menu is a `<details>` the browser opens by itself, every form navigates and
@@ -316,6 +327,24 @@ What all of this buys is that pressing "Move down" on the fiftieth technology lo
 looking at the fiftieth technology logo instead of the top of a quarter-megabyte form, and that
 moving from Contact to Careers moves the page rather than the whole window. Deleting either file
 restores the old behaviour exactly.
+
+**What the server said is shown in the corner, not at the top.** Every editor
+is several screens long, so a confirmation printed at the top of the document
+is a confirmation nobody sees — and reaching it was, for a while, the reason
+the page appeared to reload after every press. The server still renders that
+paragraph exactly where it always did, so it is there with no JavaScript at
+all; `admin-toast.js` lifts it out of the page and slides it up in the corner.
+Error lists and standing advisories are deliberately left where they are: one
+is a list of fields to go and fix, the other is a condition of the page, and
+neither is something that should fade out after four seconds.
+
+**Questions are asked in the page's own `<dialog>`.** `window.confirm()` is
+drawn by the browser, never learned this theme, and in several browsers prints
+the site's own domain above the question as though the page were something to
+be wary of. `admin-dialog.js` builds a `<dialog>` and calls `showModal()`, so
+the focus trap, Escape, inertness and the backdrop are the browser's — what is
+ours is the markup, the wording and the blur. It is asynchronous where
+`confirm()` was not, which is why every caller reads as "ask, then act".
 
 **Unsaved work is guarded in three places, because there are three ways out.**
 Following a link is asked about in the click handler; Back and Forward are asked about in

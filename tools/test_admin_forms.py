@@ -63,6 +63,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DOCROOT = ROOT / "public"
 ROUTER = ROOT / "tools" / "dev-router.php"
 DATA = ROOT / "content" / "company.json"
+CONTACT = ROOT / "content" / "contact.json"
 
 
 class Results:
@@ -238,16 +239,21 @@ class Browser:
         rq("POST", self.s + f"/element/{self._one(css)}/value", {"text": text})
         time.sleep(0.4)
 
-    def alert(self):
-        """The text of an open modal dialog, or None if there is not one."""
-        try:
-            return rq("GET", self.s + "/alert/text")["value"]
-        except urllib.error.HTTPError:
-            return None
+    def asked(self):
+        """What the admin's own question box says, or None if none is open.
+
+        Not /alert/text: these are the page's own <dialog>, not the browser's
+        box, which is the whole point of admin-dialog.js. The one prompt the
+        driver's alert API would still see is beforeunload's, and that one is
+        the browser's by design and cannot be anything else.
+        """
+        return self.js(
+            "var d = document.querySelector('dialog.dialog[open]');"
+            "return d ? d.textContent.replace(/\\s+/g, ' ').trim() : null;")
 
     def answer(self, yes):
-        rq("POST", self.s + ("/alert/accept" if yes else "/alert/dismiss"), {})
-        time.sleep(1.6)
+        self.click('.dialog__actions button[data-answer="%s"]'
+                   % ("yes" if yes else "no"))
 
     def cookie(self, name, value):
         rq("POST", self.s + "/cookie", {"cookie": {
@@ -339,13 +345,45 @@ return {
   themeLabel: toggle ? toggle.getAttribute('aria-label') : '',
   menuOpen: !!document.querySelector('details[data-account][open]'),
   focus:    document.activeElement ? document.activeElement.id : '',
-  status:   !!document.querySelector('.admin-bar [data-form-status]'),
+  status:   !!document.querySelector('[data-toasts]'),
   marked:   window.__stillHere === true
 };
 """
 
 
 def run(b: Browser, base: str, r: Results) -> None:
+    r.section("every button in the shell asks to be sent this way")
+    # STRICTER THAN "every form carries data-async", and the difference is not
+    # theoretical: the Save button lives in the bar and reaches its form with
+    # the `form` attribute, so a button and the form it submits need not be
+    # anywhere near each other. This resolves each button to the form it will
+    # actually post and asks about THAT.
+    #
+    # Signing out is the one exception, and it has to be: the session ends, so
+    # there is nothing on the page worth preserving and a new document is the
+    # correct answer.
+    for screen in ("/?s=overview", "/?s=careers", "/?s=careers&action=new",
+                   "/?s=contact", "/?s=company", "/?s=account"):
+        b.go(base + screen)
+        loud = b.js("""
+        var out = [];
+        var buttons = document.querySelectorAll(
+          'button[type=submit], button:not([type]), input[type=submit]');
+
+        Array.prototype.forEach.call(buttons, function (button) {
+          var form = button.form;
+          if (!form) { return; }
+          if (form.classList.contains('account__signout')) { return; }
+          if (!form.hasAttribute('data-async')) {
+            out.push((button.name || '(unnamed)') + '=' + (button.value || ''));
+          }
+        });
+        return out;""")
+        r.check(f"{screen}: no button posts by navigating",
+                loud == [],
+                f"{loud} — each of these reloads the document and lands back "
+                f"at the top of it")
+
     r.section("every form in the shell asks to be sent this way")
     for screen in ("/?s=careers", "/?s=contact", "/?s=company", "/?s=account"):
         b.go(base + screen)
@@ -475,7 +513,7 @@ def navigate(b: Browser, base: str, r: Results) -> None:
     for screen in ("/?s=overview", "/?s=careers", "/?s=contact",
                    "/?s=company", "/?s=account"):
         b.go(base + screen)
-        r.check(f"{screen}: the bar has a status line",
+        r.check(f"{screen}: there is somewhere to say it",
                 b.js(SHELL)["status"],
                 "nothing on this screen can report a slow fetch or a failed "
                 "one, so a post that never arrived looks exactly like a post "
@@ -585,16 +623,16 @@ def navigate(b: Browser, base: str, r: Results) -> None:
 
     b.go(base + "/?s=careers")
     b.click('.rail__item[href="?s=contact"]')
-    r.check("an untouched screen does not ask", b.alert() is None,
+    r.check("an untouched screen does not ask", b.asked() is None,
             "a question nobody needs is a question people learn to click "
             "through, and then it is not a safeguard any more")
 
     b.go(base + "/?s=company")
     b.type(YEAR, "9")
     b.click('.rail__item[href="?s=contact"]')
-    asked = b.alert()
+    asked = b.asked()
     r.check("a screen with something typed into it asks first",
-            asked is not None and "not been saved" in asked,
+            asked is not None and "have not saved" in asked,
             f"the dialog said {asked!r} — following a rail item throws the "
             f"form away, and the move is instant now")
 
@@ -617,7 +655,7 @@ def navigate(b: Browser, base: str, r: Results) -> None:
     b.go(base + "/?s=company")
     b.click('button[name="do"][value="clients-add:0"]')
     b.click('.rail__item[href="?s=careers"]')
-    r.check("a row added but not saved counts too", b.alert() is not None,
+    r.check("a row added but not saved counts too", b.asked() is not None,
             "adding a row rewrites the form and not the file, so leaving "
             "loses it exactly as typing does")
     b.answer(True)
@@ -642,9 +680,9 @@ def navigate(b: Browser, base: str, r: Results) -> None:
     b.js("window.history.back(); return true;")
     time.sleep(1.2)
 
-    asked_back = b.alert()
+    asked_back = b.asked()
     r.check("pressing Back with something unsaved asks as well",
-            asked_back is not None and "not been saved" in asked_back,
+            asked_back is not None and "have not saved" in asked_back,
             f"the dialog said {asked_back!r} — clicking a rail item asks and "
             f"Back did not, which is the worse of the two to lose work to")
 
@@ -681,7 +719,7 @@ def navigate(b: Browser, base: str, r: Results) -> None:
             f"unless this one holds")
 
     b.click('.rail__item[href="?s=careers"]')
-    r.check("and a save stops it asking", b.alert() is None,
+    r.check("and a save stops it asking", b.asked() is None,
             "the file and the form agree now, so there is nothing to lose "
             "and nothing to ask about")
 
@@ -722,6 +760,218 @@ def navigate(b: Browser, base: str, r: Results) -> None:
             left["menuOpen"] is False,
             "the rail is not replaced, so an open menu outlives the press "
             "that used it unless it is closed")
+
+
+def improvements(b: Browser, base: str, r: Results) -> None:
+    """The seven things reported after the first asynchronous release.
+
+    Every group here reproduces something that was seen on the live admin and
+    not here, and the reason each was invisible is written beside it. That is
+    the useful half: a check that only proves today's code works is a check
+    that would not have caught the thing it is named after.
+    """
+
+    r.section("adding and removing on EVERY editor, not just the biggest")
+    # THE GAP THAT LET ALL OF THIS HIDE. The suite drove the company editor
+    # and only asserted that the other screens' forms CARRIED data-async — a
+    # DOM read that passes whether or not a single line of script is running.
+    for screen, band, field in (
+        ("/?s=contact", "reach", "reach[items]"),
+        ("/?s=contact", "offices", "offices[items]"),
+        ("/?s=company", "clients", "clients[items]"),
+    ):
+        b.go(base + screen)
+        b.js(MARK)
+        count = f'return document.querySelectorAll(\'input[name^="{field}["]\').length;'
+        before = b.js(count)
+        b.click(f'#band-{band} .admin__band-add')
+        after = b.js(count)
+
+        r.check(f"{screen} {band}: a row is added without navigating",
+                after > before and b.js(SHELL)["marked"] is True,
+                f"{before} -> {after} fields, document replaced: "
+                f"{b.js(SHELL)['marked'] is not True}")
+
+    r.section("a standing warning does not steal the page")
+    # THE BUG BEHIND "the async never landed". The contact editor carries a
+    # warning whenever the site's footers have drifted from the record, and the
+    # swap used to scroll to the first error OR warning it found afterwards —
+    # so every press on that screen jumped to the top and looked like a reload.
+    # It could not be reproduced here because the development copy is in step.
+    import json as _json
+    record = _json.loads(CONTACT.read_text())
+    record["footer_synced"] = "deliberately-out-of-step"
+    CONTACT.write_text(_json.dumps(record, indent=4))
+
+    b.go(base + "/?s=contact")
+    r.check("the standing warning is on the page",
+            b.js("return document.querySelectorAll('.admin__notice--warn').length;") >= 1,
+            "the state this group is about could not be set up, so the check "
+            "below proves nothing")
+
+    # A ROW ACTION, NOT A SAVE. Saving also publishes, and publishing from a
+    # test has no key and fails — which raises a warning that genuinely IS the
+    # answer to what was just pressed, and being taken to that one is correct.
+    # Moving a row publishes nothing, so what is left on the page is only the
+    # standing advisory, which is the case this group is about. It is also the
+    # case that was reported: "add anything, or remove, or anything".
+    b.js("window.scrollTo({top: 2500, behavior: 'instant'});")
+    time.sleep(0.4)
+    was = b.js("return Math.round(window.scrollY);")
+    b.click('button[name="do"][value="reach-down:0"]')
+    now = b.js("return Math.round(window.scrollY);")
+
+    # NOT "the scroll is identical": a move deliberately follows the row it
+    # moved, which shifts the page a few hundred pixels. What must not happen
+    # is being taken to the top — so the assertion is that the warning is not
+    # what you are looking at, which is the thing that was reported.
+    warning = b.js("""
+    var w = document.querySelector('.admin__notice--warn');
+    return w ? Math.round(w.getBoundingClientRect().bottom) : null;""")
+
+    r.check("a row action does not take you to the standing warning",
+            now > 1000 and warning is not None and warning < 0,
+            f"was at {was}px, now at {now}px, and the warning's bottom edge is "
+            f"at {warning}px — at or below zero means it is above the screen "
+            f"and you were left where you were working. It used to scroll to "
+            f"it after every single press, which is what made the editor look "
+            f"like it was reloading")
+
+    # THE OTHER HALF OF THE SAME CONTRACT. A problem the press actually caused
+    # must still take the page to it, or the fix above would have traded one
+    # silence for another. The failed publish is that problem here.
+    b.js("window.scrollTo({top: 2500, behavior: 'instant'});")
+    time.sleep(0.4)
+    b.click('.admin-bar__actions button[name="do"][value="save"]')
+
+    r.check("but a problem the press CAUSED still shows itself",
+            b.js("return Math.round(window.scrollY);") < 600,
+            "a publish that failed is news, and it was not on the page before "
+            "the button was pressed")
+
+    CONTACT.write_text(_json.dumps(record, indent=4).replace(
+        '"deliberately-out-of-step"', '""'))
+
+    r.section("what the server said, said in the corner")
+    b.go(base + "/?s=company")
+    b.type('input[name="hero[subtitle]"]', " x")
+    b.click('.admin-bar__actions button[name="do"][value="save"]')
+
+    r.check("a confirmation becomes a toast",
+            "Saved" in (b.js("var t=document.querySelector('.toast');"
+                             "return t ? t.textContent : '';") or ""),
+            "the message is still a paragraph at the top of a document that is "
+            "several screens long")
+    r.check("and it has slid in rather than appeared",
+            b.js("var t=document.querySelector('.toast');"
+                 "return !!t && t.classList.contains('toast--in');"))
+    r.check("the toast is on the right, near the foot",
+            b.js("""
+            var t = document.querySelector('.toast').getBoundingClientRect();
+            return t.right > window.innerWidth * 0.6
+                && t.top > window.innerHeight * 0.5;"""),
+            "it was asked for on that side of the page, rising from the bottom")
+    r.check("and the page is not left holding a copy of it",
+            b.js("return document.querySelectorAll("
+                 "'#admin-main .admin__notice--ok').length === 0;"))
+
+    r.section("the question box is the page's own")
+    # getElementsByName rather than a selector: a field name holding brackets
+    # and quotes inside a Python string inside a JS string is three levels of
+    # escaping, and it got one of them wrong.
+    b.js("var f = document.getElementsByName('hero[title]')[0];"
+         "f.value += 'x'; f.dispatchEvent(new Event('input', {bubbles: true}));")
+    b.click('.rail__item[href="?s=contact"]')
+
+    r.check("it is a <dialog>, not the browser's box",
+            b.js("var d=document.querySelector('dialog.dialog');"
+                 "return !!d && d.open === true;"),
+            "window.confirm() cannot be styled, never learned the dark theme, "
+            "and prints the site's own domain above the question")
+    r.check("with a blurred backdrop",
+            "blur" in (b.js("var d=document.querySelector('dialog.dialog');"
+                            "return getComputedStyle(d, '::backdrop').backdropFilter;") or ""))
+    r.check("the safe answer holds the focus",
+            b.js("return document.activeElement.getAttribute('data-answer');") == "no",
+            "Enter on a dialog nobody read must not throw work away")
+
+    b.click('.dialog__actions button[data-answer="no"]')
+    r.check("saying no keeps the screen and clears the box",
+            b.js(SHELL)["heading"] == "Company Profile"
+            and b.js("return document.querySelectorAll('dialog.dialog').length === 0;"))
+
+    r.section("the outline column")
+    b.go(base + "/?s=company")
+    top = b.js("return Math.round(window.scrollY);")
+    b.click('.outline__link[href="#band-technology"]')
+    landed = b.js("""
+    var e = document.getElementById('band-technology');
+    return {y: Math.round(window.scrollY), top: Math.round(e.getBoundingClientRect().top),
+            pad: Math.round(parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop))};""")
+
+    r.check("an anchor actually moves the page",
+            landed["y"] > top + 500,
+            f"scrollY went {top} -> {landed['y']}. popstate fires for an "
+            f"in-page anchor as well as for Back, and answering it with a swap "
+            f"re-fetched the screen and landed at the top")
+    r.check("and lands the band clear of the bar",
+            abs(landed["top"] - landed["pad"]) <= 4,
+            f"band top at {landed['top']}px against a {landed['pad']}px bar")
+
+    marked = "var a=document.querySelector('.outline__link[aria-current]');" \
+             "return a ? a.textContent.trim() : '(none)';"
+    r.check("and the column marks where you are", b.js(marked) == "Technology",
+            f"marked {b.js(marked)!r}")
+
+    b.js("window.scrollTo({top: 1500, behavior: 'instant'});")
+    time.sleep(0.5)
+    r.check("the mark follows the scroll", b.js(marked) == "Milestones",
+            f"marked {b.js(marked)!r} at 1500px")
+    r.check("exactly one entry is ever marked",
+            b.js("return document.querySelectorAll("
+                 "'.outline__link[aria-current]').length;") == 1)
+
+    r.section("a form that takes a file says so")
+    # A file input in a form that is not multipart posts the FILENAME and not
+    # the file. Nothing errors: PHP simply finds nothing in $_FILES, and the
+    # editor reports a save that worked while the picture never left the
+    # machine. The contact editor was in exactly that state.
+    for screen in ("/?s=contact", "/?s=company", "/?s=account", "/?s=careers"):
+        b.go(base + screen)
+        bad = b.js("""
+        var out = [];
+        Array.prototype.forEach.call(document.querySelectorAll('form'), function (f) {
+          if (f.querySelector('input[type=file]') &&
+              (f.getAttribute('enctype') || '') !== 'multipart/form-data') {
+            out.push(f.id || f.className || '(a form)');
+          }
+        });
+        return out;""")
+        r.check(f"{screen}: every form holding a file input is multipart",
+                bad == [], f"{bad} — a file input here posts its filename only")
+
+    r.section("switching mode does not animate the whole document")
+    b.go(base + "/?s=company")
+    cost = b.js("""
+    var n = 0;
+    document.querySelectorAll('*').forEach(function (e) {
+      var t = getComputedStyle(e).transitionProperty;
+      if (t && t.indexOf('background-color') !== -1) { n += 1; }
+    });
+    var t0 = performance.now();
+    Tech4Time.theme.toggle();
+    document.documentElement.getBoundingClientRect();
+    return {matched: n, ms: Math.round(performance.now() - t0),
+            total: document.querySelectorAll('*').length};""")
+
+    r.check("the mode change is not a per-element animation",
+            cost["matched"] < cost["total"] / 4,
+            f"{cost['matched']} of {cost['total']} elements carry a "
+            f"background-color transition. It was every one of them, five "
+            f"properties each, and that is what made switching mode crawl")
+    r.check("and it does not block", cost["ms"] <= 30,
+            f"{cost['ms']}ms of blocked scripting to flip the mode")
+    b.js("Tech4Time.theme.toggle(); return true;")
 
 
 def run_without_script(b: Browser, base: str, r: Results) -> None:
@@ -802,6 +1052,7 @@ def main() -> None:
         return
 
     backup = DATA.read_bytes()
+    contact_backup = CONTACT.read_bytes()
     web_port, drv_port = free_port(), free_port()
     work = Path(tempfile.mkdtemp(prefix="t4t-admin-forms-"))
     private = work / "private"
@@ -830,6 +1081,7 @@ def main() -> None:
         agent = scripted.js("return navigator.userAgent;")
         run(scripted, base, r)
         navigate(scripted, base, r)
+        improvements(scripted, base, r)
         scripted.quit()
         scripted = None
 
@@ -859,6 +1111,7 @@ def main() -> None:
                 pass
         shutil.rmtree(work, ignore_errors=True)
         DATA.write_bytes(backup)
+        CONTACT.write_bytes(contact_backup)
         for stray in (DATA.with_suffix(".json.bak"),):
             stray.unlink(missing_ok=True)
         print(f"\n{DATA.relative_to(ROOT)} restored")

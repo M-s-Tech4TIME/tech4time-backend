@@ -61,8 +61,41 @@
     syncButtons(theme);
   }
 
+  /**
+   * Flip the mode.
+   *
+   * WHY A VIEW TRANSITION. Changing the mode changes a colour on very nearly
+   * every element, and animating that with CSS means animating it per element:
+   * on the largest admin screen that is 3,024 of them, five properties each,
+   * all at once. It was slow enough to read as the page struggling, and it was
+   * reported that way.
+   *
+   * startViewTransition() takes a picture of the page as it is, applies the
+   * change, takes another, and cross-fades the two on the compositor. One
+   * layer, one animation, and the cost no longer has anything to do with how
+   * much is on the page.
+   *
+   * Where it does not exist the change is applied directly and theme.css eases
+   * the page's own background and text colour — a cheap two-element fallback
+   * rather than the fifteen thousand animations this replaced.
+   *
+   * Skipped outright for anyone who asked for less motion: a cross-fade of the
+   * whole screen is exactly the kind of thing that setting is about.
+   */
   function toggle() {
-    apply(current() === "dark" ? "light" : "dark");
+    var next = current() === "dark" ? "light" : "dark";
+
+    var wants = !(
+      global.matchMedia &&
+      global.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+
+    if (wants && typeof document.startViewTransition === "function") {
+      document.startViewTransition(function () { apply(next); });
+      return;
+    }
+
+    apply(next);
   }
 
   function init() {

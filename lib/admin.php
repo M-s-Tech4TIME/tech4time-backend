@@ -471,7 +471,21 @@ function admin_asset(string $path): string
  */
 function admin_preview_src(string $path): string
 {
-    return str_starts_with($path, UPLOAD_URL_ROOT) ? $path : public_url($path);
+    if (str_starts_with($path, UPLOAD_URL_ROOT)) {
+        return $path;
+    }
+
+    /* A PICTURE THIS HOST ALSO HAS is served from this host. The office flags
+       ship with both halves, so previewing them from the public site was a
+       cross-origin request for a file sitting in public/ right here — and one
+       that draws nothing at all in a local preview, where the public site is a
+       closed port. Anything only the public site has, like the technology
+       logos, still comes from there. */
+    if (is_file(__DIR__ . '/../public' . $path)) {
+        return $path;
+    }
+
+    return public_url($path);
 }
 
 /**
@@ -483,7 +497,8 @@ function admin_preview_src(string $path): string
  * lives in the document, the other is where the browser puts the bytes.
  */
 function admin_image_fields(string $field, string $upload, array $image,
-                            string $noun = 'picture', string $empty = ''): void
+                            string $noun = 'picture', string $empty = '',
+                            array $fallback = []): void
 {
     $image += ['src' => '', 'webp' => '', 'width' => 0, 'height' => 0];
     ?>
@@ -499,11 +514,18 @@ function admin_image_fields(string $field, string $upload, array $image,
             &middot; with a WebP version
 <?php endif; ?>
           </p>
+<?php elseif ($fallback !== []): ?>
+          <?php /* A ROW WITH A PICTURE THIS RECORD DID NOT PUT THERE — an
+                   office still using one of the flags that ship with the site.
+                   It used to be described in a sentence and not shown, so the
+                   one question somebody actually has here, "which flag is on
+                   this office", could only be answered by opening the live
+                   page. It is the same thumbnail an uploaded one gets, because
+                   it is the same question. */ ?>
+          <img class="admin-card__thumb" src="<?= h(admin_preview_src((string)$fallback['src'])) ?>"
+               alt="" loading="lazy" decoding="async">
+          <p class="admin__hint"><?= h((string)($fallback['note'] ?? '')) ?></p>
 <?php else: ?>
-          <?php /* $empty is for a row that HAS a picture from somewhere this
-                   record does not know about — an office still using one of
-                   the flags built into the site. "No flag yet." would be a
-                   plain lie there, and the sort that gets acted on. */ ?>
           <p class="admin__hint">
             <?= $empty !== '' ? h($empty) : 'No ' . h($noun) . ' yet.' ?>
           </p>
@@ -627,6 +649,58 @@ function admin_send_picture(array $stored): string
  * drops the tail of a long form, which is the second of those. A <select>
  * always posts a value.
  */
+/**
+ * The head of one band: its name, what it is for, and how to add to it.
+ *
+ * WHY "ADD" IS UP HERE. It was the last thing in the band, under the rows. On
+ * the technology band that is more than thirty pictures, so adding a
+ * thirty-first meant scrolling past all thirty to reach the button — and then,
+ * because the new row is appended, scrolling back to it. The band's name is
+ * where you arrive when you follow "On this page", so the button that adds to
+ * the band belongs beside it. admin-forms.js moves the focus to the new row,
+ * which is what stops a press up here looking like a press that did nothing.
+ *
+ * IT IS INSIDE THE <legend>. That element has to be the first child of the
+ * fieldset to be its accessible name, and a heading with a control beside it
+ * has to be one row — so the row goes in the legend rather than the legend
+ * going in the row. <legend> takes phrasing content, and a <button> is
+ * phrasing content, so this is ordinary HTML rather than a trick.
+ *
+ * $add    ['do' => 'technology-add:0', 'label' => 'Add a technology']
+ * $status ['name' => 'technology[status]', 'value' => …, 'noun' => 'this section']
+ *
+ * The `do` value must begin with the same word the row's own fields are named
+ * with — technology[items][…] goes with technology-add. admin-forms.js finds
+ * the new row by that name, and a band whose button and fields disagree adds a
+ * row and leaves the focus where it was.
+ */
+function admin_band_head(string $legend, string $blurb = '',
+                         array $add = [], array $status = []): void
+{
+    ?>
+    <legend class="admin__band">
+      <span class="admin__band-row">
+        <span class="admin__section-title"><?= h($legend) ?></span>
+<?php if ($add): ?>
+        <button class="btn btn--secondary admin__band-add" type="submit"
+                name="do" value="<?= h((string)$add['do']) ?>">
+          <?= h((string)$add['label']) ?>
+        </button>
+<?php endif; ?>
+      </span>
+    </legend>
+<?php if ($blurb !== ''): ?>
+    <p class="admin__blurb"><?= h($blurb) ?></p>
+<?php endif; ?>
+<?php if ($status): ?>
+    <div class="admin__grid">
+      <?php admin_status_field((string)$status['name'], (string)$status['value'],
+                               (string)($status['noun'] ?? 'this section')); ?>
+    </div>
+<?php endif; ?>
+    <?php
+}
+
 function admin_status_field(string $name, string $status, string $noun): void
 {
     ?>
@@ -840,6 +914,21 @@ function admin_head(string $section, string $user, string $lede = '',
 
 <a class="skip-link" href="#admin-main">Skip to the editor</a>
 
+<?php /* WHERE THE ADMIN SAYS WHAT JUST HAPPENED.
+
+         Outside .admin-shell, and therefore outside the part admin-swap.js
+         replaces: a message about a move between screens must not be removed
+         by the move it is about.
+
+         Empty, and it stays empty without JavaScript — the server still prints
+         "Saved the …" into the page itself, exactly where it always did, and
+         admin-toast.js lifts it out of there into this. So the confirmation
+         exists either way; the enhancement is only where it is shown.
+
+         aria-live on the region rather than on each message, because the
+         region is what is there when the announcement arrives. */ ?>
+<div class="toasts" data-toasts role="status" aria-live="polite"></div>
+
 <div class="admin-shell">
 
   <?php /* The rail. Its default state is the wide one, so it is fully
@@ -1036,18 +1125,6 @@ function admin_head(string $section, string $user, string $lede = '',
                  works with JavaScript off, and admin-forms.js does not have to
                  know that the button is not inside the form it submits. */ ?>
         <div class="admin-bar__actions">
-          <?php /* WHERE EVERY SCREEN SAYS WHAT IT IS DOING, and it is outside
-                   the test below on purpose. It used to be rendered only for a
-                   section that has a Save button, which is three of the five —
-                   so on the overview, on careers and on the account page, a
-                   fetch that was slow said nothing and a fetch that FAILED
-                   said nothing either. Somebody changing their password over a
-                   dropped connection was shown the form they had just filled
-                   in, unchanged, with no indication that it had not been sent.
-
-                   It is empty, and .admin__status:empty is display:none, so it
-                   costs a screen nothing until there is something to say. */ ?>
-          <p class="admin__status" data-form-status role="status" aria-live="polite"></p>
 <?php if ($save): ?>
 <?php if (!empty($save['discard'])): ?>
           <a class="btn btn--ghost" href="<?= h($save['discard']) ?>">Discard</a>
@@ -1263,6 +1340,9 @@ function admin_foot(string $note = ''): void
 <script src="<?= h(admin_asset('/assets/js/theme-toggle.js')) ?>" defer></script>
 <script src="<?= h(admin_asset('/assets/js/admin-nav.js')) ?>" defer></script>
 <script src="<?= h(admin_asset('/assets/js/editor.js')) ?>" defer></script>
+<script src="<?= h(admin_asset('/assets/js/admin-outline.js')) ?>" defer></script>
+<script src="<?= h(admin_asset('/assets/js/admin-toast.js')) ?>" defer></script>
+<script src="<?= h(admin_asset('/assets/js/admin-dialog.js')) ?>" defer></script>
 <script src="<?= h(admin_asset('/assets/js/admin-swap.js')) ?>" defer></script>
 <script src="<?= h(admin_asset('/assets/js/admin-forms.js')) ?>" defer></script>
 <script src="<?= h(admin_asset('/assets/js/admin-init.js')) ?>" defer></script>

@@ -38,7 +38,10 @@ its record before acting.
 9. **`tools/` is never deployed.**
 10. **Do not leave cPanel's Directory Privacy on `public/`.** It writes its own `.htaccess` there
     and every deploy ships ours over it, removing the password silently.
-11. **Nothing in the admin reloads the page.** Every `<form>` carries `data-async`; every link
+11. **A form holding a file input carries `enctype="multipart/form-data"`.** Without it the
+    browser posts the filename instead of the file: `$_FILES` is empty, the save reports success,
+    and the picture never left the machine. Nothing errors and nothing else catches it.
+12. **Nothing in the admin reloads the page.** Every `<form>` carries `data-async`; every link
     between screens is `admin_url()`, which writes `?s=<section>` on the admin's own path. That is
     the whole of the contract — `admin-forms.js` and `admin-swap.js` do the rest, with no server
     side, and a link of any other shape tears the shell down and rebuilds the rail with it.

@@ -118,6 +118,22 @@ anchor (`#…`), another origin (`public_url()`, the live site), and anything op
 A link that is *none* of those four — `setup.php`, a bare path, an absolute URL back to this host —
 tears the shell down and rebuilds the rail with it.
 
+**Every band's head comes from `admin_band_head()`** — the legend, the blurb,
+the "Add a …" button and the shown/hidden switch, in that order. The button is
+up here rather than under the rows because a band can be fifty rows long, and
+the band's name is where "On this page" lands you.
+
+Its `do` value must begin with the same word the band's fields are named with:
+`technology-add:0` beside `technology[items][…]`. `admin-forms.js` finds the
+row it just added by that name and puts the focus in it, and a band whose
+button and fields disagree adds a row while the screen appears not to move.
+
+**A form with a file input needs `enctype="multipart/form-data"`.** Without it
+the browser posts the *filename* — PHP finds nothing in `$_FILES`, the save
+reports success, and the picture never leaves the machine. Nothing errors, so
+nothing catches it except `test_admin_forms.py`, which now checks every form on
+every screen.
+
 **Unsaved work:** nothing to do. Typing anywhere in `#admin-main` marks the screen, and every way
 out of it — a link, Back, a reload, signing out — asks before it goes. A save lifts the mark; a row
 added and not saved keeps it, because that row is in the form and not in `content/*.json`.
@@ -261,7 +277,8 @@ the reason beside it. `test_careers_admin.py` is the worked example.
 - [ ] the document name is in **`CONTRACT_DOCUMENTS`** — the deploy seeds every name it lists, and a page missing from it reaches the host with no record at all
 - [ ] `data-async` on every form; an `id` on the main one; `NAME_OUTLINE` passed to `admin_head()`
 - [ ] every link between screens is `admin_url()` — anything else is a full page load
-- [ ] `btn--secondary` on every "Add a …" button, so it reads as a button beside the fields
+- [ ] every band head is `admin_band_head()`, with the add button's prefix matching the field names
+- [ ] `enctype="multipart/form-data"` on any form holding a file input
 - [ ] an `id` on every `<fieldset>` the outline names
 - [ ] `ADMIN_SECTIONS` and `ADMIN_PAGE_SECTIONS` updated; icon in `ADMIN_ICONS`
 - [ ] `check_content_model.py`: a `SUBJECTS` entry, or a `COVERED_ELSEWHERE` one naming the test
