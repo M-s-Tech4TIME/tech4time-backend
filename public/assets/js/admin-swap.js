@@ -86,6 +86,30 @@
   var step = 0;
   var undoing = false;
 
+  /* THE PATH AND QUERY THIS DOCUMENT IS CURRENTLY SHOWING, WITHOUT THE
+     FRAGMENT — and the fragment is the whole point of keeping it.
+
+     Firefox fires popstate for an in-page anchor as well as for Back, and the
+     two are indistinguishable from inside the handler. So clicking "Our
+     offices" in the "On this page" column set the hash, raised popstate, and
+     this file answered it by re-fetching the screen and landing at the top:
+     the anchor moved the address bar and nothing else. The column looked
+     broken, and every click through it also threw away a round trip and any
+     unsaved typing.
+
+     Comparing without the fragment separates them exactly: a fragment move
+     leaves the path and the query alone, and there is nothing to swap. */
+  var shown = "";
+
+  function bare(url) {
+    try {
+      var u = new global.URL(url, global.location.href);
+      return u.pathname + u.search;
+    } catch (error) {
+      return url;
+    }
+  }
+
   /* Rises with every request started here. A response whose number is no
      longer the current one is a screen nobody is waiting for any more —
      press three rail items quickly and only the last one may land. */
@@ -102,15 +126,62 @@
     );
   }
 
-  /* ------------------------------------------------------------- the notice */
+  /* ------------------------------------------------------------- the notice
+
+     It was a line of small text in the bar. A message about the row you are
+     editing, printed at the top of a document you have scrolled several
+     screens down, is a message nobody reads — and the one that mattered most,
+     "Not sent", was the one least likely to be seen. It is a toast in the
+     corner now; admin-toast.js draws it.
+
+     One at a time: a "Working…" is taken away by whatever answers it, so the
+     corner never fills up with a history of presses. */
+  var pending = null;
 
   function status(text, className) {
-    var slots = doc.querySelectorAll("[data-form-status]");
+    var toast = global.Tech4Time.adminToast;
+    if (!toast) {
+      return;
+    }
 
-    Array.prototype.forEach.call(slots, function (slot) {
-      slot.textContent = text || "";
-      slot.className = "admin__status" + (className ? " " + className : "");
-    });
+    if (pending) {
+      toast.dismiss(pending);
+      pending = null;
+    }
+
+    if (!text) {
+      return;
+    }
+
+    var kind = className === BAD ? "bad" : (className === BUSY ? "busy" : "ok");
+    var made = toast.show(text, kind);
+
+    if (kind === "busy") {
+      pending = made;
+    }
+  }
+
+  /* The question this file has to ask, in the admin's own box rather than the
+     browser's. Asynchronous, so every caller is written as "ask, then act". */
+  var LEAVING = {
+    title: "There are changes you have not saved",
+    message: "Anything typed into this screen and not saved will be lost.",
+    confirm: "Leave and lose them",
+    cancel: "Stay on this screen",
+    tone: "danger"
+  };
+
+  function askToLeave() {
+    var dialog = global.Tech4Time.adminDialog;
+
+    if (dialog) {
+      return dialog.ask(LEAVING);
+    }
+
+    /* Nothing to ask with. Rather than let the work go without a word, fall
+       back to the browser's box — which is what this replaced. */
+    var answer = global.confirm(LEAVING.title + "\n\n" + LEAVING.message);
+    return { then: function (fn) { fn(answer); return this; } };
   }
 
   /* ------------------------------------------------- state the server cannot know
@@ -185,6 +256,8 @@
        own — so taking the server's copy of it wholesale is both safe and
        proof against the two drifting. */
     if (id === BODY) {
+      shown = bare(url);
+
       var railFrom = incoming.querySelector(RAIL_NAV);
       var railTo = doc.querySelector(RAIL_NAV);
       if (railFrom && railTo) {
@@ -213,9 +286,23 @@
       /* A cross-origin URL would throw, and we have already refused those. */
     }
 
+    /* Both regions carry these: the "On this page" column and the rich-text
+       surfaces are inside #admin-main, which #admin-body contains. Each init()
+       is written to be safe to call again — that is the contract for anything
+       living inside the part that gets replaced. */
     var api = global.Tech4Time;
     if (api && api.editor) {
       api.editor.init();
+    }
+    if (api && api.adminOutline) {
+      api.adminOutline.init();
+    }
+
+    /* Whatever was working is finished, and whatever the server said about it
+       comes out of the page and into the corner. */
+    status("");
+    if (api && api.adminToast) {
+      api.adminToast.lift();
     }
 
     return true;
@@ -367,10 +454,6 @@
     return new global.URLSearchParams(url.search).has("s");
   }
 
-  var LEAVING =
-    "This screen has changes that have not been saved.\n\n" +
-    "Leave it and lose them?";
-
   function noteChange(event) {
     var main = doc.getElementById(MAIN);
     if (main && event.target && main.contains(event.target)) {
@@ -385,17 +468,24 @@
         return;
       }
 
+      /* preventDefault FIRST, and unconditionally. The question is answered
+         asynchronously now, and a link whose default was allowed to run while
+         the box was open would be followed whatever the answer turned out to
+         be. */
       event.preventDefault();
 
-      /* preventDefault FIRST, and unconditionally. Asking before deciding
-         whether to leave means a "no" leaves the page exactly as it was,
-         rather than following the link anyway while the answer was being
-         given. */
-      if (touched && !global.confirm(LEAVING)) {
+      var href = link.href;
+
+      if (!touched) {
+        visit(href, { entry: "push" });
         return;
       }
 
-      visit(link.href, { entry: "push" });
+      askToLeave().then(function (leave) {
+        if (leave) {
+          visit(href, { entry: "push" });
+        }
+      });
     });
 
     /* Typing anywhere in the editing column. On the document and in the bubble
@@ -445,17 +535,39 @@
     global.addEventListener("popstate", function (event) {
       var to = (event.state && typeof event.state.i === "number") ? event.state.i : 0;
 
+      /* THE MOVE WE MADE OURSELVES, putting the entry back after a refusal.
+         Cleared FIRST, before anything else here can return early. It was
+         checked after the fragment test below, and undoing a refusal lands on
+         the entry already being shown — so that test returned, the flag was
+         never cleared, and every later Back was taken for our own move and
+         silently swallowed. */
       if (undoing) {
         undoing = false;
         step = to;
         return;
       }
 
+      /* An in-page anchor, or Back over one. Same screen, different place on
+         it — the browser has already done the only thing that was wanted. */
+      if (bare(global.location.href) === shown) {
+        return;
+      }
+
       /* step !== to because history.go(0) is a reload, which is the one
          thing a refusal must not do. */
-      if (touched && step !== to && !global.confirm(LEAVING)) {
-        undoing = true;
-        global.history.go(step - to);
+      if (touched && step !== to) {
+        var target = to;
+
+        askToLeave().then(function (leave) {
+          if (leave) {
+            step = target;
+            visit(global.location.href, { entry: false });
+          } else {
+            undoing = true;
+            global.history.go(step - target);
+          }
+        });
+
         return;
       }
 
@@ -490,6 +602,8 @@
       /* The entry the browser started on carries no state of ours. Marking it
          means a popstate back to it is recognisably ours rather than
          something another script pushed. */
+      shown = bare(global.location.href);
+
       try {
         global.history.replaceState({ t4t: true, i: step }, "", global.location.href);
       } catch (error) {

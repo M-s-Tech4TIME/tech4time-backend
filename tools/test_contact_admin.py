@@ -387,7 +387,7 @@ def run(client, r, site):
     # ------------------------------------------------------------- reorder
     print("\nreordering and removing")
     _, html = client.get(ADMIN)
-    fields = dict(form_fields(html), csrf=token, do="office-down:0")
+    fields = dict(form_fields(html), csrf=token, do="offices-down:0")
     client.post(ADMIN, fields)
     _, html = client.get(ADMIN)
     r.check("a move is NOT saved until the page is",
@@ -395,7 +395,7 @@ def run(client, r, site):
             f"first office is {first_office(html)!r}")
 
     status, _, body = client.post(ADMIN, dict(form_fields(html), csrf=token,
-                                              do="office-down:0"))
+                                              do="offices-down:0"))
     r.check("moving re-renders rather than redirecting", status == 200)
     r.check("and the move shows in the form", first_office(body) == "Malaysia",
             f"first office is {first_office(body)!r}")

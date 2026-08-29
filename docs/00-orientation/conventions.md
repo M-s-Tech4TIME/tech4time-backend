@@ -115,8 +115,15 @@ by people who are not you, and a deploy that includes `content/` destroys their 
 ### JavaScript
 
 - Each module registers itself on `window.Tech4Time` and exposes an `init()`.
+- Every `init()` must be safe to call **again**: `admin-swap.js` replaces the editing column, so
+  anything living inside it is started once more after each move between screens. Guard on
+  something in the DOM rather than on a flag, the way `editor.js` skips a textarea that already
+  has a surface over it.
 - `admin-init.js` runs last and calls each `init()` inside a try/catch, so one broken feature
-  cannot take the page down. The public site's equivalent is
+  cannot take the page down. **This was written here before it was true of the code.** The calls
+  were bare, and since the list is in dependence order, a throw in the rich-text editor left the
+  forms and the links unwired and every one of them a full page load. Say what the code does, then
+  go and look. The public site's equivalent is
   `tech4time-website-frontend/assets/js/main.js`; same pattern, different list.
 - `theme-init.js` is the only synchronous script, and only because two decisions have to be made
   before the first frame is painted.

@@ -76,6 +76,11 @@
   --silver-shine: rgba(255, 255, 255, 0.55);
 
   /* Shadows: neutral, low-alpha, so surfaces lift without a colour cast. */
+  /* Behind a modal question. Dark enough to take the page out of the reading
+     order at a glance, light enough that what is behind it is still evidently
+     there — it is the same page, waiting for an answer. */
+  --backdrop: rgba(17, 17, 19, 0.5);
+
   --shadow-sm: 0 1px 2px rgba(17, 17, 19, 0.05);
   --shadow: 0 4px 16px rgba(17, 17, 19, 0.08);
   --shadow-lg: 0 16px 48px rgba(17, 17, 19, 0.12);
@@ -117,7 +122,9 @@
 
     --silver-shine: rgba(255, 255, 255, 0.28);
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --backdrop: rgba(0, 0, 0, 0.65);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
 
@@ -151,6 +158,8 @@
   --contrast-max: #ffffff;
 
   --silver-shine: rgba(255, 255, 255, 0.28);
+
+  --backdrop: rgba(0, 0, 0, 0.65);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
@@ -210,14 +219,45 @@
    is instant, and re-added once the page is interactive.
    -------------------------------------------------------------------------- */
 
+/* TWO ELEMENTS, NOT EVERY ELEMENT.
+
+   This selector was `.theme-transition *`, which on the company editor is
+   3,024 elements, each interpolating five colour properties for 250ms. That is
+   fifteen thousand simultaneous animations, and it is why switching mode felt
+   like the page was working its way down the document rather than changing.
+   Measured: 90ms of blocked scripting before a single frame was even drawn.
+
+   The whole-page cross-fade is done by the browser's view transition instead —
+   see theme-toggle.js. That snapshots the page before and after and fades one
+   image into the other on the compositor, so the cost is the same whether the
+   page holds ten elements or ten thousand.
+
+   What is left here is the fallback for a browser without view transitions.
+   The page's own background and text colour still ease; everything else
+   changes at once, which is instant and honest rather than slow and smeared. */
 .theme-transition,
-.theme-transition *,
-.theme-transition *::before,
-.theme-transition *::after {
+.theme-transition body {
   transition:
-    background-color var(--duration) var(--ease-out),
-    border-color var(--duration) var(--ease-out),
-    color var(--duration) var(--ease-out),
-    fill var(--duration) var(--ease-out),
-    box-shadow var(--duration) var(--ease-out);
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+/* The cross-fade itself. Short: the complaint this answers was that switching
+   mode felt slow, and replacing a slow animation with a shorter slow animation
+   would be answering it badly.
+
+   pointer-events: none is not a detail. While a view transition runs, the
+   browser paints its snapshots in a layer over the live page — so for the
+   length of the animation every click lands on a picture of the page instead
+   of the page. A quarter of a second of a dead admin, on every theme change,
+   is a worse bargain than the fade is worth. Turning it off here lets a press
+   during the fade reach what is underneath, which is already the real page. */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration-fast);
+  animation-timing-function: var(--ease-out);
 }

@@ -205,24 +205,78 @@
     });
   }
 
-  /* An error the person needs to read is worth moving the page for. */
-  function showProblem() {
-    var problem = doc.querySelector(".admin__notice--error, .admin__notice--warn");
-    if (problem) {
-      problem.scrollIntoView({ block: "center" });
-      return true;
+  /* ------------------------------------------------- problems worth moving for
+
+     A NEW problem, and only a new one. This used to jump to the first error or
+     warning on the page, whatever it was and however long it had been there —
+     and the contact editor carries a standing warning, shown whenever the
+     site's footers have drifted from the record, which is most of the time.
+     So every add, every remove, every move and every save on that screen
+     scrolled to a notice at the top and never restored the position. It was
+     indistinguishable from a full page reload, and it was reported as one.
+
+     Nothing about it was visible locally: the development copy of
+     content/contact.json is in step, so the warning is not there to be found.
+
+     Compared by text rather than by class, because the class cannot tell the
+     two apart — a failed publish is a --warn that IS the answer to what was
+     just pressed, and the footer drift is a --warn that is not. What was
+     already on the page before the press is what separates them. */
+  var PROBLEM = ".admin__notice--error, .admin__notice--warn";
+
+  function problemsNow() {
+    return Array.prototype.map.call(
+      doc.querySelectorAll(PROBLEM),
+      function (notice) { return notice.textContent.replace(/\s+/g, " ").trim(); }
+    );
+  }
+
+  function showProblem(standing) {
+    var found = doc.querySelectorAll(PROBLEM);
+
+    for (var i = 0; i < found.length; i += 1) {
+      var text = found[i].textContent.replace(/\s+/g, " ").trim();
+      if (standing.indexOf(text) === -1) {
+        found[i].scrollIntoView({ block: "center" });
+        return true;
+      }
     }
+
     return false;
   }
 
   /* --------------------------------------------------------------- sending */
 
+  /* data-confirm asks first — "Delete this post permanently?" and its like.
+     The admin's own box now, which is asynchronous, so the sending is a
+     separate function rather than the rest of this one. */
   function send(form, submitter) {
     var confirmation = form.getAttribute("data-confirm");
-    if (confirmation && !global.confirm(confirmation)) {
+
+    if (!confirmation) {
+      post(form, submitter);
       return;
     }
 
+    var dialog = global.Tech4Time.adminDialog;
+    var question = dialog
+      ? dialog.ask({
+          title: confirmation,
+          message: "This cannot be undone.",
+          confirm: "Delete",
+          cancel: "Keep it",
+          tone: "danger"
+        })
+      : { then: function (fn) { fn(global.confirm(confirmation)); return this; } };
+
+    question.then(function (yes) {
+      if (yes) {
+        post(form, submitter);
+      }
+    });
+  }
+
+  function post(form, submitter) {
     var body = new global.FormData(form);
 
     /* FormData never includes submit buttons, so the one that was pressed has
@@ -234,6 +288,7 @@
 
     var shot = snapshot();
     var plan = nextFocus(submitter);
+    var standing = problemsNow();
 
     form.setAttribute("aria-busy", "true");
     if (submitter) {
@@ -292,7 +347,7 @@
            validation — leaves the form holding something content/*.json does
            not, and admin-swap.js asks about it before following a link away. */
 
-        if (!showProblem()) {
+        if (!showProblem(standing)) {
           restore(shot, plan);
         }
       })

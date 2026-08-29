@@ -142,7 +142,7 @@ function contact_apply_row_action(array $data, string $do): ?array
 
     $lists = [
         'reach'  => ['reach', 'items'],
-        'office' => ['offices', 'items'],
+        'offices' => ['offices', 'items'],
     ];
 
     foreach ($lists as $prefix => [$outer, $inner]) {
@@ -341,7 +341,14 @@ if (!$errors && $pending !== '') {
   </div>
 <?php endif; ?>
 
+<?php /* enctype, because an office can carry an uploaded flag. Without it a
+         file input posts the FILENAME and not the file, silently — the browser
+         sends it as an ordinary text field, PHP puts nothing in $_FILES, and
+         the editor reports a save that worked while the picture never left the
+         machine. It was missing here for exactly as long as the flag upload
+         has existed. */ ?>
 <form class="admin__form" id="contact-form" method="post" data-async
+      enctype="multipart/form-data"
       action="<?= h(admin_url('contact')) ?>">
   <?= admin_form_fields('contact') ?>
 
@@ -353,8 +360,8 @@ if (!$errors && $pending !== '') {
 
   <!-- ========================= banner ========================= -->
   <fieldset class="admin__block" id="band-hero">
-    <legend class="admin__section-title">The banner</legend>
-    <p class="admin__blurb">The band at the top of the page, with the circuitry around it.</p>
+    <?php admin_band_head('The banner',
+        'The band at the top of the page, with the circuitry around it.'); ?>
 
     <div class="admin__grid">
       <label class="admin__field admin__field--wide">
@@ -375,13 +382,11 @@ if (!$errors && $pending !== '') {
 
   <!-- ========================== form ========================== -->
   <fieldset class="admin__block" id="band-form">
-    <legend class="admin__section-title">The enquiry form</legend>
-    <p class="admin__blurb">
-      The words around the form. The fields themselves — name, phone, email,
-      service, message — are part of the page and of
-      <code>contact-handler.php</code>, which validates them; they are not
-      editable here.
-    </p>
+    <?php admin_band_head('The enquiry form',
+        'The words around the form. The fields themselves — name, phone, '
+        . 'email, service, message — are part of the page and of '
+        . 'contact-handler.php, which validates them; they are not editable '
+        . 'here.'); ?>
 
     <div class="admin__grid">
       <label class="admin__field admin__field--wide">
@@ -426,15 +431,14 @@ if (!$errors && $pending !== '') {
 
   <!-- ========================== reach ========================== -->
   <fieldset class="admin__block" id="band-reach">
-    <legend class="admin__section-title">Reach us directly</legend>
-    <p class="admin__blurb">
-      The short list beside the form. A row becomes a link when its kind says
-      it should — an email address opens a mail app, a phone number dials.
-    </p>
-
-    <div class="admin__grid">
-      <?php admin_status_field('reach[status]', $data['reach']['status'], 'this section'); ?>
-    </div>
+    <?php admin_band_head('Reach us directly',
+        'The short list beside the form. A row becomes a link when its kind '
+        . 'says it should — an email address opens a mail app, a phone number '
+        . 'dials.',
+        ['do' => 'reach-add:0', 'label' => 'Add a row'],
+        ['name'  => 'reach[status]',
+         'value' => $data['reach']['status'],
+         'noun'  => 'this section']); ?>
 
     <div class="admin__grid">
       <label class="admin__field admin__field--wide">
@@ -516,18 +520,17 @@ if (!$errors && $pending !== '') {
 <?php endforeach; ?>
 
     <div class="admin__actions">
-      <button class="btn btn--secondary" type="submit" name="do" value="reach-add">Add a row</button>
     </div>
   </fieldset>
 
   <!-- ========================= offices ========================= -->
   <fieldset class="admin__block" id="band-offices">
-    <legend class="admin__section-title">Our offices</legend>
-    <p class="admin__blurb">The band at the foot of the page, one card per office.</p>
-
-    <div class="admin__grid">
-      <?php admin_status_field('offices[status]', $data['offices']['status'], 'this section'); ?>
-    </div>
+    <?php admin_band_head('Our offices',
+        'The band at the foot of the page, one card per office.',
+        ['do' => 'offices-add:0', 'label' => 'Add an office'],
+        ['name'  => 'offices[status]',
+         'value' => $data['offices']['status'],
+         'noun'  => 'this section']); ?>
 
     <div class="admin__grid">
       <label class="admin__field">
@@ -558,7 +561,7 @@ if (!$errors && $pending !== '') {
 
 <?php foreach ($rows as $i => $office): ?>
     <div class="admin-card<?= $office['status'] === 'hidden' ? ' admin-card--hidden' : '' ?>">
-      <?php admin_card_head('office', $i, $total, [
+      <?php admin_card_head('offices', $i, $total, [
           'label'  => $office['name'],
           'noun'   => 'office',
           'detail' => $office['address'],
@@ -567,15 +570,23 @@ if (!$errors && $pending !== '') {
 
       <input type="hidden" name="offices[items][<?= $i ?>][id]" value="<?= h($office['id']) ?>">
 
+      <?php /* The built-in flag is SHOWN, not merely named. contact_flag_file()
+               finds what the public site would actually draw, so the thumbnail
+               here and the flag on the page are the same file rather than two
+               guesses at it. */ ?>
+      <?php $builtIn = contact_flag_file($office['flag']); ?>
       <?php admin_image_fields(
           "offices[items][$i][image]",
           "upload[offices][$i]",
           $office['image'],
           'flag',
-          $office['flag'] !== ''
-              ? 'Using the built-in ' . str_replace('-', ' ', $office['flag'])
-                . ' flag. Upload one to replace it.'
-              : ''
+          '',
+          $builtIn !== ''
+              ? ['src'  => $builtIn,
+                 'note' => 'The built-in '
+                     . ucwords(str_replace('-', ' ', $office['flag']))
+                     . ' flag. Upload one to replace it.']
+              : []
       ); ?>
 
       <div class="admin__grid">
@@ -684,17 +695,14 @@ if (!$errors && $pending !== '') {
 <?php endforeach; ?>
 
     <div class="admin__actions">
-      <button class="btn btn--secondary" type="submit" name="do" value="office-add">Add an office</button>
     </div>
   </fieldset>
 
   <!-- ==================== search and sharing ==================== -->
   <fieldset class="admin__block" id="band-meta">
-    <legend class="admin__section-title">Search results and shared links</legend>
-    <p class="admin__blurb">
-      What Google shows, and what appears when someone pastes the address of
-      this page into a chat. Nobody sees these on the page itself.
-    </p>
+    <?php admin_band_head('Search results and shared links',
+        'What Google shows, and what appears when someone pastes the address '
+        . 'of this page into a chat. Nobody sees these on the page itself.'); ?>
 
     <div class="admin__grid">
       <label class="admin__field admin__field--wide">

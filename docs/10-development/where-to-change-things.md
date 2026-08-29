@@ -55,6 +55,10 @@ The public site's palette, layout, motion, JavaScript modules and page markup ar
 | Whether a link moves screens without reloading | write it as `?s=<section>`; `public/assets/js/admin-swap.js` |
 | What survives a move between screens | anything outside `#admin-body` — the rail, and nothing else |
 | The rich-text toolbar | `public/assets/js/editor.js` |
+| Where "Saved …" appears | `public/assets/js/admin-toast.js` — the server still prints it into the page |
+| What a confirmation question looks like | `public/assets/js/admin-dialog.js`; the `<dialog>` styles are in `admin.css` |
+| The "On this page" column, and its marker | `admin_foot()` in `lib/admin.php`; `public/assets/js/admin-outline.js` |
+| A band's heading and its "Add a …" button | `admin_band_head()` in `lib/admin.php` — **not** per section |
 | The theme switch | `public/assets/js/theme-init.js`, `theme-toggle.js` |
 | An icon the editor offers | `CONTACT_ICONS` in `lib/contract.php` — **and the other repository** |
 | The icon artwork itself | `public/assets/icons/sprite.svg` — **shared; rebuild it in tech4time-website-frontend and copy it here** |
