@@ -317,6 +317,15 @@ looking at the fiftieth technology logo instead of the top of a quarter-megabyte
 moving from Contact to Careers moves the page rather than the whole window. Deleting either file
 restores the old behaviour exactly.
 
+**Unsaved work is guarded in three places, because there are three ways out.**
+Following a link is asked about in the click handler; Back and Forward are asked about in
+`popstate`, which has to put the entry back with `history.go()` because by then it has already
+moved; and a reload, a closed tab or a sign-out is asked about by `beforeunload`, whose wording
+belongs to the browser and cannot be ours. All three read the same flag — set by typing anywhere in
+`#admin-main`, and by any post that was not a save, since a row that has been added lives in the
+form and nowhere else until Save is pressed. None of them fires on an untouched screen: a page that
+asks on every exit is a page people learn to click through.
+
 **A new editor gets this for free, and must not opt out of it.** Give the form `data-async` and
 write every link between screens as `?s=<section>` on the admin's own path. `test_admin_forms.py`
 walks every screen and fails on a link that is none of: an in-page anchor, another origin,

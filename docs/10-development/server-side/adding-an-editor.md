@@ -118,6 +118,10 @@ anchor (`#…`), another origin (`public_url()`, the live site), and anything op
 A link that is *none* of those four — `setup.php`, a bare path, an absolute URL back to this host —
 tears the shell down and rebuilds the rail with it.
 
+**Unsaved work:** nothing to do. Typing anywhere in `#admin-main` marks the screen, and every way
+out of it — a link, Back, a reload, signing out — asks before it goes. A save lifts the mark; a row
+added and not saved keeps it, because that row is in the form and not in `content/*.json`.
+
 `test_admin_forms.py` walks every screen and fails with the offending `href` in the message, so
 this is caught rather than discovered. It also asserts the rail element itself survives a move: the
 rail is outside `#admin-body` on purpose, and it is what carries the account menu, the scroll

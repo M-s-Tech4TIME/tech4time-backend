@@ -69,6 +69,23 @@
      arriving somewhere new. */
   var touched = false;
 
+  /* WHERE WE ARE IN THE ENTRIES THIS FILE MADE.
+
+     NOT named `here`. apply() has a local `here` — the element on the page —
+     and a module variable of the same name is shadowed inside it silently.
+     `step += 1` there appended to a <div> and stored
+     "[object HTMLDivElement]1" as the index, so no two entries ever compared
+     unequal and Back never asked. Nothing about reading the code says that;
+     the browser test is what said it.
+     popstate says nothing about direction — only that the document moved —
+     and undoing a move needs to know how far. So each entry is numbered, and
+     the difference between the number we were on and the one we landed on IS
+     the distance back. `undoing` marks the move we make ourselves putting the
+     entry back after a refusal, so that move is not mistaken for another
+     press and asked about again, forever. */
+  var step = 0;
+  var undoing = false;
+
   /* Rises with every request started here. A response whose number is no
      longer the current one is a screen nobody is waiting for any more —
      press three rail items quickly and only the last one may land. */
@@ -186,9 +203,11 @@
        repeats the state on screen rather than the one before it. */
     try {
       if (opts.entry === "push") {
-        global.history.pushState({ t4t: true }, "", url);
+        step += 1;
+        global.history.pushState({ t4t: true, i: step }, "", url);
       } else if (opts.entry === "replace") {
-        global.history.replaceState({ t4t: true }, "", url);
+        /* The same place, said better — a save is not a step. */
+        global.history.replaceState({ t4t: true, i: step }, "", url);
       }
     } catch (error) {
       /* A cross-origin URL would throw, and we have already refused those. */
@@ -387,10 +406,60 @@
     doc.addEventListener("input", noteChange);
     doc.addEventListener("change", noteChange);
 
-    /* Back and Forward. The entry being returned to is already in history, so
+    /* THE WAYS OUT THAT NOTHING HERE CAN INTERCEPT: a reload, the tab being
+       closed, a new address typed over this one, signing out. No script of
+       ours runs after any of them, so this is the only place to stand.
+
+       The browser writes the sentence, not us — Chrome, Firefox and Safari all
+       stopped honouring custom text around 2016, because it was used to
+       frighten people. That is the whole cost of this, and it buys the case
+       the in-page question cannot reach: F5 with forty minutes of typing in a
+       448-field form.
+
+       ONLY WHEN THERE IS SOMETHING TO LOSE. A page that asks on every exit is
+       the page people learn to click straight through, and then neither this
+       nor the question the links ask means anything. */
+    global.addEventListener("beforeunload", function (event) {
+      if (!touched) {
+        return;
+      }
+      event.preventDefault();
+      event.returnValue = "";   /* the older spelling, still wanted by Safari */
+    });
+
+    /* BACK AND FORWARD. The entry being returned to is already in history, so
        this must not add one — and it must not replace it either, or Forward
-       would have nothing to return to. */
-    global.addEventListener("popstate", function () {
+       would have nothing to return to.
+
+       IT ASKS, THE SAME AS A LINK DOES. This did not, at first, and the
+       omission was invisible: pressing a rail item with unsaved work asked,
+       and pressing Back threw the same work away without a word. Nor would
+       beforeunload have caught it — Back is answered here by a swap, so no
+       document is ever unloaded and that event never fires.
+
+       Putting it back needs history.go() rather than pushState(): the entry
+       has ALREADY moved by the time this runs, and pushing the old URL on top
+       would leave the address bar right and everything in front of it
+       unreachable. go() walks back the exact distance and leaves Forward
+       intact. */
+    global.addEventListener("popstate", function (event) {
+      var to = (event.state && typeof event.state.i === "number") ? event.state.i : 0;
+
+      if (undoing) {
+        undoing = false;
+        step = to;
+        return;
+      }
+
+      /* step !== to because history.go(0) is a reload, which is the one
+         thing a refusal must not do. */
+      if (touched && step !== to && !global.confirm(LEAVING)) {
+        undoing = true;
+        global.history.go(step - to);
+        return;
+      }
+
+      step = to;
       visit(global.location.href, { entry: false });
     });
   }
@@ -422,7 +491,7 @@
          means a popstate back to it is recognisably ours rather than
          something another script pushed. */
       try {
-        global.history.replaceState({ t4t: true }, "", global.location.href);
+        global.history.replaceState({ t4t: true, i: step }, "", global.location.href);
       } catch (error) {
         /* Nothing to do: history is only how the address bar keeps up. */
       }
