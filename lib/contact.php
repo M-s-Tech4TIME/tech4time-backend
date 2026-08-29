@@ -194,10 +194,10 @@ function contact_validate(array $data): array
            the third is a row with a dead link in it. */
         foreach ($item['values'] as $value) {
             if ($type === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                $errors[] = "$where is marked as an email address but “$value” is not one.";
+                $errors[] = "$where is marked as an email address but “{$value}” is not one.";
             }
             if ($type === 'url' && rt_safe_href($value) === null) {
-                $errors[] = "$where: “$value” must be a full web address starting with https://";
+                $errors[] = "$where: “{$value}” must be a full web address starting with https://";
             }
         }
     }

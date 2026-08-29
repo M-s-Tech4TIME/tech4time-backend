@@ -193,6 +193,58 @@ At the bottom is a count of the pictures held and how many no rows are using. Re
 leaves the old one behind, which is normal. Nothing is ever deleted on its own — press the button
 when you want the unused ones gone, and only when you have saved.
 
+## The about page
+
+`https://admin.tech4time.bd/?s=about` — the banner, the five image-and-prose sections, the
+specialities slideshow, the why-us cards and the closing band.
+
+One long form again, and the same rules: **nothing reaches the site until you press Save**, the
+add / remove / reorder buttons deliberately do not save, and every row and every section has a
+**Shown / Hidden** control.
+
+### The sections are a list, not five fixed slots
+
+The Company, Our Goal, Our Mission, Our Vision and Our Ambition are five entries in one list. You
+can add a sixth, move Vision above Mission, or hide Ambition for a while — none of it needs a
+developer.
+
+Two things are chosen per section rather than fixed:
+
+**Picture** — *A photograph*, or *The Tech4TIME logo lockup*. The lockup is the wordmark that ships
+with the site and swaps itself for light and dark mode; choosing it ignores any picture on that
+row, and the picture is kept rather than thrown away, so switching back does not lose it. Only "The
+Company" uses the lockup today.
+
+**Which side** — the picture sits left or right. On a narrow screen it is always on top, whatever
+you choose.
+
+The light and shaded backgrounds alternate down the page **by position**. Reordering keeps the
+stripe, so a section you move changes its background — expect the page to look rearranged rather
+than only changed.
+
+### The text of a section
+
+The prose box is the same rich-text control the other editors use. Write one or two paragraphs;
+each one fades in on its own as the reader reaches it. That is automatic — there is nothing to
+switch on.
+
+### The specialities and the why-us cards
+
+Both are icon + title + text, and the icon list is fixed: it is drawn from a set of symbols that
+ship with the site, so only those can be offered. The preview beside the picker shows what is
+drawn, and updates when you save.
+
+The **specialities** are a slideshow. *Time on each card* is in milliseconds — 10000 is ten
+seconds — and it never advances on its own for somebody who has asked for reduced motion. Without
+JavaScript every card is on screen at once, so the order is the reading order either way.
+
+### Pictures, and the stored count
+
+Exactly as on the company profile: JPEG, PNG or WebP up to 5 MB, re-encoded on arrival so the
+camera and location details a photograph carries are removed, and the description is not optional.
+The stored-pictures count at the bottom is shared across every editor, which is why nothing is ever
+swept automatically.
+
 ## Your account
 
 **Admin → Account**
@@ -217,12 +269,12 @@ to sign in, then pair. If both are gone: [rung 3](secrets-recovery.md#3-phone-an
 
 ## What cannot be edited here
 
-Two editable pages today: **Careers** and **Contact**. The other fourteen are built into the site and
-need a developer and a deploy.
+Four editable pages today: **Careers**, **Contact**, **Company Profile** and **About Us**. The
+other twelve are built into the site and need a developer and a deploy.
 
 | | |
 |---|---|
-| Home, About, Services, Company Profile, and the rest | a developer |
+| Home, Services, Resource Certifications, and the rest | a developer |
 | Images anywhere | a developer |
 | The footer's contact details | a developer, after you change them here |
 | Navigation | a developer |

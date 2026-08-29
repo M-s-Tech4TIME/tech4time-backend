@@ -131,6 +131,21 @@ COVERED_ELSEWHERE = {
         "every field set through the editor and read back off the wire, plus "
         "add, remove, hide and reorder on all six lists.",
     ),
+    "about": (
+        "tools/test_about_admin.py" if SIDE in ("backend", "both")
+        else "tools/test_publish.py",
+        "The about page is three repeatable lists — the story sections, the "
+        "specialities and the why-us cards — and both the editor and the "
+        "renderer walk them. The editor names its inputs "
+        "\"<?= $band ?>[items][<?= $i ?>][title]\" and the page renders each "
+        "list with foreach over about_shown(), so the regexes below read the "
+        "loop variables rather than the fields. The same argument as the "
+        "company profile, one list shorter: a SUBJECTS entry would have to "
+        "exempt nearly the whole model and would then report a pass on a model "
+        "it had not looked at. Proved by round trip instead — every field set "
+        "through the editor and read back off the wire, plus add, remove, hide "
+        "and reorder on all three lists.",
+    ),
 }
 
 
@@ -327,7 +342,7 @@ def fingerprints_agree() -> str:
 def icons_are_drawable() -> list[str]:
     """Every icon the model offers can actually be drawn, on this side.
 
-    COMPANY_ICONS and CONTACT_ICONS are chosen at run time, which is exactly
+    CONTACT_ICONS, COMPANY_ICONS and ABOUT_ICONS are chosen at run time, which is exactly
     what neither repository's icon tooling can see. So each half has to inline
     the whole list up front, and each half does it differently:
 
@@ -348,7 +363,8 @@ def icons_are_drawable() -> list[str]:
         ["php", "-r",
          "require 'lib/contract.php';"
          "echo json_encode(['contact' => array_keys(CONTACT_ICONS),"
-         "                  'company' => array_keys(COMPANY_ICONS)]);"],
+         "                  'company' => array_keys(COMPANY_ICONS),"
+         "                  'about'   => array_keys(ABOUT_ICONS)]);"],
         cwd=ROOT, capture_output=True, text=True,
     )
     if php.returncode != 0:

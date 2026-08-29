@@ -55,7 +55,7 @@ its record before acting.
 | | |
 |---|---|
 | `public/` | **the document root** — six entry points, `.htaccess`, and the assets a browser fetches |
-| `sections/` | the five screens, included by `public/index.php` |
+| `sections/` | the six screens, included by `public/index.php` |
 | `lib/` | the sign-in, the contract, the publish client, the store |
 | `content/` | the JSON the editors write — **the system of record** |
 | `tools/` | build, audit and test scripts — never deployed |
@@ -126,7 +126,8 @@ python3 tools/check_shared_repos.py
 ```
 
 Touched the admin, auth or an editor? Also `test_admin_auth.py`, `test_careers_admin.py`,
-`test_contact_admin.py`, `test_company_admin.py`, `test_publish_client.py`.
+`test_contact_admin.py`, `test_company_admin.py`, `test_about_admin.py`,
+`test_publish_client.py`.
 
 Touched `lib/upload.php` or anything a picture passes through? Also `test_upload.py` — it needs
 PHP's GD extension (`sudo apt install php-gd`) and skips the re-encoding cases with a notice

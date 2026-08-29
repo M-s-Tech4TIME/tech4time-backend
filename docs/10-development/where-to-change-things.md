@@ -24,6 +24,7 @@ breath**.
 | The CV / application form link | `/?s=careers` |
 | An office address, phone number, email | `/?s=contact` |
 | The contact page's headings and copy | `/?s=contact` |
+| The about page's sections, specialities and why-us cards | `/?s=about` |
 | What the enquiry form says | `/?s=contact` |
 
 Saving writes `content/careers.json` or `content/contact.json` here — **the system of record** —

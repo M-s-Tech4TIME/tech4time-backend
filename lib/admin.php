@@ -73,6 +73,12 @@ const ADMIN_SECTIONS = [
         'desc'  => 'Milestones, clients, technology',
         'view'  => '/pages/company-profile/',
     ],
+    'about' => [
+        'label' => 'About Us',
+        'icon'  => 'users',
+        'desc'  => 'The story, specialities and why-us cards',
+        'view'  => '/pages/about/',
+    ],
     'account' => [
         'label' => 'Account',
         'icon'  => 'user-shield',
@@ -88,7 +94,7 @@ const ADMIN_SECTIONS = [
  * account — so anything counting or listing "the pages you can edit" asks here
  * rather than filtering the registry by hand in three places.
  */
-const ADMIN_PAGE_SECTIONS = ['careers', 'contact', 'company'];
+const ADMIN_PAGE_SECTIONS = ['careers', 'contact', 'company', 'about'];
 
 /* The marker admin_form_tail() writes and admin_form_truncated() looks for. */
 const ADMIN_TAIL_FIELD = '__tail';
@@ -117,6 +123,11 @@ const ADMIN_ICONS = [
        every name there must be inlined here, or the editor's live preview
        draws an empty box for it. */
     'lightbulb', 'handshake', 'calendar-check', 'cloud-upload-alt',
+    /* The about page: every icon a speciality card, a why-us card or its
+       closing button may carry. Kept in step with ABOUT_ICONS the same way,
+       and for the same reason. */
+    'code', 'cloud', 'users', 'server', 'graduation-cap', 'trophy',
+    'layer-group', 'project-diagram',
 ];
 
 /* ------------------------------------------------------------------- auth */

@@ -123,6 +123,78 @@ numbers had two of them reachable on the page and invisible to a search engine.
 
 ---
 
+## `content/about.json`
+
+```json
+{
+  "updated":  "…",
+  "revision": 0,
+  "meta":        { "title": "…", "description": "…", "share_title": "…" },
+  "hero":        { "title": "…", "subtitle": "…" },
+  "story":       { "status": "shown", "items": [] },
+  "specialties": { "status": "shown", "title": "…", "interval": 10000, "items": [] },
+  "whyus":       { "status": "shown", "title": "…", "items": [] },
+  "cta":         { "status": "shown", "title": "…", "label": "…", "href": "…", "icon": "…" }
+}
+```
+
+| Field | |
+|---|---|
+| `updated` · `revision` | bookkeeping — see *Rules that apply to both* |
+| `meta` | `<title>`, meta description, Open Graph title |
+| `hero` | the page's heading and subheading. No `status`: a page with no title is not a page with a section switched off |
+| `story` | the image-and-prose sections. `status` switches the whole run of them off |
+| `specialties` | the slideshow. `interval` is milliseconds, clamped 2000–60000 |
+| `whyus` | the grid of short reasons |
+| `cta` | the closing band and its one button |
+
+**`story` has no `title` of its own.** Every heading on that part of the page belongs to a row,
+which is what lets a section be added, reordered or hidden on its own.
+
+### A story section
+
+| Field | |
+|---|---|
+| `id` | minted from the heading; also the `<h2>`'s id and what the section's `aria-labelledby` points at |
+| `heading` | the section's `<h2>` |
+| `body` | sanitised HTML — one or two `<p>`. The only rich field on this page |
+| `layout` | `photograph`, or `logo` for the light/dark wordmark lockup |
+| `side` | `left` or `right`; `right` renders `.about-split--reverse` |
+| `alt` | what the picture shows. Required even for `logo`, because the lockup is what gets announced |
+| `image` | `{ src, webp, width, height }` — ignored when `layout` is `logo` |
+| `status` | `shown` or `hidden` |
+
+**`layout: "logo"` ignores `image`.** The wordmark ships with the site and changes with a deploy,
+so it is a layout an editor may choose and not a file an editor may replace. The picture record is
+kept rather than cleared, so switching back does not lose it — which is also why
+`about_images()` still counts it when the unused-upload sweep asks what is in use.
+
+**The light and shaded backgrounds alternate by position, not by a stored field.** It is a rhythm
+down the page, so a reordered or added section keeps the stripe instead of carrying a stale copy
+of it.
+
+### A speciality, and a why-us card
+
+The same shape.
+
+| Field | |
+|---|---|
+| `id` | minted from the title |
+| `icon` | a name from `ABOUT_ICONS`. Anything else is dropped on save and on receipt |
+| `title` | the card's heading |
+| `text` | one paragraph, plain text |
+| `status` | `shown` or `hidden` |
+
+**The specialities repeat the six service names that also appear on the home page and
+`/pages/services/`.** Neither of those has a content source yet, so this document is not the owner
+of that taxonomy — it is the first place it was written down. To be reconciled when the services
+page comes under management.
+
+**About's why-us cards and the company profile's `principles` express overlapping ideas** — Robust
+Security and Security First, Client-Centric Approach and Client Partnership — and are deliberately
+separate: different wording, different icons, different markup, on different pages. Editing one is
+worth a look at the other.
+
 ## Rules that apply to both
 
 **Written atomically.** `store_write()` writes a temp file and renames it over the target, keeping

@@ -100,7 +100,7 @@ MAX_TABS = 60
 PUBLIC_SCREENS = ["/login.php", "/forgot.php", "/reset.php"]
 
 SIGNED_IN_SCREENS = ["/", "/?s=careers", "/?s=contact", "/?s=company",
-                     "/?s=account"]
+                     "/?s=about", "/?s=account"]
 
 MIN_TARGET = 24          # SC 2.5.8, CSS pixels
 

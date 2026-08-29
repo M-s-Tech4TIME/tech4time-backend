@@ -363,7 +363,7 @@ def run(b: Browser, base: str, r: Results) -> None:
     # there is nothing on the page worth preserving and a new document is the
     # correct answer.
     for screen in ("/?s=overview", "/?s=careers", "/?s=careers&action=new",
-                   "/?s=contact", "/?s=company", "/?s=account"):
+                   "/?s=contact", "/?s=company", "/?s=about", "/?s=account"):
         b.go(base + screen)
         loud = b.js("""
         var out = [];
@@ -385,7 +385,8 @@ def run(b: Browser, base: str, r: Results) -> None:
                 f"at the top of it")
 
     r.section("every form in the shell asks to be sent this way")
-    for screen in ("/?s=careers", "/?s=contact", "/?s=company", "/?s=account"):
+    for screen in ("/?s=careers", "/?s=contact", "/?s=company", "/?s=about",
+                   "/?s=account"):
         b.go(base + screen)
         counts = b.js(
             "var all = document.querySelectorAll('#admin-main form');"
@@ -485,7 +486,7 @@ def navigate(b: Browser, base: str, r: Results) -> None:
 
     r.section("every link on every screen is one the swap will answer")
     for screen in ("/?s=overview", "/?s=careers", "/?s=careers&action=new",
-                   "/?s=contact", "/?s=company", "/?s=account"):
+                   "/?s=contact", "/?s=company", "/?s=about", "/?s=account"):
         b.go(base + screen)
         stragglers = b.js(STRAGGLERS)
         r.check(f"{screen}: no link falls through to a full page load",
@@ -511,7 +512,7 @@ def navigate(b: Browser, base: str, r: Results) -> None:
 
     r.section("every screen can say what it is doing")
     for screen in ("/?s=overview", "/?s=careers", "/?s=contact",
-                   "/?s=company", "/?s=account"):
+                   "/?s=company", "/?s=about", "/?s=account"):
         b.go(base + screen)
         r.check(f"{screen}: there is somewhere to say it",
                 b.js(SHELL)["status"],
@@ -779,6 +780,8 @@ def improvements(b: Browser, base: str, r: Results) -> None:
         ("/?s=contact", "reach", "reach[items]"),
         ("/?s=contact", "offices", "offices[items]"),
         ("/?s=company", "clients", "clients[items]"),
+        ("/?s=about", "story", "story[items]"),
+        ("/?s=about", "whyus", "whyus[items]"),
     ):
         b.go(base + screen)
         b.js(MARK)

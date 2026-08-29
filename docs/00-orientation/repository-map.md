@@ -84,6 +84,7 @@ sections/
 ├── careers.php         the job post editor      → content/careers.json
 ├── contact.php         the contact page editor  → content/contact.json
 ├── company.php         the company profile      → content/company.json
+├── about.php           the about page editor    → content/about.json
 └── account.php         password, second factor, recovery codes, the log
 ```
 
@@ -95,6 +96,7 @@ The rail draws itself from `ADMIN_SECTIONS` in `lib/admin.php`:
 | `/?s=careers` | `careers` | `content/careers.json`, then publishes |
 | `/?s=contact` | `contact` | `content/contact.json`, then publishes |
 | `/?s=company` | `company` | `content/company.json`, then publishes |
+| `/?s=about` | `about` | `content/about.json`, then publishes |
 | `/?s=account` | `account` | your own password, second factor and recovery codes |
 
 `ADMIN_PAGE_SECTIONS` names the subset that edits a page of the public website

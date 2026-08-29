@@ -27,6 +27,11 @@ The shell needs to know nothing else. The rail draws itself from the registry.
 
 ---
 
+**The example below is a page that does not exist**, deliberately: the four editors that do —
+careers, contact, company profile and about — are the ones to copy from, and an example that named
+one of them would drift out of step with it. `sections/about.php` is the most recent and the
+closest to this recipe.
+
 ## 1. The model — `lib/<name>.php`
 
 ```php
@@ -36,7 +41,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/html.php';
 
-function about_defaults(): array
+function partners_defaults(): array
 {
     return [
         'updated' => '',
@@ -45,14 +50,14 @@ function about_defaults(): array
     ];
 }
 
-function about_value_defaults(): array
+function partners_value_defaults(): array
 {
     return ['id' => '', 'title' => '', 'body' => '', 'icon' => ''];
 }
 
-function about_load(): array   { /* store_read + defaults */ }
-function about_save(array $d): bool { /* validate + store_write */ }
-function about_validate(array $d): array { /* → field => message */ }
+function partners_load(): array   { /* store_read + defaults */ }
+function partners_save(array $d): bool { /* validate + store_write */ }
+function partners_validate(array $d): array { /* → field => message */ }
 ```
 
 `*_defaults()` **is** the shape. Everything else reads it — see
@@ -68,8 +73,8 @@ Rename `tech4time-website-frontend/index.html` to `index.php` and replace the ed
 
 ```php
 <?php
-require_once __DIR__ . '/../../lib/about.php';
-$data = about_load();
+require_once __DIR__ . '/../../lib/partners.php';
+$data = partners_load();
 ?>
 …
 <h1><?= h($data['hero']['title']) ?></h1>
@@ -211,16 +216,16 @@ revalidate on an ordinary reload — `check_secrets.py` fails on one.
 ```php
 const ADMIN_SECTIONS = [
     …
-    'about' => [
-        'label' => 'About',
+    'partners' => [
+        'label' => 'Partners',
         'icon'  => 'building',
-        'desc'  => 'The about page',
-        'view'  => '/pages/about/',
+        'desc'  => 'The partner list',
+        'view'  => '/pages/partners/',
     ],
     …
 ];
 
-const ADMIN_PAGE_SECTIONS = ['careers', 'contact', 'about'];
+const ADMIN_PAGE_SECTIONS = ['careers', 'contact', 'company', 'about', 'partners'];
 ```
 
 If the icon is not already in `ADMIN_ICONS`, add it there too — the admin inlines that whole list on
@@ -235,10 +240,10 @@ website, and is what anything counting "the pages you can edit" asks.
 
 ```python
 {
-    "name":  "about",
-    "model": ROOT / "lib" / "about.php",
-    "form":  ROOT / "admin" / "sections" / "about.php",
-    "page":  ROOT / "pages" / "about" / "index.php",
+    "name":  "partners",
+    "model": ROOT / "lib" / "partners.php",
+    "form":  ROOT / "sections" / "partners.php",
+    "page":  ROOT / "pages" / "partners" / "index.php",
     "page_indirect": {"updated"},
     "form_exempt":   {"updated", "values.items.id"},
 }

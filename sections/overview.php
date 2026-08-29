@@ -20,6 +20,7 @@ if (!defined('T4T_ADMIN')) {
 require_once __DIR__ . '/../lib/careers.php';
 require_once __DIR__ . '/../lib/contact.php';
 require_once __DIR__ . '/../lib/company.php';
+require_once __DIR__ . '/../lib/about.php';
 
 /** "3 minutes ago", or the date once that stops being useful. */
 function admin_when(string $iso): string
@@ -55,6 +56,7 @@ function admin_when(string $iso): string
 $careers = careers_load();
 $contact = contact_load();
 $company = company_load();
+$about   = about_load();
 
 /* How much of the company profile is actually on the page. It is nine bands
    and six lists, so "3 milestones" on its own says very little — what somebody
@@ -67,6 +69,17 @@ foreach (array_keys(COMPANY_LISTS) as $band) {
 $company_hidden = count(array_filter(
     COMPANY_BANDS,
     static fn(string $band): bool => !company_band_shown($company, $band)
+));
+
+/* The same two numbers for the about page, and for the same reason: what
+   somebody wants to know from here is whether a section is switched off. */
+$about_rows = 0;
+foreach (array_keys(ABOUT_LISTS) as $band) {
+    $about_rows += count(about_shown($about, $band));
+}
+$about_hidden = count(array_filter(
+    ABOUT_BANDS,
+    static fn(string $band): bool => !about_band_shown($about, $band)
 ));
 
 $cards = [
@@ -113,6 +126,21 @@ $cards = [
         ],
         'saved'   => (string)($company['updated'] ?? ''),
         'file'    => 'content/company.json',
+    ],
+    [
+        'section' => 'about',
+        'title'   => 'About Us',
+        'lines'   => [
+            $about_rows . ' entr' . ($about_rows === 1 ? 'y' : 'ies') . ' shown across '
+                . count(ABOUT_LISTS) . ' lists — the sections, the specialities '
+                . 'and the why-us cards',
+            $about_hidden === 0
+                ? 'Every section of the page is showing'
+                : $about_hidden . ' section' . ($about_hidden === 1 ? '' : 's')
+                    . ' of the page switched off',
+        ],
+        'saved'   => (string)($about['updated'] ?? ''),
+        'file'    => 'content/about.json',
     ],
 ];
 

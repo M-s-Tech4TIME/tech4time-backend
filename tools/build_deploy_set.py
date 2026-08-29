@@ -116,10 +116,12 @@ REQUIRED = [
     "lib/auth.php",
     "lib/contract.php",              # the shape both halves agree on
     "lib/publish.php",               # and the format they agree it travels in
+    "lib/about.php",               # the about editor's model
     "lib/publish_client.php",        # without it a save writes and never sends
     "sections/careers.php",
     "sections/contact.php",
     "sections/company.php",
+    "sections/about.php",
 ]
 
 # Never in the set, whatever else changes. Stated separately from "not in

@@ -53,7 +53,7 @@ require_once __DIR__ . '/html.php';
 const CONTRACT_VERSION = 1;
 
 /** Every document that is published, by name. The endpoint refuses any other. */
-const CONTRACT_DOCUMENTS = ['careers', 'contact', 'company'];
+const CONTRACT_DOCUMENTS = ['careers', 'contact', 'company', 'about'];
 
 /**
  * Where a document's record lives, on either host.
@@ -1084,7 +1084,344 @@ function company_slug(string $name, array $taken = []): string
 }
 
 /* ==========================================================================
-   4. Revisions
+   4. About page — the shape of the about page
+   ========================================================================== */
+
+/**
+ * The icons a specialty card, a why-us card or the closing button may use.
+ *
+ * Fixed for the same reason CONTACT_ICONS and COMPANY_ICONS are:
+ * tools/inject_icons.py inlines the symbols a page references by scanning it
+ * for a literal href="#name", and a name chosen at run time is invisible to
+ * that scan. Every icon offered here is therefore also listed in a comment in
+ * the frontend's pages/about/index.php, where the scanner can see it. Add one
+ * here and add it there; inject_icons.py --check says so if it is forgotten.
+ *
+ * Every name here must also be in ADMIN_ICONS in the backend's lib/admin.php,
+ * or the editor's live preview draws an empty box for it.
+ */
+const ABOUT_ICONS = [
+    'shield-alt'      => 'Shield',
+    'code'            => 'Code',
+    'cloud'           => 'Cloud',
+    'users'           => 'People',
+    'server'          => 'Server',
+    'graduation-cap'  => 'Graduation cap',
+    'trophy'          => 'Trophy',
+    'layer-group'     => 'Stacked layers',
+    'lightbulb'       => 'Lightbulb',
+    'handshake'       => 'Handshake',
+    'cogs'            => 'Cogs',
+    'lock'            => 'Padlock',
+    'project-diagram' => 'Project diagram',
+    'eye'             => 'Eye',
+    'arrow-right'     => 'Arrow',
+    'check-circle'    => 'Tick in a circle',
+];
+
+/**
+ * How a story row draws its picture.
+ *
+ * 'logo' emits the light/dark Tech4TIME lockup and ignores the row's picture
+ * record entirely. That is deliberate: the logo is a brand asset that ships
+ * with the site and changes with a deploy, so it is a LAYOUT an editor may
+ * choose and not a file an editor may replace.
+ */
+const ABOUT_LAYOUTS = [
+    'photograph' => 'A photograph',
+    'logo'       => 'The Tech4TIME logo lockup',
+];
+
+/** Which side of a story row the picture sits on. */
+const ABOUT_SIDES = [
+    'left'  => 'Picture on the left',
+    'right' => 'Picture on the right',
+];
+
+/* Free-text single-line fields, by band. The story band has none: every
+   heading on that part of the page belongs to a row, not to the band. */
+const ABOUT_TEXT_FIELDS = [
+    'meta'        => ['title', 'description', 'share_title'],
+    'hero'        => ['title', 'subtitle'],
+    'specialties' => ['title'],
+    'whyus'       => ['title'],
+    'cta'         => ['title', 'label', 'href', 'icon'],
+];
+
+/**
+ * Rich fields that live on a ROW rather than on a band.
+ *
+ * The about page has no band-level rich text — its one rich field is a story
+ * section's prose, and there are five of those. Careers is shaped the same way
+ * (CAREERS_RICH_FIELDS is applied per job), and contract_sanitise() already
+ * knows how to walk a list; this just says which list and which fields.
+ */
+const ABOUT_ROW_RICH_FIELDS = ['story' => ['body']];
+
+/* Every band of the page that can be hidden whole, in the order it renders.
+   The hero is not here, for the reason the contact page's hero is not in
+   CONTACT_BANDS: a page with no title is not a page with a section switched
+   off, it is a broken page. */
+const ABOUT_BANDS = ['story', 'specialties', 'whyus', 'cta'];
+
+/**
+ * The bands that hold a list, and the function that fills one of its rows.
+ *
+ * Named once so about_normalise() can drive itself off it, exactly as
+ * COMPANY_LISTS does. A list added to the page is normalised by being added
+ * here rather than by somebody also remembering a line further down.
+ */
+const ABOUT_LISTS = [
+    'story'       => 'about_story_defaults',
+    'specialties' => 'about_specialty_defaults',
+    'whyus'       => 'about_reason_defaults',
+];
+
+/* What a row is called before it is called anything. Deliberately the same
+   value as COMPANY_ID_PLACEHOLDER and deliberately a separate constant: each
+   document owns its own id vocabulary, and one changing must not move the
+   other. See about_identify(). */
+const ABOUT_ID_PLACEHOLDER = 'row';
+
+/**
+ * The page as it ships, and the fallback for anything missing from the file.
+ *
+ * Every scalar the renderer reads exists here, so a truncated or hand-edited
+ * about.json degrades to the shipped headings rather than emptying the page.
+ * The lists default to empty, which is the same bargain the contact and
+ * company pages make: the page still has a shape, it just has nothing in it.
+ */
+function about_defaults(): array
+{
+    return [
+        'updated'  => '',
+        'revision' => 0,
+        'meta' => [
+            'title'       => 'About Tech4TIME | Trusted IT & Cybersecurity Solutions',
+            'description' => 'Founded in 2018, Tech4TIME delivers cybersecurity, software development, cloud infrastructure, HRaaS and IT training — orchestrating technology with time.',
+            'share_title' => 'About Tech4TIME',
+        ],
+        'hero' => [
+            'title'    => 'About Us',
+            'subtitle' => 'Orchestrating Technology with Time',
+        ],
+        'story' => [
+            'status' => 'shown',
+            'items'  => [],
+        ],
+        'specialties' => [
+            'status'   => 'shown',
+            'title'    => 'Our Specialities',
+            'interval' => 10000,
+            'items'    => [],
+        ],
+        'whyus' => [
+            'status' => 'shown',
+            'title'  => 'Why Us?',
+            'items'  => [],
+        ],
+        'cta' => [
+            'status' => 'shown',
+            'title'  => 'Curious About our Services?',
+            'label'  => 'Explore All Services',
+            'href'   => '/pages/services/',
+            'icon'   => 'arrow-right',
+        ],
+    ];
+}
+
+/**
+ * Bring a document to the current shape, whatever it arrived as.
+ *
+ * One level of merge per band, then every list through its own row-filler.
+ * Rows are renumbered with array_values() because the editor posts them keyed
+ * by position and a removed row leaves a hole.
+ */
+function about_normalise(array $data): array
+{
+    $defaults = about_defaults();
+
+    foreach ($defaults as $key => $value) {
+        if ($key === 'revision') {
+            $data[$key] = max(0, (int)($data[$key] ?? 0));
+            continue;
+        }
+        if (!is_array($value)) {
+            $data[$key] = is_string($data[$key] ?? null) ? $data[$key] : $value;
+            continue;
+        }
+        $data[$key] = is_array($data[$key] ?? null) ? $data[$key] + $value : $value;
+    }
+
+    foreach (ABOUT_BANDS as $band) {
+        $data[$band]['status'] =
+            ($data[$band]['status'] ?? 'shown') === 'hidden' ? 'hidden' : 'shown';
+    }
+
+    /* Clamped rather than refused, for the reason journey.interval is: this
+       arrives from a file as often as from a form. */
+    $data['specialties']['interval'] =
+        min(60000, max(2000, (int)($data['specialties']['interval'] ?? 10000)));
+
+    foreach (ABOUT_LISTS as $band => $filler) {
+        $rows = is_array($data[$band]['items'] ?? null) ? $data[$band]['items'] : [];
+        $data[$band]['items'] = array_map(
+            $filler,
+            array_values(array_filter($rows, 'is_array'))
+        );
+    }
+
+    return about_identify($data);
+}
+
+/**
+ * Give every row an id, unique within its own list.
+ *
+ * Same contract as company_identify(): a row added by the Add button has
+ * nothing to be named after and gets the placeholder; once it has a name the
+ * placeholder is replaced; a real id is never re-minted, because it is the
+ * handle a fragment link, an upload and a test all hold the row by.
+ */
+function about_identify(array $data): array
+{
+    foreach (ABOUT_LISTS as $band => $_filler) {
+        $taken = [];
+        foreach ($data[$band]['items'] as $i => $row) {
+            $id   = trim((string)($row['id'] ?? ''));
+            $name = about_row_name($band, $row);
+
+            $provisional = $id === ''
+                || preg_match('/^' . ABOUT_ID_PLACEHOLDER . '(-\d+)?$/', $id) === 1;
+
+            if (($provisional && $name !== '') || in_array($id, $taken, true)) {
+                $id = about_slug($name, $taken);
+            } elseif ($id === '') {
+                $id = about_slug('', $taken);
+            }
+
+            $data[$band]['items'][$i]['id'] = $id;
+            $taken[] = $id;
+        }
+    }
+
+    return $data;
+}
+
+/** What a row's id is minted from, whichever list it is in. */
+function about_row_name(string $band, array $row): string
+{
+    return trim((string)match ($band) {
+        'story' => $row['heading'] ?? '',
+        default => $row['title'] ?? '',
+    });
+}
+
+/**
+ * One image-and-prose section of the page.
+ *
+ * 'body' is sanitised HTML, not plain text: it is one or two paragraphs and
+ * the editor writes it with the rich-text control. See ABOUT_ROW_RICH_FIELDS.
+ */
+function about_story_defaults(array $row): array
+{
+    $row += [
+        'id'      => '',
+        'heading' => '',
+        'body'    => '',
+        'layout'  => 'photograph',
+        'side'    => 'left',
+        'alt'     => '',
+        'status'  => 'shown',
+    ];
+
+    $row['layout'] = isset(ABOUT_LAYOUTS[$row['layout']]) ? $row['layout'] : 'photograph';
+    $row['side']   = isset(ABOUT_SIDES[$row['side']]) ? $row['side'] : 'left';
+    $row['image']  = contract_image_defaults($row['image'] ?? []);
+
+    return $row;
+}
+
+/** A specialty card: the slider holds these. */
+function about_specialty_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'icon' => '', 'title' => '', 'text' => '', 'status' => 'shown',
+    ];
+}
+
+/** A why-us card. Same shape as a specialty, one line of text rather than a paragraph. */
+function about_reason_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'icon' => '', 'title' => '', 'text' => '', 'status' => 'shown',
+    ];
+}
+
+/** Only the rows of a list a visitor should see. */
+function about_shown(array $data, string $band): array
+{
+    return array_values(array_filter(
+        $data[$band]['items'] ?? [],
+        static fn(array $row): bool => ($row['status'] ?? 'shown') !== 'hidden'
+    ));
+}
+
+/** Whether a band of the page is shown at all. */
+function about_band_shown(array $data, string $band): bool
+{
+    return ($data[$band]['status'] ?? 'shown') !== 'hidden';
+}
+
+function about_find(array $data, string $band, string $id): ?array
+{
+    foreach ($data[$band]['items'] ?? [] as $row) {
+        if (($row['id'] ?? '') === $id) {
+            return $row;
+        }
+    }
+    return null;
+}
+
+/**
+ * Every picture the document points at, as web paths, without duplicates.
+ *
+ * A row laid out as the logo lockup still has its picture record counted: the
+ * layout can be switched back, and a sweep that deleted the file the moment
+ * somebody chose 'logo' would lose it for good.
+ */
+function about_images(array $data): array
+{
+    $seen = [];
+
+    foreach ($data['story']['items'] ?? [] as $row) {
+        foreach ([$row['image']['src'] ?? '', $row['image']['webp'] ?? ''] as $path) {
+            $path = trim((string)$path);
+            if ($path !== '') {
+                $seen[$path] = true;
+            }
+        }
+    }
+
+    return array_keys($seen);
+}
+
+/** A URL-safe id from a name, unique against the ids already in use. */
+function about_slug(string $name, array $taken = []): string
+{
+    $slug = strtolower(trim($name));
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
+    $slug = trim($slug, '-') ?: ABOUT_ID_PLACEHOLDER;
+
+    $base = $slug;
+    $n = 2;
+    while (in_array($slug, $taken, true)) {
+        $slug = $base . '-' . $n++;
+    }
+    return $slug;
+}
+
+/* ==========================================================================
+   5. Revisions
    ========================================================================== */
 
 /**
@@ -1107,7 +1444,7 @@ function contract_next_revision(array $data): int
 }
 
 /* ==========================================================================
-   5. Normalising and re-sanitising on receipt
+   6. Normalising and re-sanitising on receipt
    ========================================================================== */
 
 /**
@@ -1131,6 +1468,7 @@ function contract_normalise(string $document, array $data): array
         'careers' => careers_normalise($data),
         'contact' => contact_normalise($data),
         'company' => company_normalise($data),
+        'about'   => about_normalise($data),
         default   => throw new RuntimeException('Unknown document: ' . $document),
     };
 }
@@ -1142,7 +1480,8 @@ function contract_normalise(string $document, array $data): array
  * signature proves where something came from and not what is inside it. If the
  * backend is ever compromised, the public site should still not render script.
  *
- * Driven off CAREERS_RICH_FIELDS and CONTACT_RICH_FIELDS rather than a list of
+ * Driven off CAREERS_RICH_FIELDS, CONTACT_RICH_FIELDS, COMPANY_RICH_FIELDS and
+ * ABOUT_ROW_RICH_FIELDS rather than a list of
  * its own, so a rich field added to the contract is sanitised on receipt by
  * having been added — not by somebody also remembering to add it here. That is
  * the whole reason this lives in the contract and not in the endpoint.
@@ -1177,6 +1516,21 @@ function contract_sanitise(string $document, array $data): array
             foreach ($fields as $field) {
                 $data[$section][$field] =
                     rt_sanitise_html((string)($data[$section][$field] ?? ''));
+            }
+        }
+        return $data;
+    }
+
+    /* The about page's rich text hangs off rows, not bands — one prose block
+       per story section. Same walk as careers, one level deeper because the
+       list it belongs to is named rather than assumed. */
+    if ($document === 'about') {
+        foreach (ABOUT_ROW_RICH_FIELDS as $band => $fields) {
+            foreach ($data[$band]['items'] ?? [] as $i => $row) {
+                foreach ($fields as $field) {
+                    $data[$band]['items'][$i][$field] =
+                        rt_sanitise_html((string)($row[$field] ?? ''));
+                }
             }
         }
         return $data;

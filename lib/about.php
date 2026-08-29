@@ -1,6 +1,6 @@
 <?php
 /**
- * Tech4TIME — company profile page data access.
+ * Tech4TIME — about page data access.
  *
  * Reading and writing the file is lib/store.php; escaping and rich-text
  * sanitising is lib/html.php; the SHAPE of the page is lib/contract.php, which
@@ -8,10 +8,11 @@
  * side's own business with that shape.
  *
  * On THIS side that is: validation and the save that publishes. The AboutPage
- * structured data and the <picture> a row of artwork turns into are the
- * frontend's, because the frontend renders the page.
+ * structured data, the <picture> a story row turns into and the scroll-reveal
+ * markers its prose carries are the frontend's, because the frontend renders
+ * the page.
  *
- * WHAT THE SHAPE IS — see lib/contract.php, company_defaults().
+ * WHAT THE SHAPE IS — see lib/contract.php, about_defaults().
  */
 
 declare(strict_types=1);
@@ -20,20 +21,20 @@ require_once __DIR__ . '/contract.php';
 require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/publish_client.php';
 
-const COMPANY_FILE = __DIR__ . '/../content/company.json';
+const ABOUT_FILE = __DIR__ . '/../content/about.json';
 
 /* ------------------------------------------------------------------- read */
 
 /**
  * Load the file, or the shipped defaults if it is missing or unreadable.
  *
- * Never throws, for the same reason contact_load() does not: a page showing
- * last week's milestones is wrong only if they changed, and a page showing a
- * PHP error is wrong for everybody.
+ * Never throws, for the same reason company_load() does not: a page showing
+ * last week's prose is wrong only if it changed, and a page showing a PHP
+ * error is wrong for everybody.
  */
-function company_load(): array
+function about_load(): array
 {
-    return company_normalise(store_read(COMPANY_FILE) ?? []);
+    return about_normalise(store_read(ABOUT_FILE) ?? []);
 }
 
 /* ------------------------------------------------------------------ write */
@@ -45,25 +46,21 @@ function company_load(): array
  * site holds a replica — ADR 0010. A publish that fails leaves this file
  * correct and the site behind, which is recoverable. The other order is not.
  *
- * THE PUBLISH IS IN HERE RATHER THAN AT THE CALL SITES because the editor
- * saves from a dozen branches, and a publish added to eleven of them is a
- * publish somebody forgets at the twelfth.
- *
  * The return value is "did the write work", not "did the publish work". A
  * failed publish is reported through publish_note(), which admin_redirect()
  * turns into the retry notice — it must not send the operator back to a form
  * they have already successfully saved.
  */
-function company_save(array $data): bool
+function about_save(array $data): bool
 {
     $data['updated']  = gmdate('c');
     $data['revision'] = contract_next_revision($data);
 
-    if (!store_write(COMPANY_FILE, $data)) {
+    if (!store_write(ABOUT_FILE, $data)) {
         return false;
     }
 
-    publish_note(publish_push('company', $data));
+    publish_note(publish_push('about', $data));
 
     return true;
 }
@@ -74,11 +71,10 @@ function company_save(array $data): bool
  * What is wrong with this document, as sentences somebody can act on.
  *
  * Permissive about prose and strict about anything that would render as a dead
- * link, an empty heading or a picture the browser cannot size. The rule is the
- * same one careers and contact follow: refuse what would break the page, and
- * let the author write what they like otherwise.
+ * link, an empty heading or a picture the browser cannot size — the same rule
+ * careers, contact and the company profile follow.
  */
-function company_validate(array $data): array
+function about_validate(array $data): array
 {
     $errors = [];
 
@@ -89,82 +85,66 @@ function company_validate(array $data): array
         $errors[] = 'The browser tab title cannot be empty.';
     }
 
-    /* strlen and not mb_strlen: bytes, as contact_validate() counts them, and
-       as lib/html.php explains — mbstring is not relied on anywhere here. It
+    /* strlen and not mb_strlen: bytes, as company_validate() counts them. It
        undercounts the characters allowed in a description with accents, which
        for a soft search-engine limit is the safe direction to be wrong in. */
-    $description = trim((string)$data['meta']['description']);
-    if (strlen($description) > 320) {
+    if (strlen(trim((string)$data['meta']['description'])) > 320) {
         $errors[] = 'The search description is longer than 320 characters. '
                   . 'Search engines will cut it off.';
     }
 
-    foreach (COMPANY_BANDS as $band) {
+    foreach (ABOUT_BANDS as $band) {
         if (!in_array($data[$band]['status'] ?? 'shown', ['shown', 'hidden'], true)) {
             $errors[] = 'A section was given a state that is neither shown nor hidden.';
             break;
         }
     }
 
-    /* Each list, by its own rules. */
-    foreach ($data['milestones']['items'] as $i => $row) {
-        $where = 'Milestone ' . ($i + 1);
-        if (trim((string)$row['title']) === '' && trim((string)$row['year']) === '') {
-            $errors[] = "$where has neither a year nor a title. Give it one, or remove it.";
+    /* The story sections. */
+    foreach ($data['story']['items'] as $i => $row) {
+        $where = 'Section ' . ($i + 1);
+
+        if (trim((string)$row['heading']) === '') {
+            $errors[] = "$where has no heading. The heading is what the section is "
+                      . 'announced as, so it cannot be blank.';
         }
-        $year = trim((string)$row['year']);
-        if ($year !== '' && !preg_match('/^[0-9]{4}(\s*[–—-]\s*[0-9]{4})?$/u', $year)) {
-            $errors[] = "$where: “{$year}” is not a year. Use 2024, or 2024–2025.";
+        if (rt_plain((string)$row['body']) === '') {
+            $errors[] = "$where has no text.";
+        }
+        if (!isset(ABOUT_LAYOUTS[(string)$row['layout']])) {
+            $errors[] = "$where was given a layout this page cannot draw.";
+        }
+        if (!isset(ABOUT_SIDES[(string)$row['side']])) {
+            $errors[] = "$where was given a side that is neither left nor right.";
+        }
+
+        /* A row drawn as the logo lockup needs no picture of its own — the
+           lockup ships with the site. It still needs a description, because
+           the lockup is what gets announced. */
+        if (trim((string)$row['alt']) === '') {
+            $errors[] = "$where has no picture description. Say what is in the "
+                      . 'picture, so somebody who cannot see it is not left out.';
+        }
+        if ((string)$row['layout'] !== 'logo') {
+            $errors = array_merge($errors, about_validate_image($row['image'], $where));
         }
     }
 
-    foreach ($data['experience']['items'] as $i => $row) {
-        $where  = 'Figure ' . ($i + 1);
-        $figure = trim((string)$row['figure']);
-
-        if ($figure === '') {
-            $errors[] = "$where has no number.";
-        } elseif (!preg_match('/^\d/', $figure)) {
-            /* animations.js counts up from /^\s*(\d+)(.*)$/ and keeps the rest
-               as a suffix. "Over 100" matches nothing, so the figure silently
-               never animates. Said here rather than left to be noticed. */
-            $errors[] = "$where: “{$figure}” must start with a digit — the count-up "
-                      . 'animation reads the number off the front. "100+" works, '
-                      . '"Over 100" does not.';
-        }
-        if (trim((string)$row['label']) === '') {
-            $errors[] = "$where has no label saying what it counts.";
-        }
-    }
-
-    foreach (['clients' => 'Client', 'technology' => 'Technology'] as $band => $noun) {
+    /* The two card lists, by the same rules. */
+    foreach (['specialties' => 'Speciality', 'whyus' => 'Reason'] as $band => $noun) {
         foreach ($data[$band]['items'] as $i => $row) {
             $where = "$noun " . ($i + 1);
-            if (trim((string)$row['name']) === '') {
-                $errors[] = "$where has no name. The name is what a screen reader "
-                          . 'announces for the logo, so it cannot be blank.';
+
+            if (trim((string)$row['title']) === '') {
+                $errors[] = "$where has no title.";
             }
-            $errors = array_merge($errors, company_validate_image($row['image'], $where));
-        }
-    }
-
-    foreach ($data['journey']['items'] as $i => $row) {
-        $where = 'Photograph ' . ($i + 1);
-        if (trim((string)$row['alt']) === '') {
-            $errors[] = "$where has no description. Say what is in the picture, "
-                      . 'so somebody who cannot see it is not left out.';
-        }
-        $errors = array_merge($errors, company_validate_image($row['image'], $where));
-    }
-
-    foreach ($data['principles']['items'] as $i => $row) {
-        $where = 'Principle ' . ($i + 1);
-        if (trim((string)$row['title']) === '') {
-            $errors[] = "$where has no title.";
-        }
-        $icon = trim((string)$row['icon']);
-        if ($icon !== '' && !isset(COMPANY_ICONS[$icon])) {
-            $errors[] = "$where: “{$icon}” is not one of the icons this page can draw.";
+            if (trim((string)$row['text']) === '') {
+                $errors[] = "$where has no text.";
+            }
+            $icon = trim((string)$row['icon']);
+            if ($icon !== '' && !isset(ABOUT_ICONS[$icon])) {
+                $errors[] = "$where: “{$icon}” is not one of the icons this page can draw.";
+            }
         }
     }
 
@@ -180,7 +160,7 @@ function company_validate(array $data): array
                   . 'Use https://, mailto:, tel:, or a path starting with /.';
     }
     $icon = trim((string)$data['cta']['icon']);
-    if ($icon !== '' && !isset(COMPANY_ICONS[$icon])) {
+    if ($icon !== '' && !isset(ABOUT_ICONS[$icon])) {
         $errors[] = "The closing button's icon “{$icon}” is not one this page can draw.";
     }
 
@@ -195,7 +175,7 @@ function company_validate(array $data): array
  * under the reader when it loads. Every upload sets them from the file itself,
  * so a row without them came from somewhere else.
  */
-function company_validate_image(array $image, string $where): array
+function about_validate_image(array $image, string $where): array
 {
     $errors = [];
     $src = trim((string)$image['src']);

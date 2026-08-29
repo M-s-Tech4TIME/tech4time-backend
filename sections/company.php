@@ -180,7 +180,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($do === 'save') {
-        $errors = company_validate($posted);
+        /* MERGED, not assigned. $errors already holds anything
+           company_take_uploads() put there, and an assignment here threw away
+           the one message explaining why the picture the operator just chose
+           is not on the row. sections/contact.php always merged; this did not. */
+        $errors = array_merge($errors, company_validate($posted));
         if (!$errors) {
             if (company_save($posted)) {
                 admin_redirect('company', 'Saved the company profile.');
