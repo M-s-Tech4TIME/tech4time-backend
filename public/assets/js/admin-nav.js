@@ -6,6 +6,19 @@
    narrows it starts hidden: a control that does nothing is worse than no
    control. This unhides it, remembers the choice, and does nothing else.
 
+   THE CHOICE IS A COOKIE, AND THAT IS THE WHOLE POINT.
+   It was localStorage, read here, on a deferred script — which runs after the
+   document has been parsed and, on anything but a fast machine, after it has
+   been painted. So a rail left narrow was drawn at its full width, and then
+   snapped shut. On every single page load. It was described as the menu
+   opening and closing "within a blink of an eye, almost immediately, but
+   fully noticeable", and that is exactly what it was.
+
+   A cookie goes up with the request, so lib/admin.php renders data-rail before
+   it renders the rail. The first frame is already right and there is nothing
+   left for this file to correct. Nothing here reads the state at all now: the
+   attribute the server wrote IS the state.
+
    The choice is per browser rather than per session, so the rail is the shape
    it was left in the next time someone signs in.
 
@@ -19,31 +32,36 @@
 (function (global) {
   "use strict";
 
-  var STORE_KEY = "t4t-admin-rail";
+  var COOKIE = "t4t_rail";
   var NARROW = "narrow";
   var WIDE = "wide";
 
-  function stored() {
-    try {
-      return global.localStorage.getItem(STORE_KEY);
-    } catch (error) {
-      /* Private browsing, or storage switched off. The rail still works. */
-      return null;
-    }
-  }
+  /* A year, because the alternative is a rail that forgets. Nothing secret is
+     in it — it is a width — but SameSite=Lax keeps it off cross-site requests
+     anyway, and Secure keeps it off the wire wherever there is a wire. It is
+     read by lib/admin.php and by nothing else. */
+  var YEAR = 60 * 60 * 24 * 365;
 
   function remember(state) {
     try {
-      global.localStorage.setItem(STORE_KEY, state);
+      global.document.cookie =
+        COOKIE + "=" + state +
+        "; path=/; max-age=" + YEAR + "; SameSite=Lax" +
+        (global.location.protocol === "https:" ? "; Secure" : "");
     } catch (error) {
-      /* Nothing to do: the rail is correct for this page load either way. */
+      /* Cookies switched off. The rail is correct for this page load either
+         way; it simply will not be next time. */
     }
   }
 
   function Rail(element, toggle) {
     this.rail = element;
     this.toggle = toggle;
-    this.apply(stored() === NARROW ? NARROW : WIDE);
+
+    /* NOT applied from storage here. The server has already written the
+       attribute; this only reads it, so that the button says the right thing
+       about a rail that is already the right shape. */
+    this.apply(element.getAttribute("data-rail") === NARROW ? NARROW : WIDE);
 
     toggle.hidden = false;
     toggle.addEventListener(

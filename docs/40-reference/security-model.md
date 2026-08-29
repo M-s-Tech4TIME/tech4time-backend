@@ -193,6 +193,13 @@ Requiring one would add no security and remove the last way in on the day it is 
 
 **`content/` is only `public/.htaccess`-protected.** It holds addresses the contact page already displays.
 
+**The `t4t_rail` cookie carries no authority.** It holds one of two words — `wide` or `narrow` —
+and `admin_rail_state()` treats anything else as `wide`. Nothing in the application branches on it,
+it names nobody, and forging it changes the width of a menu. It is a cookie rather than
+`localStorage` for one reason: the width has to be decided before the rail is rendered, or the rail
+is painted at the wrong width and then corrected, visibly, on every load. `SameSite=Lax` and
+`Secure` are set anyway, because a cookie that does not need them costs nothing to give them to.
+
 **There is no intrusion detection**, no WAF, no fail2ban. The audit log records; nothing watches it.
 
 ---

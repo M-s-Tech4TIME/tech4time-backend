@@ -19,6 +19,7 @@ if (!defined('T4T_ADMIN')) {
 
 require_once __DIR__ . '/../lib/careers.php';
 require_once __DIR__ . '/../lib/contact.php';
+require_once __DIR__ . '/../lib/company.php';
 
 /** "3 minutes ago", or the date once that stops being useful. */
 function admin_when(string $iso): string
@@ -53,6 +54,20 @@ function admin_when(string $iso): string
 
 $careers = careers_load();
 $contact = contact_load();
+$company = company_load();
+
+/* How much of the company profile is actually on the page. It is nine bands
+   and six lists, so "3 milestones" on its own says very little — what somebody
+   wants to know from here is whether a band is switched off, because that is
+   the state where the editor is full and the page is empty. */
+$company_rows = 0;
+foreach (array_keys(COMPANY_LISTS) as $band) {
+    $company_rows += count(company_shown($company, $band));
+}
+$company_hidden = count(array_filter(
+    COMPANY_BANDS,
+    static fn(string $band): bool => !company_band_shown($company, $band)
+));
 
 $cards = [
     [
@@ -83,6 +98,21 @@ $cards = [
         'warn'    => contact_footer_in_step($contact)
             ? ''
             : 'The site footer is showing older contact details.',
+    ],
+    [
+        'section' => 'company',
+        'title'   => 'Company profile',
+        'lines'   => [
+            $company_rows . ' entr' . ($company_rows === 1 ? 'y' : 'ies') . ' shown across '
+                . count(COMPANY_LISTS) . ' lists — milestones, statistics, clients, '
+                . 'photographs, technology and principles',
+            $company_hidden === 0
+                ? 'Every section of the page is showing'
+                : $company_hidden . ' section' . ($company_hidden === 1 ? '' : 's')
+                    . ' of the page switched off',
+        ],
+        'saved'   => (string)($company['updated'] ?? ''),
+        'file'    => 'content/company.json',
     ],
 ];
 
@@ -130,9 +160,10 @@ admin_notices($errors);
   </p>
   <ul class="admin__notes">
     <li>
-      <strong>The other pages.</strong> Home, About, Services, Company Profile
-      and the rest are static files. They are also the pages whose wording
-      almost never changes.
+      <strong>The other pages.</strong> Home, About, Services and the rest are
+      static files. They are also the pages whose wording almost never changes.
+      The three above are not among them — careers, contact and the company
+      profile are edited here and published to the live site on save.
     </li>
     <li>
       <strong>The footer on every page.</strong> It repeats the email address,
@@ -146,9 +177,12 @@ admin_notices($errors);
       live in <code>contact-handler.php</code>, which validates each one.
     </li>
     <li>
-      <strong>Images</strong>, other than choosing which flag an office uses.
-      New ones are uploaded to <code>/assets/images/</code> with cPanel's File
-      Manager.
+      <strong>Images on the pages that are not edited here.</strong> Those are
+      built from <code>tools/masters/</code> and uploaded with a deploy. The
+      company profile's client logos, journey photographs and technology marks,
+      and an office's flag, are all uploaded from the editor itself — they go
+      through the same signed channel as the text and land on the live site
+      without one.
     </li>
   </ul>
 </section>

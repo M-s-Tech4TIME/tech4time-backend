@@ -25,6 +25,11 @@
     if (api.editor) {
       api.editor.init();
     }
+    /* Before admin-forms.js, which asks this one whether it can work: with the
+       swap module absent every form navigates, which is the fallback. */
+    if (api.adminSwap) {
+      api.adminSwap.init();
+    }
     /* Last, and it does not matter: its listener is on the document, so the
        per-form handlers editor.js just bound still run before it. */
     if (api.adminForms) {

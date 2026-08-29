@@ -52,7 +52,7 @@ public/
 └── assets/
     ├── css/                base.css theme.css layout.css components.css admin.css
     ├── js/                 theme-init.js theme-toggle.js admin-init.js admin-nav.js
-    │                       editor.js admin-forms.js
+    │                       editor.js admin-swap.js admin-forms.js
     ├── fonts/              Inter, self-hosted
     ├── icons/sprite.svg    read from disk by lib/admin.php and inlined
     └── images/             favicon, the logo, and the office flags

@@ -97,8 +97,31 @@ if (!defined('T4T_ADMIN')) { http_response_code(403); exit; }   // required
 - `admin_redirect()` after a successful save, so a refresh does not re-post
 - render errors beside the field they belong to
 - **`data-async` on every `<form>`**, and an `id` on the one the page-level Save belongs to
+- **every link between screens written as `?s=<section>`** — see below
 - **`$action` assigned locally**, before the POST block:
   `$action = (string)($_POST['action'] ?? $_GET['action'] ?? '');`
+
+### Nothing in an editor may reload the page
+
+Two files see to it, and both work by doing what the browser would have done. `admin-forms.js`
+posts the form and puts `#admin-main` back; `admin-swap.js` follows the link and puts `#admin-body`
+back. Neither has a server side, so there is nothing to add in PHP — but there are two things not
+to get wrong:
+
+**Forms:** `data-async`. Without it the form navigates, and a navigation lands at the top of the
+document, which on a long editor means the row somebody was arranging scrolls off the screen.
+
+**Links:** `?s=<section>` on the admin's own path — `admin_url()` writes exactly that, so use it.
+`admin-swap.js` swaps anything matching that shape and leaves everything else to the browser, which
+is the right answer for the three kinds of link that are not a move between screens: an in-page
+anchor (`#…`), another origin (`public_url()`, the live site), and anything opening in a new tab.
+A link that is *none* of those four — `setup.php`, a bare path, an absolute URL back to this host —
+tears the shell down and rebuilds the rail with it.
+
+`test_admin_forms.py` walks every screen and fails with the offending `href` in the message, so
+this is caught rather than discovered. It also asserts the rail element itself survives a move: the
+rail is outside `#admin-body` on purpose, and it is what carries the account menu, the scroll
+position and the width somebody chose.
 
 ### The shell gives you three things — ask for them
 
@@ -233,12 +256,13 @@ the reason beside it. `test_careers_admin.py` is the worked example.
 - [ ] `sections/<name>.php` with the `T4T_ADMIN` guard, CSRF on POST and `$action` assigned
 - [ ] the document name is in **`CONTRACT_DOCUMENTS`** — the deploy seeds every name it lists, and a page missing from it reaches the host with no record at all
 - [ ] `data-async` on every form; an `id` on the main one; `NAME_OUTLINE` passed to `admin_head()`
+- [ ] every link between screens is `admin_url()` — anything else is a full page load
 - [ ] `btn--secondary` on every "Add a …" button, so it reads as a button beside the fields
 - [ ] an `id` on every `<fieldset>` the outline names
 - [ ] `ADMIN_SECTIONS` and `ADMIN_PAGE_SECTIONS` updated; icon in `ADMIN_ICONS`
 - [ ] `check_content_model.py`: a `SUBJECTS` entry, or a `COVERED_ELSEWHERE` one naming the test
 - [ ] `test_<name>_admin.py`
-- [ ] `test_admin_forms.py` still passes — it asserts every form in the shell is async
+- [ ] `test_admin_forms.py` still passes — it asserts every form in the shell is async, and every link in it swappable
 - [ ] Docs updated
 - [ ] `.gitignore` covers `content/<name>.json.bak`
 

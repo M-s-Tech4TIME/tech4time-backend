@@ -276,23 +276,54 @@ theme-init.js     ← the ONLY synchronous script, in <head>: which theme to pai
 
 admin-nav.js      ← the rail's narrow/wide control, and closing the account menu
 editor.js         ← the rich-text toolbar over a contenteditable surface
+admin-swap.js     ← puts a screen in place of the one on show; wires the links
 admin-forms.js    ← posts the editors without navigating, and puts the answer back
 theme-toggle.js   ← the theme switch
 admin-init.js     ← runs last, calls each init() in a try/catch
 ```
 
-Without JavaScript the rail stays wide and fully labelled, the account menu is a `<details>` the
-browser opens by itself, every form navigates the way it always did, the theme follows the
-operating system, and the rich-text fields are plain `<textarea>`s that save exactly what is typed.
-**Every editor still works.**
+Without JavaScript the rail stays wide and fully labelled — at whatever width the cookie says, see
+below — the account menu is a `<details>` the browser opens by itself, every form navigates and
+every link follows the way it always did, the theme follows the operating system, and the rich-text
+fields are plain `<textarea>`s that save exactly what is typed. **Every editor still works.**
 
-`admin-forms.js` is worth understanding, because it looks like the kind of thing that usually
-introduces a second truth. It does not: it posts the same form to the same URL, follows the
-redirect the way the browser would, and swaps the returned `#admin-main` into the page. There is no
-JSON endpoint, no partial-render path and no server-side branch — **nothing on the server knows or
-cares whether the request came from it.** What it buys is that pressing "Move down" on the fiftieth
-technology logo leaves you looking at the fiftieth technology logo, instead of at the top of a
-quarter-megabyte form. Deleting the file restores the old behaviour exactly. `editor.js` is a surface over the textarea, not a replacement for it — the hidden
+`admin-swap.js` and `admin-forms.js` are worth understanding, because they look like the kind of
+thing that usually introduces a second truth. They do not. Both request the same URL the browser
+would have requested, follow the redirect the way the browser would, and put the returned markup
+back in place. There is no JSON endpoint, no partial-render path and no server-side branch —
+**nothing on the server knows or cares whether the request came from one of them.**
+
+They differ only in what is replaced and what that means for history:
+
+| | replaces | history | why |
+|---|---|---|---|
+| `admin-forms.js` | `#admin-main` | `replaceState` | the bar holds the status line the post has just written to, and a save is not a place to press Back to |
+| `admin-swap.js` | `#admin-body` | `pushState` | the bar's title, lede and Save button all belong to the screen, and moving between screens is exactly what Back is for |
+
+Neither touches the rail. It is the same markup on every screen bar one attribute, so `admin-swap.js`
+brings `aria-current` across and leaves the element standing — which is what keeps the account
+menu's open state, the rail's own scroll position, and the width somebody chose. The rail being
+rebuilt on every navigation is what used to make it flash open and shut on the way to the page you
+asked for.
+
+**The width is a cookie, and that is a decision, not an accident.** It was `localStorage`, read by
+`admin-nav.js` — a deferred script, which by definition runs after the document is parsed and often
+after it is painted. So a narrow rail was drawn wide and then snapped shut, every load. `t4t_rail`
+travels with the request, so `admin_rail_state()` writes `data-rail` before it writes the rail and
+the first frame is already right. Nothing in the application branches on the value; it is a width.
+
+What all of this buys is that pressing "Move down" on the fiftieth technology logo leaves you
+looking at the fiftieth technology logo instead of the top of a quarter-megabyte form, and that
+moving from Contact to Careers moves the page rather than the whole window. Deleting either file
+restores the old behaviour exactly.
+
+**A new editor gets this for free, and must not opt out of it.** Give the form `data-async` and
+write every link between screens as `?s=<section>` on the admin's own path. `test_admin_forms.py`
+walks every screen and fails on a link that is none of: an in-page anchor, another origin,
+`target="_blank"`, or a `?s=` on this path — the four things that are either handled or plainly not
+meant to be.
+
+`editor.js` is a surface over the textarea, not a replacement for it — the hidden
 field is what posts, and `test_editor.py` asserts the two stay in step.
 
 Alignment is a **class**, never an inline style: the CSP is `style-src 'self'`, so a `style=`

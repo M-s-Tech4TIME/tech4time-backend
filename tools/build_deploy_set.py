@@ -97,6 +97,18 @@ REQUIRED = [
     "public/setup.php",
     "public/assets/css/admin.css",
     "public/assets/icons/sprite.svg",   # read from disk and inlined by lib/admin.php
+    # The scripts, named one by one rather than left to the walk over public/.
+    # Every one of them is an ENHANCEMENT, so the admin still works with any of
+    # them missing — which is exactly why nothing would fail if a deploy
+    # dropped one. Losing admin-swap.js puts every link back to a full page
+    # load and reports success.
+    "public/assets/js/theme-init.js",
+    "public/assets/js/theme-toggle.js",
+    "public/assets/js/admin-nav.js",
+    "public/assets/js/editor.js",
+    "public/assets/js/admin-swap.js",
+    "public/assets/js/admin-forms.js",
+    "public/assets/js/admin-init.js",
     "lib/private.php",
     "lib/auth.php",
     "lib/contract.php",              # the shape both halves agree on

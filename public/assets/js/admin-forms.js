@@ -28,6 +28,12 @@
    The rail carries the open/closed state of the account menu and the width the
    person chose. Only #admin-main changes between these responses, so only
    #admin-main is replaced.
+
+   THE SWAP ITSELF IS admin-swap.js, which does the same job for the links.
+   Putting the answer back in place is one problem with one answer, and it was
+   written here first only because the buttons were done first. What is left in
+   this file is what is particular to a form: which button was pressed, what
+   had focus, and where to put it back afterwards.
    ========================================================================== */
 
 (function (global) {
@@ -42,10 +48,12 @@
   /* Everything this needs. Any one of them missing and the forms are left
      alone, which means they navigate — the behaviour this replaces. */
   function usable() {
+    var api = global.Tech4Time;
+
     return (
       typeof global.fetch === "function" &&
       typeof global.FormData === "function" &&
-      typeof global.DOMParser === "function" &&
+      !!(api && api.adminSwap && api.adminSwap.usable()) &&
       global.history &&
       typeof global.history.replaceState === "function"
     );
@@ -54,12 +62,7 @@
   /* ------------------------------------------------------------- the notice */
 
   function status(text, className) {
-    var slots = doc.querySelectorAll("[data-form-status]");
-
-    Array.prototype.forEach.call(slots, function (slot) {
-      slot.textContent = text || "";
-      slot.className = "admin__status" + (className ? " " + className : "");
-    });
+    global.Tech4Time.adminSwap.status(text, className);
   }
 
   /* ------------------------------------------------- where to look afterwards
@@ -181,40 +184,25 @@
     }
   }
 
-  /* ------------------------------------------------------------- the swap */
+  /* ------------------------------------------------------------- the swap
+
+     admin-swap.js does the putting-back, for the links as well as for this.
+     Two things are said here rather than there, because they are true of a
+     form post and not of a move between screens:
+
+       #admin-main and not #admin-body — the bar holds the status line that
+       has just said "Working…", and replacing it would wipe the only report
+       of what is happening.
+
+       replaceState and not pushState — a save is not a place. Adding a
+       history entry for it would mean Back walked through every row that was
+       added and every one that was moved. */
 
   function swap(html, url) {
-    var incoming = new global.DOMParser().parseFromString(html, "text/html");
-    var fresh = incoming.getElementById(MAIN);
-    var here = doc.getElementById(MAIN);
-
-    if (!fresh || !here) {
-      /* Not a page of the shape we expected — a session that ended, an error
-         page from the server. Let the browser have it. */
-      global.location.href = url;
-      return false;
-    }
-
-    here.innerHTML = fresh.innerHTML;
-
-    if (incoming.title) {
-      doc.title = incoming.title;
-    }
-
-    /* The address bar should say what was actually served, so that a reload
-       repeats the state on screen rather than the one before it. */
-    try {
-      global.history.replaceState({}, "", url);
-    } catch (error) {
-      /* A cross-origin URL would throw, and we have already refused those. */
-    }
-
-    var api = global.Tech4Time;
-    if (api && api.editor) {
-      api.editor.init();
-    }
-
-    return true;
+    return global.Tech4Time.adminSwap.apply(html, url, {
+      region: MAIN,
+      entry: "replace"
+    });
   }
 
   /* An error the person needs to read is worth moving the page for. */
@@ -288,6 +276,21 @@
         if (!swap(result.html, result.url)) {
           return;
         }
+
+        /* WHAT IS STILL ONLY IN THE FORM. admin_redirect() puts ?saved= on the
+           URL it sends back, and it is the one thing that says the document on
+           disk now matches what is on screen. Everything else that comes
+           through here — a row added, a row moved, a save that failed
+           validation — leaves the form holding something content/*.json does
+           not, and admin-swap.js asks about it before following a link away. */
+        global.Tech4Time.adminSwap.touched(!/[?&]saved=/.test(result.url));
+
+        /* WHAT IS STILL ONLY IN THE FORM. admin_redirect() puts ?saved= on the
+           URL it sends back, and it is the one thing that says the document on
+           disk now matches what is on screen. Everything else that comes
+           through here — a row added, a row moved, a save that failed
+           validation — leaves the form holding something content/*.json does
+           not, and admin-swap.js asks about it before following a link away. */
 
         if (!showProblem()) {
           restore(shot, plan);
