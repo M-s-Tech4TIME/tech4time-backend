@@ -1,0 +1,393 @@
+{
+    "updated": "",
+    "revision": 0,
+    "meta": {
+        "title": "Tech4TIME | Orchestrating Technology with Time",
+        "description": "Enterprise-grade cybersecurity, software development, cloud infrastructure and HR solutions from Tech4TIME. Orchestrate, build, maintain and protect your business.",
+        "share_title": "Tech4TIME | Orchestrating Technology with Time"
+    },
+    "hero": {
+        "title": "Orchestrating Technology with Time",
+        "accent": "Technology",
+        "cta_label": "Explore All Services",
+        "cta_href": "/pages/services/"
+    },
+    "badges": {
+        "status": "shown",
+        "items": [
+            {
+                "id": "cybersecurity",
+                "icon": "shield-alt",
+                "label": "Cybersecurity",
+                "status": "shown"
+            },
+            {
+                "id": "software-dev",
+                "icon": "code",
+                "label": "Software Dev",
+                "status": "shown"
+            },
+            {
+                "id": "cloud-solutions",
+                "icon": "cloud",
+                "label": "Cloud Solutions",
+                "status": "shown"
+            },
+            {
+                "id": "hr-services",
+                "icon": "users",
+                "label": "HR Services",
+                "status": "shown"
+            }
+        ]
+    },
+    "tags": {
+        "status": "shown",
+        "items": [
+            {
+                "id": "penetration-testing",
+                "icon": "bug",
+                "label": "Penetration Testing",
+                "status": "shown"
+            },
+            {
+                "id": "vulnerability-assessment",
+                "icon": "search",
+                "label": "Vulnerability Assessment",
+                "status": "shown"
+            },
+            {
+                "id": "red-teaming",
+                "icon": "crosshairs",
+                "label": "Red Teaming",
+                "status": "shown"
+            },
+            {
+                "id": "blue-teaming",
+                "icon": "shield-halved",
+                "label": "Blue Teaming",
+                "status": "shown"
+            },
+            {
+                "id": "managed-soc",
+                "icon": "desktop",
+                "label": "Managed SOC",
+                "status": "shown"
+            },
+            {
+                "id": "incident-response",
+                "icon": "first-aid",
+                "label": "Incident Response",
+                "status": "shown"
+            },
+            {
+                "id": "devsecops",
+                "icon": "cogs",
+                "label": "DevSecOps",
+                "status": "shown"
+            },
+            {
+                "id": "openstack",
+                "icon": "server",
+                "label": "OpenStack",
+                "status": "shown"
+            },
+            {
+                "id": "network-security",
+                "icon": "network-wired",
+                "label": "Network Security",
+                "status": "shown"
+            },
+            {
+                "id": "compliance",
+                "icon": "file-contract",
+                "label": "Compliance",
+                "status": "shown"
+            },
+            {
+                "id": "security-training",
+                "icon": "graduation-cap",
+                "label": "Security Training",
+                "status": "shown"
+            },
+            {
+                "id": "web-development",
+                "icon": "laptop-code",
+                "label": "Web Development",
+                "status": "shown"
+            },
+            {
+                "id": "mobile-apps",
+                "icon": "mobile-alt",
+                "label": "Mobile Apps",
+                "status": "shown"
+            }
+        ]
+    },
+    "terminal": {
+        "status": "shown",
+        "title": "tech4time@soc:~",
+        "summary": "Illustration: a security operations console showing twelve connected agents and two high-severity alerts in the last 24 hours.",
+        "items": [
+            {
+                "id": "agents-status",
+                "kind": "command",
+                "tone": "plain",
+                "prompt": "tech4time@soc:~$",
+                "text": "agents status",
+                "status": "shown"
+            },
+            {
+                "id": "fetching-agent-status",
+                "kind": "output",
+                "tone": "plain",
+                "prompt": "tech4time@soc:~$",
+                "text": "Fetching agent status…",
+                "status": "shown"
+            },
+            {
+                "id": "12-agents-connected",
+                "kind": "output",
+                "tone": "success",
+                "prompt": "tech4time@soc:~$",
+                "text": "✓ 12 agents connected",
+                "status": "shown"
+            },
+            {
+                "id": "3-linux-2-windows-4-containers-3-network",
+                "kind": "output",
+                "tone": "plain",
+                "prompt": "tech4time@soc:~$",
+                "text": "└─ 3 linux | 2 windows | 4 containers | 3 network",
+                "status": "shown"
+            },
+            {
+                "id": "alerts-last-24h-severity-high",
+                "kind": "command",
+                "tone": "plain",
+                "prompt": "tech4time@soc:~$",
+                "text": "alerts --last 24h --severity high",
+                "status": "shown"
+            },
+            {
+                "id": "2-high-severity-alerts",
+                "kind": "output",
+                "tone": "alert",
+                "prompt": "tech4time@soc:~$",
+                "text": "! 2 high severity alerts",
+                "status": "shown"
+            },
+            {
+                "id": "ssh-brute-force-blocked-web-01",
+                "kind": "output",
+                "tone": "plain",
+                "prompt": "tech4time@soc:~$",
+                "text": "└─ SSH brute-force blocked (web-01)",
+                "status": "shown"
+            },
+            {
+                "id": "unusual-outbound-traffic-db-02",
+                "kind": "output",
+                "tone": "plain",
+                "prompt": "tech4time@soc:~$",
+                "text": "└─ Unusual outbound traffic (db-02)",
+                "status": "shown"
+            }
+        ]
+    },
+    "capabilities": {
+        "status": "shown",
+        "title": "Our Technical Domains",
+        "lead": "The principles and practices we cherish from our roots throughout the endeavour of time.",
+        "items": [
+            {
+                "id": "secured-architecture-design",
+                "icon": "sitemap",
+                "title": "Secured Architecture Design",
+                "status": "shown"
+            },
+            {
+                "id": "infrastructure-high-availability",
+                "icon": "server",
+                "title": "Infrastructure High Availability",
+                "status": "shown"
+            },
+            {
+                "id": "24-7-365-monitoring-response",
+                "icon": "eye",
+                "title": "24/7/365 Monitoring & Response",
+                "status": "shown"
+            },
+            {
+                "id": "research-and-innovation-driven",
+                "icon": "lightbulb",
+                "title": "Research and Innovation Driven",
+                "status": "shown"
+            },
+            {
+                "id": "building-soc-cirt",
+                "icon": "shield-virus",
+                "title": "Building SOC & CIRT",
+                "status": "shown"
+            },
+            {
+                "id": "conducting-sim3-audits",
+                "icon": "clipboard-check",
+                "title": "Conducting SIM3 Audits",
+                "status": "shown"
+            }
+        ]
+    },
+    "services": {
+        "status": "shown",
+        "eyebrow": "Our Services",
+        "title": "Complete Technology Solutions",
+        "lead": "Tech4TIME provides end-to-end IT services from Software Development, Cybersecurity and Cloud Infrastructure, along with Human Resource Provisioning — which we also call Human Resource as a Service (HRaaS).",
+        "schema_name": "Tech4TIME technology services",
+        "schema_description": "End-to-end IT services from software development, cybersecurity and cloud infrastructure to human resource provisioning.",
+        "items": [
+            {
+                "id": "cybersecurity",
+                "icon": "shield-alt",
+                "title": "Cybersecurity",
+                "text": "Building full SOC & CIRT capability, SIM3 audits, penetration testing, incident response and digital forensics.",
+                "href": "/pages/services/cybersecurity/",
+                "label": "View Services",
+                "link_hint": "for Cybersecurity",
+                "status": "shown"
+            },
+            {
+                "id": "software-development",
+                "icon": "laptop-code",
+                "title": "Software Development",
+                "text": "Web, mobile and custom application development, DevSecOps, database design, QA and source code auditing.",
+                "href": "/pages/services/software-development/",
+                "label": "View Services",
+                "link_hint": "for Software Development",
+                "status": "shown"
+            },
+            {
+                "id": "cloud-infrastructure",
+                "icon": "cloud",
+                "title": "Cloud Infrastructure",
+                "text": "Private and hybrid cloud on OpenStack, migration, container platforms, monitoring and disaster recovery.",
+                "href": "/pages/services/cloud-infrastructure/",
+                "label": "View Services",
+                "link_hint": "for Cloud Infrastructure",
+                "status": "shown"
+            },
+            {
+                "id": "human-resource-provision",
+                "icon": "users",
+                "title": "Human Resource Provision",
+                "text": "Dedicated, shared, project-based and retainer resourcing — Human Resource as a Service (HRaaS).",
+                "href": "/pages/services/hr-solutions/",
+                "label": "View Services",
+                "link_hint": "for Human Resource Provision",
+                "status": "shown"
+            },
+            {
+                "id": "it-equipment-supply",
+                "icon": "boxes",
+                "title": "IT Equipment Supply",
+                "text": "Multi-vendor hardware sourcing and licensing, deployment, lifecycle support and responsible disposal.",
+                "href": "/pages/services/it-equipment-supply/",
+                "label": "View Services",
+                "link_hint": "for IT Equipment Supply",
+                "status": "shown"
+            },
+            {
+                "id": "it-consultancy-training",
+                "icon": "chalkboard-teacher",
+                "title": "IT Consultancy & Training",
+                "text": "IT strategy, enterprise architecture and vCIO advisory, plus technical and operational skills training.",
+                "href": "/pages/services/it-consultancy-training/",
+                "label": "View Services",
+                "link_hint": "for IT Consultancy and Training",
+                "status": "shown"
+            }
+        ]
+    },
+    "destinations": {
+        "status": "shown",
+        "eyebrow": "Explore Tech4TIME",
+        "title": "Get to Know Us",
+        "lead": "Three ways in — who we are, what we deliver, and the track record behind it.",
+        "items": [
+            {
+                "id": "about-us",
+                "title": "About Us",
+                "text": "Get familiar with us",
+                "href": "/pages/about/",
+                "label": "Learn more",
+                "link_hint": "about Tech4TIME",
+                "alt": "Line illustration of a team collaborating around a table with laptops and notes",
+                "image": {
+                    "src": "/assets/images/pages/about-us.jpg",
+                    "webp": "/assets/images/pages/about-us.webp",
+                    "width": 800,
+                    "height": 658
+                },
+                "image_dark": {
+                    "src": "",
+                    "webp": "",
+                    "width": 0,
+                    "height": 0
+                },
+                "status": "shown"
+            },
+            {
+                "id": "services",
+                "title": "Services",
+                "text": "Check out our services",
+                "href": "/pages/services/",
+                "label": "Learn more",
+                "link_hint": "about our services",
+                "alt": "Line illustration of a team reviewing charts, dashboards and project gears",
+                "image": {
+                    "src": "/assets/images/pages/services.jpg",
+                    "webp": "/assets/images/pages/services.webp",
+                    "width": 800,
+                    "height": 655
+                },
+                "image_dark": {
+                    "src": "",
+                    "webp": "",
+                    "width": 0,
+                    "height": 0
+                },
+                "status": "shown"
+            },
+            {
+                "id": "company-profile",
+                "title": "Company Profile",
+                "text": "Get to learn our background",
+                "href": "/pages/company-profile/",
+                "label": "Learn more",
+                "link_hint": "about our company profile",
+                "alt": "Line illustration of a certificate, ratings and a performance chart being reviewed",
+                "image": {
+                    "src": "/assets/images/pages/company-profile.jpg",
+                    "webp": "/assets/images/pages/company-profile.webp",
+                    "width": 800,
+                    "height": 659
+                },
+                "image_dark": {
+                    "src": "",
+                    "webp": "",
+                    "width": 0,
+                    "height": 0
+                },
+                "status": "shown"
+            }
+        ]
+    },
+    "cta": {
+        "status": "shown",
+        "icon": "rocket",
+        "title": "Transform Your Digital Landscape\nwith Expert Technology Solutions",
+        "text": "From software development to cybersecurity — complete IT services for your business growth.",
+        "label": "Start Your Project",
+        "href": "/pages/contact/"
+    }
+}

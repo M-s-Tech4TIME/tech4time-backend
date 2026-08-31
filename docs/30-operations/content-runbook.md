@@ -193,6 +193,53 @@ At the bottom is a count of the pictures held and how many no rows are using. Re
 leaves the old one behind, which is normal. Nothing is ever deleted on its own — press the button
 when you want the unused ones gone, and only when you have saved.
 
+## The home page
+
+`https://admin.tech4time.bd/?s=home` — the hero and its badges, tags and terminal; the technical
+domains; the six service cards; the Get to Know Us cards; and the closing band.
+
+One long form again, and the same rules: **nothing reaches the site until you press Save**, the
+add / remove / reorder buttons deliberately do not save, and every row and every section has a
+**Shown / Hidden** control. The hero itself is the one thing with no Hidden switch — a front page
+with no heading is a broken page, not a page with a section switched off.
+
+### The highlighted word in the headline
+
+The headline is one field and the phrase drawn in the accent colour is another. Type the phrase
+exactly as it appears in the headline, capitals included. Change the headline and forget the
+phrase, and saving will refuse and say so — because a phrase that is not in the headline highlights
+nothing, and the page would look merely a little plainer rather than wrong.
+
+Leave the phrase empty for a headline in one colour.
+
+### The terminal is a picture of a shell
+
+Nothing in it runs. Each line is either **a typed command**, which the browser types out character
+by character behind a prompt, or **output**, which arrives whole. Output can be **Plain**,
+**Success** or **Alert** — that only picks the colour; the tick and the exclamation mark at the
+start of those lines are part of the text, so you can write something else.
+
+The blinking cursor at the end is not a line and does not appear in the list. It is added
+automatically after the last one, and follows the last command's prompt.
+
+**The one-line description matters.** The console is hidden from screen readers, because reading
+shell output line by line is noise — that sentence is read instead. If you change what the console
+shows, change the sentence.
+
+### The service cards are also what a search engine is told
+
+The six cards and the six services in the page's structured data are the same six. Add a card and
+the search engine is told about it; hide one and it is not. Two fields under the heading — *What a
+search engine calls this list* and *how it describes it* — are the only things on this screen that
+never appear on the page.
+
+### Pictures on the Get to Know Us cards
+
+Each card has **two** upload slots, one per colour mode, and the second is almost always empty.
+The artwork is line drawings that sit on a light plate in both modes by design, so one picture is
+the normal case. Upload a dark one only if you have artwork made for a dark page; it takes that
+card off the light plate.
+
 ## The about page
 
 `https://admin.tech4time.bd/?s=about` — the banner, the five image-and-prose sections, the

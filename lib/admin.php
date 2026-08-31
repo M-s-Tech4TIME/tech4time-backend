@@ -55,6 +55,12 @@ const ADMIN_SECTIONS = [
         'desc'  => 'What can be changed here',
         'view'  => '',
     ],
+    'home' => [
+        'label' => 'Home Page',
+        'icon'  => 'home',
+        'desc'  => 'The hero, the services and the cards on the front page',
+        'view'  => '/',                 // resolved through public_url()
+    ],
     'careers' => [
         'label' => 'Careers',
         'icon'  => 'briefcase',
@@ -94,7 +100,7 @@ const ADMIN_SECTIONS = [
  * account — so anything counting or listing "the pages you can edit" asks here
  * rather than filtering the registry by hand in three places.
  */
-const ADMIN_PAGE_SECTIONS = ['careers', 'contact', 'company', 'about'];
+const ADMIN_PAGE_SECTIONS = ['home', 'careers', 'contact', 'company', 'about'];
 
 /* The marker admin_form_tail() writes and admin_form_truncated() looks for. */
 const ADMIN_TAIL_FIELD = '__tail';
@@ -128,6 +134,14 @@ const ADMIN_ICONS = [
        and for the same reason. */
     'code', 'cloud', 'users', 'server', 'graduation-cap', 'trophy',
     'layer-group', 'project-diagram',
+    /* The home page: every icon a badge, a tag, a domain card, a service card
+       or its closing panel may carry. Kept in step with HOME_ICONS the same
+       way, and for the same reason. It is the longest addition because the
+       home page is the widest summary of what the company does — the hero
+       alone offers thirteen tags. */
+    'shield-halved', 'shield-virus', 'bug', 'search', 'crosshairs', 'desktop',
+    'first-aid', 'network-wired', 'file-contract', 'laptop-code', 'boxes',
+    'chalkboard-teacher', 'sitemap', 'clipboard-check', 'rocket',
 ];
 
 /* ------------------------------------------------------------------- auth */

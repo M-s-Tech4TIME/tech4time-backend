@@ -146,6 +146,22 @@ COVERED_ELSEWHERE = {
         "through the editor and read back off the wire, plus add, remove, hide "
         "and reorder on all three lists.",
     ),
+    "home": (
+        "tools/test_home_admin.py" if SIDE in ("backend", "both")
+        else "tools/test_publish.py",
+        "The home page is SIX repeatable lists — the hero's badges and tags, "
+        "the terminal's lines, the technical domains, the service cards and "
+        "the Get to Know Us cards — which is more than any other document "
+        "here. Both the editor and the renderer walk every one of them, "
+        "naming inputs \"<?= $band ?>[items][<?= $i ?>][title]\" and "
+        "rendering with foreach over home_shown(), so the regexes below read "
+        "the loop variables rather than the fields. Same argument as the "
+        "company profile, at its strongest: a SUBJECTS entry would exempt "
+        "almost the entire model and then report a pass on a model it had not "
+        "looked at. Proved by round trip instead — every field set through the "
+        "editor and read back off the wire, plus add, remove, hide and reorder "
+        "on all six lists, and the light/dark picture pair on a card.",
+    ),
 }
 
 
@@ -342,7 +358,8 @@ def fingerprints_agree() -> str:
 def icons_are_drawable() -> list[str]:
     """Every icon the model offers can actually be drawn, on this side.
 
-    CONTACT_ICONS, COMPANY_ICONS and ABOUT_ICONS are chosen at run time, which is exactly
+    CONTACT_ICONS, COMPANY_ICONS, ABOUT_ICONS and HOME_ICONS are chosen at run
+    time, which is exactly
     what neither repository's icon tooling can see. So each half has to inline
     the whole list up front, and each half does it differently:
 
@@ -364,7 +381,8 @@ def icons_are_drawable() -> list[str]:
          "require 'lib/contract.php';"
          "echo json_encode(['contact' => array_keys(CONTACT_ICONS),"
          "                  'company' => array_keys(COMPANY_ICONS),"
-         "                  'about'   => array_keys(ABOUT_ICONS)]);"],
+         "                  'about'   => array_keys(ABOUT_ICONS),"
+         "                  'home'    => array_keys(HOME_ICONS)]);"],
         cwd=ROOT, capture_output=True, text=True,
     )
     if php.returncode != 0:
