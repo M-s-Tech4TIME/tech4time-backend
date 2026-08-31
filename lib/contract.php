@@ -1344,9 +1344,13 @@ function about_story_defaults(array $row): array
     $row['side']   = isset(ABOUT_SIDES[$row['side']]) ? $row['side'] : 'left';
     $row['image']  = contract_image_defaults($row['image'] ?? []);
 
-    /* The second half of a logo lockup. Only a row laid out as 'logo' draws
-       it, and it is kept rather than cleared on a row that is not, for the
-       same reason the first picture is: the layout can be switched back. */
+    /* The second half of the pair, for whichever layout the row uses: the dark
+       lockup on a logo row, the dark artwork on a photograph one. Optional and
+       usually empty — the illustrations sit on a white plate in both colour
+       modes by design, so one picture is the normal case and a second is what
+       switches that off for that row. Kept rather than cleared when the layout
+       changes, for the same reason the first picture is: it can be switched
+       back. */
     $row['image_dark'] = contract_image_defaults($row['image_dark'] ?? []);
 
     return $row;
@@ -1396,9 +1400,10 @@ function about_find(array $data, string $band, string $id): ?array
 /**
  * Every picture the document points at, as web paths, without duplicates.
  *
- * A row laid out as the logo lockup still has its picture record counted: the
- * layout can be switched back, and a sweep that deleted the file the moment
- * somebody chose 'logo' would lose it for good.
+ * Both halves of every row, whichever layout it uses. A row laid out as the
+ * logo lockup still has its picture record counted: the layout can be switched
+ * back, and a sweep that deleted the file the moment somebody chose 'logo'
+ * would lose it for good.
  */
 function about_images(array $data): array
 {

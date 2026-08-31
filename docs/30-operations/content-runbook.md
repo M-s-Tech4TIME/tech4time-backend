@@ -257,6 +257,12 @@ developer.
 
 Two things are chosen per section rather than fixed:
 
+**Every section has two upload slots**, one per colour mode, whichever picture it uses. The second
+is almost always empty and that is normal: the illustrations sit on a white plate in both light and
+dark mode by design, so one picture is the usual case. Upload a dark one only if you have artwork
+made for a dark page — it takes that section off the white plate. Same control as the Get to Know Us
+cards on the home page.
+
 **Picture** — *A photograph*, or *The Tech4TIME logo lockup*. The lockup swaps itself for light and
 dark mode, and a section using it gets **two upload slots**, one per mode. Leave them empty and the
 logo that ships with the site is used. Upload only the light one and it is used in both modes —

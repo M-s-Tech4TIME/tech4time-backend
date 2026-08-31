@@ -51,7 +51,11 @@ require_once __DIR__ . '/upload.php';
 const ADMIN_SECTIONS = [
     'overview' => [
         'label' => 'Overview',
-        'icon'  => 'home',
+        /* A grid of panels, which is what this screen draws: one card per
+           editable page. It was 'home' until the home page got an editor of
+           its own, at which point the rail had the same glyph twice and the
+           two entries beside each other. 'home' belongs to the home page. */
+        'icon'  => 'th-large',
         'desc'  => 'What can be changed here',
         'view'  => '',
     ],
@@ -114,7 +118,7 @@ const ADMIN_RAIL_COOKIE = 't4t_rail';
    icon the contact and company editors offer, since both render a live
    preview of them. */
 const ADMIN_ICONS = [
-    'home', 'briefcase', 'envelope', 'sun', 'moon', 'chevron-left',
+    'home', 'th-large', 'briefcase', 'envelope', 'sun', 'moon', 'chevron-left',
     'chevron-right', 'arrow-up', 'arrow-down', 'arrow-right', 'link', 'user',
     'times', 'check', 'eye', 'lock', 'cogs', 'info-circle',
     'phone', 'mobile-alt', 'clock', 'map-marker-alt', 'building', 'globe',
