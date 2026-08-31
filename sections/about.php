@@ -209,9 +209,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  */
 function about_take_uploads(array $data, array &$errors): array
 {
-    /* Two file inputs can land on one row: a logo row has a light half and a
-       dark one. admin_uploaded_files() keys them by the name the input was
-       given, so they arrive as two pseudo-bands and land in two fields. */
+    /* Two file inputs can land on one row: every row has a light half and a
+       dark one, whichever layout it uses. admin_uploaded_files() keys them by
+       the name the input was given, so they arrive as two pseudo-bands and land
+       in two fields. */
     $slots = ['story' => 'image', 'story_dark' => 'image_dark'];
 
     foreach (admin_uploaded_files() as [$band, $index, $file]) {
@@ -510,9 +511,31 @@ if (!$errors && $pending !== '') {
         the site itself and still needs a developer.
       </p>
 <?php else: ?>
+      <?php /* A photograph row carries a pair too. The dark half is optional
+               and almost always empty: the illustrations are line drawings that
+               sit on a white plate in both colour modes by design, so one
+               picture is the normal case and uploading a second is what
+               switches that off for this row. Same control, same rules, as the
+               Get to Know Us cards on the home page. */ ?>
+      <p class="admin__label">Picture</p>
       <?php admin_image_fields("story[items][$i][image]",
                                 "upload[story][$i]",
                                 $row['image']); ?>
+
+      <p class="admin__label">Picture for dark mode</p>
+      <?php admin_image_fields(
+          "story[items][$i][image_dark]",
+          "upload[story_dark][$i]",
+          $row['image_dark'],
+          'dark-mode picture',
+          '',
+          trim((string)$row['image']['src']) !== ''
+              ? ['src'  => (string)$row['image']['src'],
+                 'note' => 'Using the picture above in both colour modes, which '
+                         . 'is how these sections are designed. Upload one here '
+                         . 'only if you have artwork made for a dark page.']
+              : []
+      ); ?>
 <?php endif; ?>
 
       <label class="admin__field admin__field--wide">

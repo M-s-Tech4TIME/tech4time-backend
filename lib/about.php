@@ -137,7 +137,21 @@ function about_validate(array $data): array
                 }
             }
         } else {
+            /* A photograph row needs its light half and may have a dark one.
+               The dark half is optional and almost always empty: the
+               illustrations sit on a white plate in both colour modes by
+               design, so one picture is the normal case. Whichever halves are
+               present are checked the same way, because a picture with no
+               dimensions shifts the page as it loads whichever mode it is
+               for. */
             $errors = array_merge($errors, about_validate_image($row['image'], $where));
+
+            if (trim((string)$row['image_dark']['src']) !== '') {
+                $errors = array_merge(
+                    $errors,
+                    about_validate_image($row['image_dark'], "$where (dark mode)")
+                );
+            }
         }
     }
 

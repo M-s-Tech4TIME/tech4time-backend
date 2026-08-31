@@ -390,6 +390,58 @@ def run(client, r, site):
         got = rows_sent(site, "story")[1]["image"]["src"]
         r.check(f"{name} is refused", got != sent, got)
 
+    print("\na photograph section can carry artwork for each colour mode")
+    _, html = client.get(ADMIN)
+    photo = next(i for i, x in enumerate(rows_sent(site, "story"))
+                 if x["layout"] == "photograph")
+    can_upload = 'type="file"' in html
+    r.check("it offers a slot for each colour mode",
+            (f'name="upload[story][{photo}]"' in html
+             and f'name="upload[story_dark][{photo}]"' in html) if can_upload
+            else (f'name="story[items][{photo}][image][src]"' in html
+                  and f'name="story[items][{photo}][image_dark][src]"' in html),
+            "the same control the home page's cards have"
+            + ("" if can_upload else "  [no GD here: checked the record halves, "
+                                     "not the file inputs]"))
+    r.check("and says one picture is the normal case",
+            "in both colour modes" in html,
+            "the illustrations sit on a white plate in both modes by design")
+
+    fields = dict(form_fields(html), csrf=token, do="save")
+    fields[f"story[items][{photo}][image_dark][src]"] = "/uploads/4444444444444444.webp"
+    fields[f"story[items][{photo}][image_dark][width]"] = "818"
+    fields[f"story[items][{photo}][image_dark][height]"] = "810"
+    client.post(ADMIN, fields)
+    row = rows_sent(site, "story")[photo]
+    r.check("both halves reach the live site",
+            row["image"]["src"] != ""
+            and row["image_dark"]["src"].endswith("4444444444444444.webp"),
+            str([row["image"], row["image_dark"]]))
+
+    print("\nand a dark half with no dimensions is refused, like any other")
+    _, html = client.get(ADMIN)
+    fields = dict(form_fields(html), csrf=token, do="save")
+    fields[f"story[items][{photo}][image_dark][width]"] = "0"
+    fields[f"story[items][{photo}][image_dark][height]"] = "0"
+    status, _, body = client.post(ADMIN, fields)
+    r.check("it is refused", status == 200 and "no width and height" in body,
+            f"status {status}")
+    r.check("and the message says which half", "(dark mode)" in body,
+            "two pictures on one row need telling apart")
+
+    print("\nclearing the dark half puts the section back to one picture")
+    _, html = client.get(ADMIN)
+    fields = dict(form_fields(html), csrf=token, do="save")
+    fields[f"story[items][{photo}][image_dark][src]"] = ""
+    fields[f"story[items][{photo}][image_dark][webp]"] = ""
+    fields[f"story[items][{photo}][image_dark][width]"] = "0"
+    fields[f"story[items][{photo}][image_dark][height]"] = "0"
+    client.post(ADMIN, fields)
+    row = rows_sent(site, "story")[photo]
+    r.check("the light half is kept and the dark one is empty",
+            row["image"]["src"] != "" and row["image_dark"]["src"] == "",
+            str([row["image"], row["image_dark"]]))
+
     print("\nwhat it refuses to save")
     for case, field, value, expect in [
         ("an empty banner title", "hero[title]", "", "banner title cannot be empty"),
