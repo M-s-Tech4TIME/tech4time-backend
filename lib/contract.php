@@ -53,7 +53,7 @@ require_once __DIR__ . '/html.php';
 const CONTRACT_VERSION = 1;
 
 /** Every document that is published, by name. The endpoint refuses any other. */
-const CONTRACT_DOCUMENTS = ['careers', 'contact', 'company', 'about'];
+const CONTRACT_DOCUMENTS = ['careers', 'contact', 'company', 'about', 'home'];
 
 /**
  * Where a document's record lives, on either host.
@@ -1433,7 +1433,477 @@ function about_slug(string $name, array $taken = []): string
 }
 
 /* ==========================================================================
-   5. Revisions
+   5. Home page — the shape of the home page
+   ========================================================================== */
+
+/**
+ * The icons a badge, a tag, a capability, a service card or a button may use.
+ *
+ * Fixed for the same reason CONTACT_ICONS, COMPANY_ICONS and ABOUT_ICONS are:
+ * tools/inject_icons.py inlines the symbols a page references by scanning it
+ * for a literal href="#name", and a name chosen at run time is invisible to
+ * that scan. Every icon offered here is therefore also listed in a comment in
+ * the frontend's index.php, where the scanner can see it. Add one here and add
+ * it there; inject_icons.py --check says so if it is forgotten.
+ *
+ * Every name here must also be in ADMIN_ICONS in the backend's lib/admin.php,
+ * or the editor's live preview draws an empty box for it.
+ *
+ * This is the longest of the four lists because the home page is the widest
+ * summary of what the company does: the hero alone offers thirteen tags.
+ */
+const HOME_ICONS = [
+    'shield-alt'          => 'Shield',
+    'shield-halved'       => 'Shield, half filled',
+    'shield-virus'        => 'Shield with a virus',
+    'bug'                 => 'Bug',
+    'search'              => 'Magnifying glass',
+    'crosshairs'          => 'Crosshairs',
+    'desktop'             => 'Monitor',
+    'first-aid'           => 'First-aid kit',
+    'cogs'                => 'Cogs',
+    'server'              => 'Server',
+    'network-wired'       => 'Network',
+    'file-contract'       => 'Document',
+    'graduation-cap'      => 'Graduation cap',
+    'laptop-code'         => 'Laptop with code',
+    'mobile-alt'          => 'Mobile phone',
+    'code'                => 'Code',
+    'cloud'               => 'Cloud',
+    'users'               => 'People',
+    'boxes'               => 'Boxes',
+    'chalkboard-teacher'  => 'Teacher at a board',
+    'sitemap'             => 'Sitemap',
+    'clipboard-check'     => 'Clipboard with a tick',
+    'lightbulb'           => 'Lightbulb',
+    'eye'                 => 'Eye',
+    'rocket'              => 'Rocket',
+    'arrow-right'         => 'Arrow',
+];
+
+/**
+ * What a line of the hero terminal is.
+ *
+ * A 'command' line is typed out character by character by
+ * assets/js/terminal.js and carries a prompt in front of it; an 'output' line
+ * arrives whole, the way a shell prints. That distinction is the whole effect,
+ * so it is a field and not a guess made from the text.
+ */
+const HOME_LINE_KINDS = [
+    'command' => 'A typed command',
+    'output'  => 'Output from the command',
+];
+
+/**
+ * How a line of output is coloured. Ignored on a 'command' line.
+ *
+ * The tick and the exclamation mark that begin the success and alert lines are
+ * part of the text, not added by CSS, so an operator writes them and can write
+ * something else. This only picks the colour.
+ */
+const HOME_LINE_TONES = [
+    'plain'   => 'Plain',
+    'success' => 'Success',
+    'alert'   => 'Alert',
+];
+
+/* The prompt a command line shows when it has none of its own. */
+const HOME_PROMPT_DEFAULT = 'tech4time@soc:~$';
+
+/* Free-text single-line fields, by band. The list bands carry only their own
+   headings here; everything inside them belongs to a row. */
+const HOME_TEXT_FIELDS = [
+    'meta'         => ['title', 'description', 'share_title'],
+    'hero'         => ['title', 'accent', 'cta_label', 'cta_href'],
+    'terminal'     => ['title', 'summary'],
+    'capabilities' => ['title', 'lead'],
+    'services'     => ['eyebrow', 'title', 'lead', 'schema_name', 'schema_description'],
+    'destinations' => ['eyebrow', 'title', 'lead'],
+    'cta'          => ['title', 'text', 'label', 'href', 'icon'],
+];
+
+/**
+ * The home page has NO rich text, deliberately.
+ *
+ * Every lead and every card body on it is a single styled <p> — .section__lead,
+ * .service-card__text, .destination-card__text. A rich field would emit a <div>
+ * full of paragraphs where one <p> is styled, so the control would offer
+ * formatting the page cannot show. The one field that needs two lines is the
+ * closing title, and it gets them from a newline rather than from markup; see
+ * home_cta_title() in the frontend's lib/home.php.
+ *
+ * Named as an empty constant rather than left out so that the question "where
+ * is the home page's rich text?" has an answer in the file.
+ */
+const HOME_ROW_RICH_FIELDS = [];
+
+/* Every band of the page that can be hidden whole, in the order it renders.
+   The hero itself is not here, for the reason the contact and about heroes are
+   not: a page with no title is not a page with a section switched off, it is a
+   broken page. Its badges, tags and terminal ARE here — they decorate the hero
+   and the hero reads perfectly well without any of them. */
+const HOME_BANDS = [
+    'badges', 'tags', 'terminal', 'capabilities', 'services', 'destinations', 'cta',
+];
+
+/**
+ * The bands that hold a list, and the function that fills one of its rows.
+ *
+ * Six of them — the most of any document here. Named once so home_normalise()
+ * drives itself off it, exactly as ABOUT_LISTS and COMPANY_LISTS do.
+ *
+ * The hero's badges and tags are top-level bands rather than nested under
+ * 'hero' so that every list on the page has the same $data[$band]['items']
+ * shape. Nesting two of the six would mean home_identify(), home_shown() and
+ * home_find() each carrying a special case for exactly those two, which is
+ * three places for the same exception to be forgotten.
+ */
+const HOME_LISTS = [
+    'badges'       => 'home_badge_defaults',
+    'tags'         => 'home_tag_defaults',
+    'terminal'     => 'home_line_defaults',
+    'capabilities' => 'home_capability_defaults',
+    'services'     => 'home_service_defaults',
+    'destinations' => 'home_destination_defaults',
+];
+
+/* What a row is called before it is called anything. Deliberately the same
+   value as ABOUT_ID_PLACEHOLDER and deliberately a separate constant: each
+   document owns its own id vocabulary. See home_identify(). */
+const HOME_ID_PLACEHOLDER = 'row';
+
+/**
+ * The page as it ships, and the fallback for anything missing from the file.
+ *
+ * Every scalar the renderer reads exists here, so a truncated or hand-edited
+ * home.json degrades to the shipped headings rather than emptying the site's
+ * front door. The lists default to empty, which is the same bargain the other
+ * three pages make: the page still has a shape, it just has nothing in it.
+ */
+function home_defaults(): array
+{
+    return [
+        'updated'  => '',
+        'revision' => 0,
+        'meta' => [
+            'title'       => 'Tech4TIME | Orchestrating Technology with Time',
+            'description' => 'Enterprise-grade cybersecurity, software development, cloud infrastructure and HR solutions from Tech4TIME. Orchestrate, build, maintain and protect your business.',
+            'share_title' => 'Tech4TIME | Orchestrating Technology with Time',
+        ],
+        'hero' => [
+            'title'     => 'Orchestrating Technology with Time',
+            /* The phrase drawn in the accent colour. See home_hero_title(). */
+            'accent'    => 'Technology',
+            'cta_label' => 'Explore All Services',
+            'cta_href'  => '/pages/services/',
+        ],
+        'badges' => [
+            'status' => 'shown',
+            'items'  => [],
+        ],
+        'tags' => [
+            'status' => 'shown',
+            'items'  => [],
+        ],
+        'terminal' => [
+            'status'  => 'shown',
+            'title'   => 'tech4time@soc:~',
+            /* The one-line description that stands in for the panel, which is
+               aria-hidden. It is not decoration: it is what a screen reader
+               reads instead of the whole session. */
+            'summary' => 'Illustration: a security operations console showing twelve connected agents and two high-severity alerts in the last 24 hours.',
+            'items'   => [],
+        ],
+        'capabilities' => [
+            'status' => 'shown',
+            'title'  => 'Our Technical Domains',
+            'lead'   => 'The principles and practices we cherish from our roots throughout the endeavour of time.',
+            'items'  => [],
+        ],
+        'services' => [
+            'status'  => 'shown',
+            'eyebrow' => 'Our Services',
+            'title'   => 'Complete Technology Solutions',
+            'lead'    => 'Tech4TIME provides end-to-end IT services from Software Development, Cybersecurity and Cloud Infrastructure, along with Human Resource Provisioning — which we also call Human Resource as a Service (HRaaS).',
+            /* What the Service ItemList in the <head> calls itself. Separate
+               from the band's own heading because it is addressed to a search
+               engine rather than to a reader, and the two have never said the
+               same thing. Each Service node inside the list takes its name,
+               description and url from the card — one source, so the six cards
+               and the six schema entries cannot drift apart again. They had:
+               the card read "SOC & CIRT" while the schema read "SOC and
+               CIRT". */
+            'schema_name'        => 'Tech4TIME technology services',
+            'schema_description' => 'End-to-end IT services from software development, cybersecurity and cloud infrastructure to human resource provisioning.',
+            'items'   => [],
+        ],
+        'destinations' => [
+            'status'  => 'shown',
+            'eyebrow' => 'Explore Tech4TIME',
+            'title'   => 'Get to Know Us',
+            'lead'    => 'Three ways in — who we are, what we deliver, and the track record behind it.',
+            'items'   => [],
+        ],
+        'cta' => [
+            'status' => 'shown',
+            'icon'   => 'rocket',
+            /* Two lines. The newline becomes a <br>; see home_cta_title(). */
+            'title'  => "Transform Your Digital Landscape\nwith Expert Technology Solutions",
+            'text'   => 'From software development to cybersecurity — complete IT services for your business growth.',
+            'label'  => 'Start Your Project',
+            'href'   => '/pages/contact/',
+        ],
+    ];
+}
+
+/**
+ * Bring a document to the current shape, whatever it arrived as.
+ *
+ * One level of merge per band, then every list through its own row-filler.
+ * Rows are renumbered with array_values() because the editor posts them keyed
+ * by position and a removed row leaves a hole.
+ */
+function home_normalise(array $data): array
+{
+    $defaults = home_defaults();
+
+    foreach ($defaults as $key => $value) {
+        if ($key === 'revision') {
+            $data[$key] = max(0, (int)($data[$key] ?? 0));
+            continue;
+        }
+        if (!is_array($value)) {
+            $data[$key] = is_string($data[$key] ?? null) ? $data[$key] : $value;
+            continue;
+        }
+        $data[$key] = is_array($data[$key] ?? null) ? $data[$key] + $value : $value;
+    }
+
+    foreach (HOME_BANDS as $band) {
+        $data[$band]['status'] =
+            ($data[$band]['status'] ?? 'shown') === 'hidden' ? 'hidden' : 'shown';
+    }
+
+    foreach (HOME_LISTS as $band => $filler) {
+        $rows = is_array($data[$band]['items'] ?? null) ? $data[$band]['items'] : [];
+        $data[$band]['items'] = array_map(
+            $filler,
+            array_values(array_filter($rows, 'is_array'))
+        );
+    }
+
+    return home_identify($data);
+}
+
+/**
+ * Give every row an id, unique within its own list.
+ *
+ * Same contract as about_identify(): a row added by the Add button has nothing
+ * to be named after and gets the placeholder; once it has a name the
+ * placeholder is replaced; a real id is never re-minted, because it is the
+ * handle a fragment link, an upload and a test all hold the row by.
+ */
+function home_identify(array $data): array
+{
+    foreach (HOME_LISTS as $band => $_filler) {
+        $taken = [];
+        foreach ($data[$band]['items'] as $i => $row) {
+            $id   = trim((string)($row['id'] ?? ''));
+            $name = home_row_name($band, $row);
+
+            $provisional = $id === ''
+                || preg_match('/^' . HOME_ID_PLACEHOLDER . '(-\d+)?$/', $id) === 1;
+
+            if (($provisional && $name !== '') || in_array($id, $taken, true)) {
+                $id = home_slug($name, $taken);
+            } elseif ($id === '') {
+                $id = home_slug('', $taken);
+            }
+
+            $data[$band]['items'][$i]['id'] = $id;
+            $taken[] = $id;
+        }
+    }
+
+    return $data;
+}
+
+/** What a row's id is minted from, whichever list it is in. */
+function home_row_name(string $band, array $row): string
+{
+    return trim((string)match ($band) {
+        'badges', 'tags' => $row['label'] ?? '',
+        'terminal'       => $row['text'] ?? '',
+        default          => $row['title'] ?? '',
+    });
+}
+
+/** A hero badge: the four headline disciplines under the title. */
+function home_badge_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'icon' => '', 'label' => '', 'status' => 'shown',
+    ];
+}
+
+/** A hero tag: the smaller pills under the badges. Same shape. */
+function home_tag_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'icon' => '', 'label' => '', 'status' => 'shown',
+    ];
+}
+
+/**
+ * One line of the hero terminal.
+ *
+ * The blinking caret at the end of the session is NOT one of these. It is
+ * emitted by the renderer after the last line, so an operator cannot delete it
+ * or end up with two — see home_terminal_lines() in the frontend's lib/home.php.
+ */
+function home_line_defaults(array $row): array
+{
+    $row += [
+        'id'     => '',
+        'kind'   => 'output',
+        'tone'   => 'plain',
+        'prompt' => HOME_PROMPT_DEFAULT,
+        'text'   => '',
+        'status' => 'shown',
+    ];
+
+    $row['kind'] = isset(HOME_LINE_KINDS[$row['kind']]) ? $row['kind'] : 'output';
+    $row['tone'] = isset(HOME_LINE_TONES[$row['tone']]) ? $row['tone'] : 'plain';
+
+    return $row;
+}
+
+/** A capability card: an icon and a title, nothing else. */
+function home_capability_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'icon' => '', 'title' => '', 'status' => 'shown',
+    ];
+}
+
+/**
+ * A service card.
+ *
+ * 'link_hint' is the visually-hidden tail on the card's link — "for
+ * Cybersecurity" — which turns six identical "View Services" links into six
+ * distinguishable ones for anyone listing the links on the page. It is a field
+ * rather than something derived from the title because the wording differs
+ * from it: the card titled "IT Consultancy & Training" reads "and", not "&".
+ */
+function home_service_defaults(array $row): array
+{
+    return $row + [
+        'id'        => '',
+        'icon'      => '',
+        'title'     => '',
+        'text'      => '',
+        'href'      => '',
+        'label'     => 'View Services',
+        'link_hint' => '',
+        'status'    => 'shown',
+    ];
+}
+
+/**
+ * A "Get to Know Us" card: a picture, a title, a line and a button.
+ *
+ * Two picture records, not one. The illustrations are black line art on white
+ * and the page keeps them on a light plate in both colour modes, so the dark
+ * half is usually empty and the light one is used for both — exactly the
+ * fallback a story row's logo takes. Uploading a dark half is what switches
+ * that off, per card. See home_theme_pair() in the frontend's lib/home.php.
+ */
+function home_destination_defaults(array $row): array
+{
+    $row += [
+        'id'        => '',
+        'title'     => '',
+        'text'      => '',
+        'href'      => '',
+        'label'     => 'Learn more',
+        'link_hint' => '',
+        'alt'       => '',
+        'status'    => 'shown',
+    ];
+
+    $row['image']      = contract_image_defaults($row['image'] ?? []);
+    $row['image_dark'] = contract_image_defaults($row['image_dark'] ?? []);
+
+    return $row;
+}
+
+/** Only the rows of a list a visitor should see. */
+function home_shown(array $data, string $band): array
+{
+    return array_values(array_filter(
+        $data[$band]['items'] ?? [],
+        static fn(array $row): bool => ($row['status'] ?? 'shown') !== 'hidden'
+    ));
+}
+
+/** Whether a band of the page is shown at all. */
+function home_band_shown(array $data, string $band): bool
+{
+    return ($data[$band]['status'] ?? 'shown') !== 'hidden';
+}
+
+function home_find(array $data, string $band, string $id): ?array
+{
+    foreach ($data[$band]['items'] ?? [] as $row) {
+        if (($row['id'] ?? '') === $id) {
+            return $row;
+        }
+    }
+    return null;
+}
+
+/**
+ * Every picture the document points at, as web paths, without duplicates.
+ *
+ * Both halves of every destination card, for the reason about_images() counts
+ * both halves of a logo row: an unused-file sweep that ignored the dark half
+ * would offer to delete a dark image the moment it was uploaded, because
+ * nothing else in the document mentions it.
+ */
+function home_images(array $data): array
+{
+    $seen = [];
+
+    foreach ($data['destinations']['items'] ?? [] as $row) {
+        foreach ([$row['image']['src'] ?? '',      $row['image']['webp'] ?? '',
+                  $row['image_dark']['src'] ?? '', $row['image_dark']['webp'] ?? ''] as $path) {
+            $path = trim((string)$path);
+            if ($path !== '') {
+                $seen[$path] = true;
+            }
+        }
+    }
+
+    return array_keys($seen);
+}
+
+/** A URL-safe id from a name, unique against the ids already in use. */
+function home_slug(string $name, array $taken = []): string
+{
+    $slug = strtolower(trim($name));
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
+    $slug = trim($slug, '-') ?: HOME_ID_PLACEHOLDER;
+
+    $base = $slug;
+    $n = 2;
+    while (in_array($slug, $taken, true)) {
+        $slug = $base . '-' . $n++;
+    }
+    return $slug;
+}
+
+/* ==========================================================================
+   6. Revisions
    ========================================================================== */
 
 /**
@@ -1456,7 +1926,7 @@ function contract_next_revision(array $data): int
 }
 
 /* ==========================================================================
-   6. Normalising and re-sanitising on receipt
+   7. Normalising and re-sanitising on receipt
    ========================================================================== */
 
 /**
@@ -1481,6 +1951,7 @@ function contract_normalise(string $document, array $data): array
         'contact' => contact_normalise($data),
         'company' => company_normalise($data),
         'about'   => about_normalise($data),
+        'home'    => home_normalise($data),
         default   => throw new RuntimeException('Unknown document: ' . $document),
     };
 }
@@ -1545,6 +2016,16 @@ function contract_sanitise(string $document, array $data): array
                 }
             }
         }
+        return $data;
+    }
+
+    /* The home page has no rich text at all — see HOME_ROW_RICH_FIELDS. It
+       still needs a branch, and the branch still has to be explicit: the
+       default below is a refusal, so "nothing to sanitise" and "document I do
+       not know" must not arrive at the same line. A publish of a document this
+       file has never heard of is a bug or an attack, and is refused; a publish
+       of the home page is neither, and passes through untouched. */
+    if ($document === 'home') {
         return $data;
     }
 

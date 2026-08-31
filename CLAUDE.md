@@ -127,7 +127,7 @@ python3 tools/check_shared_repos.py
 
 Touched the admin, auth or an editor? Also `test_admin_auth.py`, `test_careers_admin.py`,
 `test_contact_admin.py`, `test_company_admin.py`, `test_about_admin.py`,
-`test_publish_client.py`.
+`test_home_admin.py`, `test_publish_client.py`.
 
 Touched `lib/upload.php` or anything a picture passes through? Also `test_upload.py` — it needs
 PHP's GD extension (`sudo apt install php-gd`) and skips the re-encoding cases with a notice

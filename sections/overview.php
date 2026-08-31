@@ -21,6 +21,7 @@ require_once __DIR__ . '/../lib/careers.php';
 require_once __DIR__ . '/../lib/contact.php';
 require_once __DIR__ . '/../lib/company.php';
 require_once __DIR__ . '/../lib/about.php';
+require_once __DIR__ . '/../lib/home.php';
 
 /** "3 minutes ago", or the date once that stops being useful. */
 function admin_when(string $iso): string
@@ -57,6 +58,7 @@ $careers = careers_load();
 $contact = contact_load();
 $company = company_load();
 $about   = about_load();
+$home    = home_load();
 
 /* How much of the company profile is actually on the page. It is nine bands
    and six lists, so "3 milestones" on its own says very little — what somebody
@@ -82,7 +84,33 @@ $about_hidden = count(array_filter(
     static fn(string $band): bool => !about_band_shown($about, $band)
 ));
 
+/* And again for the home page, which has more lists than any other screen —
+   six — so the total says more here than any single one of them would. */
+$home_rows = 0;
+foreach (array_keys(HOME_LISTS) as $band) {
+    $home_rows += count(home_shown($home, $band));
+}
+$home_hidden = count(array_filter(
+    HOME_BANDS,
+    static fn(string $band): bool => !home_band_shown($home, $band)
+));
+
 $cards = [
+    [
+        'section' => 'home',
+        'title'   => 'Home page',
+        'lines'   => [
+            $home_rows . ' entr' . ($home_rows === 1 ? 'y' : 'ies') . ' shown across '
+                . count(HOME_LISTS) . ' lists — badges, tags, terminal lines, '
+                . 'domains, services and cards',
+            $home_hidden === 0
+                ? 'Every section of the page is showing'
+                : $home_hidden . ' section' . ($home_hidden === 1 ? '' : 's')
+                    . ' of the page switched off',
+        ],
+        'saved'   => (string)($home['updated'] ?? ''),
+        'file'    => 'content/home.json',
+    ],
     [
         'section' => 'careers',
         'title'   => 'Job posts',

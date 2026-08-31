@@ -110,6 +110,7 @@ require_once 'lib/careers.php';
 require_once 'lib/contact.php';
 require_once 'lib/company.php';
 require_once 'lib/about.php';
+require_once 'lib/home.php';
 
 /* A TABLE, AND NOT A TERNARY, for the reason contract_normalise() gives at
    length. What stood here was
@@ -126,6 +127,7 @@ $models = [
     'contact' => ['contact_load', 'contact_save'],
     'company' => ['company_load', 'company_save'],
     'about'   => ['about_load',   'about_save'],
+    'home'    => ['home_load',    'home_save'],
 ];
 
 $document = $argv[1];

@@ -20,6 +20,7 @@ store they read from is outside the document root entirely.
 | [`contact.php`](#contactphp) | what this side does with the contact page | `contract`, `store` |
 | [`company.php`](#companyphp) | what this side does with the company profile | `contract`, `store` |
 | [`about.php`](#aboutphp) | what this side does with the about page | `contract`, `store` |
+| [`home.php`](#homephp) | what this side does with the home page | `contract`, `store` |
 | [`upload.php`](#uploadphp) *(backend)* | a file somebody chose, turned into a picture this site will show | `publish` |
 | [`publish.php`](#publishphp) **shared** | how a document is signed and checked on the wire | `private`, `contract` |
 | [`publish_client.php`](#publish_clientphp) *(backend)* | sending one | `publish` |
@@ -171,6 +172,34 @@ find out.
 against `COMPANY_IMAGE_ROOTS`. The editor checks it because a hidden input is a text field with the
 label taken off; the frontend checks it again on receipt, because a signature proves where a
 document came from and not what is in it.
+
+### `home.php`
+
+`home_load()` · `home_save()` · `home_validate()` · `home_validate_icon()` ·
+`home_validate_link_card()` · `home_validate_image()`
+
+The same division once more, for the home page — the widest shape here, with **six** repeatable
+lists in `contract.php`: the hero's badges and tags, the terminal's lines, the technical domains,
+the service cards and the Get to Know Us cards. Every row carries a `status` so it can be **hidden
+without being deleted**.
+
+Three rules in `home_validate()` are worth knowing before changing either half:
+
+**The highlighted phrase must appear in the hero title.** `hero.accent` is the phrase the renderer
+draws in the accent colour, matched literally against `hero.title`. A phrase that is not in the
+title highlights nothing, and nothing about the rendered page would say so — which is exactly the
+kind of mistake nobody notices for months. It is refused, and the message quotes both halves.
+
+**The dark half of a card's picture is optional; the light half is not.** A card with one picture
+shows it in both colour modes, which is every card today. Whichever halves are present are checked
+the same way, because a picture with no dimensions shifts the page as it loads whichever mode it
+belongs to. The message says `(dark mode)` so two pictures on one card can be told apart.
+
+**A picture may only point inside this site** — `contract_safe_image_path()`, against
+`CONTRACT_IMAGE_ROOTS`. The editor checks it because a hidden input is a text field with the label
+taken off; the frontend checks it again on receipt, because a signature proves where a document came
+from and not what is in it. On this page that matters most: a third-party `src` here is in every
+visitor's first page load.
 
 ### `upload.php`
 

@@ -25,6 +25,7 @@ breath**.
 | An office address, phone number, email | `/?s=contact` |
 | The contact page's headings and copy | `/?s=contact` |
 | The about page's sections, specialities and why-us cards | `/?s=about` |
+| The home page's hero, badges, tags, terminal and cards | `/?s=home` |
 | What the enquiry form says | `/?s=contact` |
 
 Saving writes `content/careers.json` or `content/contact.json` here — **the system of record** —

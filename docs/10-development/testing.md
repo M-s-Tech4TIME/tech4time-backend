@@ -38,6 +38,7 @@ python3 tools/test_admin_auth.py        # the whole sign-in cycle, over HTTP
 python3 tools/test_publish_client.py    # the push, and the save that calls it
 python3 tools/test_careers_admin.py     # the job post editor
 python3 tools/test_contact_admin.py     # the contact page editor
+python3 tools/test_home_admin.py        # the home page editor — six lists
 python3 tools/test_store.py             # the JSON store itself
 python3 tools/test_qr.py                # the pairing code, against libqrencode
 ```
@@ -116,6 +117,7 @@ These start a real PHP server on a spare port and drive it over HTTP.
 | `test_publish_client.py` | `publish_push()` and the save that calls it: a payload an **independent** verifier accepts, and every way it can fail arriving as something the editor can show |
 | `test_careers_admin.py` | the job post editor: add, edit, reorder, delete, validation, CSRF, the atomic write — and that **every field the model declares reaches the live site**, by pushing a marker through each one and reading it out of the published document |
 | `test_contact_admin.py` | the contact page editor, and the icon rail |
+| `test_home_admin.py` | the home page editor: **six** lists, so add, remove, hide and reorder are exercised across them rather than on one — the mechanics are shared, and a break in the shared part would otherwise surface only in whichever list happened to be tested. Also each terminal line's kind and colour, the light/dark picture pair on a card, and the accent phrase that has to appear in the headline |
 | `test_store.py` | `lib/store.php`: telling apart missing, unreadable and corrupt; the atomic write; and the rule that a damaged file is never copied over a good `.bak`, because the backup is what damage is recovered from |
 
 **The three that publish do so to a stub, and that is the point.** `tools/publish_stub.py`
