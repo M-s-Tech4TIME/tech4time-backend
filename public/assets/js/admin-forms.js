@@ -81,32 +81,53 @@
       return null;
     }
 
-    var parts = /^([a-z]+)-(up|down|add|remove):(\d+)$/.exec(submitter.value || "");
+    /* The address may be nested: "card-remove:1.4" is the fifth solution of
+       the second group. Only the LAST coordinate moves, so the leading ones
+       are carried along untouched. A flat "story-up:3" is the same shape with
+       nothing in front of it. */
+    var parts = /^([a-z]+)-(up|down|add|remove):(\d+(?:\.\d+)*)$/.exec(submitter.value || "");
     if (!parts) {
       return null;
     }
 
     var band = parts[1];
     var action = parts[2];
-    var index = parseInt(parts[3], 10);
+    var address = parts[3].split(".");
+    var index = parseInt(address[address.length - 1], 10);
+    var stem = address.slice(0, -1).join(".");
+    if (stem !== "") {
+      stem += ".";
+    }
+
+    function at(n) {
+      return band + "-" + action + ":" + stem + n;
+    }
 
     if (action === "up") {
-      return { selector: 'button[name="do"][value="' + band + "-up:" + Math.max(0, index - 1) + '"]' };
+      return { selector: 'button[name="do"][value="' + at(Math.max(0, index - 1)) + '"]' };
     }
     if (action === "down") {
-      return { selector: 'button[name="do"][value="' + band + "-down:" + (index + 1) + '"]' };
+      return { selector: 'button[name="do"][value="' + at(index + 1) + '"]' };
     }
     if (action === "add") {
       /* The new row is the last one in its band; its first text field is
-         where somebody is about to type. */
-      return { lastRowOf: band };
+         where somebody is about to type.
+
+         WHICH rows those are is normally "<band>[items][", and for a nested
+         list it is not — a solution card is service[layers][items][0][cards][.
+         The button says so with data-rows when the two differ, rather than
+         this having to know the shape of every editor. */
+      return {
+        lastRowOf: band,
+        rows: submitter.getAttribute("data-rows") || ""
+      };
     }
     /* Removed. The row that took its place, or the one before it if the list
        just lost its tail. */
     return {
       selector:
-        'button[name="do"][value="' + band + "-remove:" + index + '"], ' +
-        'button[name="do"][value="' + band + "-remove:" + Math.max(0, index - 1) + '"]'
+        'button[name="do"][value="' + at(index) + '"], ' +
+        'button[name="do"][value="' + at(Math.max(0, index - 1)) + '"]'
     };
   }
 
@@ -128,8 +149,9 @@
     return shot;
   }
 
-  function focusFirstFieldOf(band) {
-    var rows = doc.querySelectorAll('input[name^="' + band + '[items]["]');
+  function focusFirstFieldOf(band, namedRows) {
+    var prefix = namedRows || band + "[items][";
+    var rows = doc.querySelectorAll('input[name^="' + prefix + '"]');
     if (!rows.length) {
       return false;
     }
@@ -149,7 +171,7 @@
   }
 
   function restore(shot, plan) {
-    if (plan && plan.lastRowOf && focusFirstFieldOf(plan.lastRowOf)) {
+    if (plan && plan.lastRowOf && focusFirstFieldOf(plan.lastRowOf, plan.rows)) {
       return;
     }
 

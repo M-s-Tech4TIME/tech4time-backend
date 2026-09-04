@@ -105,6 +105,13 @@ jobs:
       - run: python3 tools/test_careers_admin.py
       - run: python3 tools/test_contact_admin.py
       - run: python3 tools/test_company_admin.py
+      # These three were in the repository but not here, so the about, home and
+      # services editors were only ever tested by somebody remembering to run
+      # them. A test that CI does not run is a test that stops being true
+      # quietly.
+      - run: python3 tools/test_about_admin.py
+      - run: python3 tools/test_home_admin.py
+      - run: python3 tools/test_services_admin.py
 
   browser:
     name: firefox

@@ -21,6 +21,7 @@ store they read from is outside the document root entirely.
 | [`company.php`](#companyphp) | what this side does with the company profile | `contract`, `store` |
 | [`about.php`](#aboutphp) | what this side does with the about page | `contract`, `store` |
 | [`home.php`](#homephp) | what this side does with the home page | `contract`, `store` |
+| [`services.php`](#servicesphp) | what this side does with the services document | `contract`, `store`, `publish_client` |
 | [`upload.php`](#uploadphp) *(backend)* | a file somebody chose, turned into a picture this site will show | `publish` |
 | [`publish.php`](#publishphp) **shared** | how a document is signed and checked on the wire | `private`, `contract` |
 | [`publish_client.php`](#publish_clientphp) *(backend)* | sending one | `publish` |
@@ -200,6 +201,43 @@ belongs to. The message says `(dark mode)` so two pictures on one card can be to
 taken off; the frontend checks it again on receipt, because a signature proves where a document came
 from and not what is in it. On this page that matters most: a third-party `src` here is in every
 visitor's first page load.
+
+### `services.php`
+
+`services_load()` · `services_save()` · `services_edit()` · `services_validate()` ·
+`services_validate_list()` · `services_validate_one()`
+
+**One document, seven pages.** `content/services.json` holds the services index *and* the six
+service pages under it. That is forced rather than chosen: a seventh service has to be addable from
+the editor, and `CONTRACT_DOCUMENTS` is a constant in code — so a service cannot be its own document
+and has to be a row in a list. See the note over `services_defaults()` in `contract.php`.
+
+**`services_edit()` is the only locked read-modify-write in the admin, and it has to be.** Every
+other editor rebuilds its whole document from the form, so two people saving at once means the
+later save wins entirely — bad, but not silently destructive of anything the form did not contain.
+This editor is split across two screens, because PHP's `max_input_vars` defaults to 1000 and the
+HRaaS page alone is about 350 inputs. So a form carries **one** service and the other five are
+merged back from the file — and a read-modify-write without a lock loses one of two concurrent
+edits to *different* services, which is the normal case for this screen rather than an edge one.
+It goes through `store_edit()`; the publish happens outside the lock, because holding an exclusive
+lock across an HTTP request to another host would make every other editor wait on that host.
+
+**The merge is by id, never by position.** A row's index in the form is its index in the document
+as it was *read*; between then and the lock, somebody on the other screen may have added, removed or
+reordered a service. Matched by id, a reorder is harmless and a delete is a no-op — and a service
+deleted while its form was open is put back rather than dropping what was typed, because undoing an
+unwanted revival is one press and retyping a page is not.
+
+**Validation is split, and the split is the point.** `services_validate_list()` judges only which
+services there are, what they are called and where they live — that is all the index screen shows,
+and a service added a moment ago and not yet filled in must not make the index unsaveable.
+`services_validate_one()` judges a whole page and runs on that page's own screen. A new service
+arrives **hidden**, so an unfinished page is never live either way.
+
+**A list needs a heading before it can be shown.** A solution card's ticked list and tag list are
+headed once for the whole page, not per card — every card on the cloud page says *"What it
+includes"*. So a card that lists things on a page with no heading set for that list would render
+loose text with no explanation, and it is refused with the two ways out named.
 
 ### `upload.php`
 

@@ -117,6 +117,22 @@ COVERED_ELSEWHERE = {
         "trip instead: a marker through every field the model declares, over "
         "HTTP, through whichever half of the journey this repository owns.",
     ),
+    "services": (
+        "tools/test_services_admin.py" if SIDE in ("backend", "both")
+        else "tools/test_publish.py",
+        "The services document is seven pages, not one, and every part of all "
+        "seven is a loop: six service blocks over their groups, six detail "
+        "pages over their layers, twenty-four layers over a hundred and "
+        "thirty-seven solution cards. The renderer names nothing it draws — it "
+        "walks $card['name'] and $group['items'] — so the regexes below would "
+        "read the loop variables and report on 'card' and 'group'. Same "
+        "bargain the careers, company, about and home pages already take, and "
+        "for a stronger reason: this is the largest document in the contract "
+        "and the one where a per-field allowlist would be least honest. It is "
+        "proved by round trip instead — a marker through every field the model "
+        "declares, over HTTP, through whichever half of the journey this "
+        "repository owns.",
+    ),
     "company": (
         "tools/test_company_admin.py" if SIDE in ("backend", "both")
         else "tools/test_publish.py",
@@ -382,7 +398,8 @@ def icons_are_drawable() -> list[str]:
          "echo json_encode(['contact' => array_keys(CONTACT_ICONS),"
          "                  'company' => array_keys(COMPANY_ICONS),"
          "                  'about'   => array_keys(ABOUT_ICONS),"
-         "                  'home'    => array_keys(HOME_ICONS)]);"],
+         "                  'home'    => array_keys(HOME_ICONS),"
+         "                  'services' => array_keys(SERVICES_ICONS)]);"],
         cwd=ROOT, capture_output=True, text=True,
     )
     if php.returncode != 0:

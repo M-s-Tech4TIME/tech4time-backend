@@ -364,6 +364,7 @@ def run(b: Browser, base: str, r: Results) -> None:
     # correct answer.
     for screen in ("/?s=overview", "/?s=careers", "/?s=careers&action=new",
                    "/?s=contact", "/?s=company", "/?s=about", "/?s=home",
+                   "/?s=services", "/?s=services&service=cybersecurity",
                    "/?s=account"):
         b.go(base + screen)
         loud = b.js("""
@@ -387,7 +388,8 @@ def run(b: Browser, base: str, r: Results) -> None:
 
     r.section("every form in the shell asks to be sent this way")
     for screen in ("/?s=careers", "/?s=contact", "/?s=company", "/?s=about",
-                   "/?s=home",
+                   "/?s=home", "/?s=services",
+                   "/?s=services&service=cybersecurity",
                    "/?s=account"):
         b.go(base + screen)
         counts = b.js(
@@ -516,6 +518,7 @@ def navigate(b: Browser, base: str, r: Results) -> None:
     r.section("every link on every screen is one the swap will answer")
     for screen in ("/?s=overview", "/?s=careers", "/?s=careers&action=new",
                    "/?s=contact", "/?s=company", "/?s=about", "/?s=home",
+                   "/?s=services", "/?s=services&service=cybersecurity",
                    "/?s=account"):
         b.go(base + screen)
         stragglers = b.js(STRAGGLERS)
@@ -542,7 +545,8 @@ def navigate(b: Browser, base: str, r: Results) -> None:
 
     r.section("every screen can say what it is doing")
     for screen in ("/?s=overview", "/?s=careers", "/?s=contact",
-                   "/?s=company", "/?s=about", "/?s=home",
+                   "/?s=company", "/?s=about", "/?s=home", "/?s=services",
+                   "/?s=services&service=cybersecurity",
                    "/?s=account"):
         b.go(base + screen)
         r.check(f"{screen}: there is somewhere to say it",
@@ -815,6 +819,12 @@ def improvements(b: Browser, base: str, r: Results) -> None:
         ("/?s=about", "whyus", "whyus[items]"),
         ("/?s=home", "tags", "tags[items]"),
         ("/?s=home", "destinations", "destinations[items]"),
+        ("/?s=services", "ossf", "ossf[items]"),
+        ("/?s=services", "nav", "nav[items]"),
+        # The nested case, which nothing else in this list covers: the rows
+        # inside a row. Its button carries two coordinates rather than one.
+        ("/?s=services&service=cybersecurity", "layers",
+         "service[layers][items]"),
     ):
         b.go(base + screen)
         b.js(MARK)
