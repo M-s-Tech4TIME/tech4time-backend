@@ -114,8 +114,10 @@ pages.** `content/services.json` holds the services index *and* all six service
 pages, because a seventh service has to be addable from the editor and
 `CONTRACT_DOCUMENTS` is a constant in code — so a service is a row in a list.
 The screen is split because PHP's `max_input_vars` defaults to 1000 and
-silently drops the tail of a larger POST: the HRaaS page alone is about 350
-inputs, and two services on one screen would lose data with no error.
+silently drops the tail of a larger POST. Measured, the seven screens render
+308, 371, 333, 279, 276, 243 and 175 inputs: each fits with room to spare, and
+all of them together would be about **1985** — twice the limit, losing the tail
+with no error.
 
 Each file refuses to run unless `T4T_ADMIN` is defined. That guard is
 unnecessary while the document root is `public/`, and it is kept for exactly

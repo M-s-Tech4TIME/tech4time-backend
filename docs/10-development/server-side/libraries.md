@@ -216,8 +216,9 @@ and has to be a row in a list. See the note over `services_defaults()` in `contr
 other editor rebuilds its whole document from the form, so two people saving at once means the
 later save wins entirely — bad, but not silently destructive of anything the form did not contain.
 This editor is split across two screens, because PHP's `max_input_vars` defaults to 1000 and the
-HRaaS page alone is about 350 inputs. So a form carries **one** service and the other five are
-merged back from the file — and a read-modify-write without a lock loses one of two concurrent
+seven screens render 308, 371, 333, 279, 276, 243 and 175 inputs — each fits, all of them together
+would be about 1985. So a form carries **one** service and the other five are merged back from the
+file — and a read-modify-write without a lock loses one of two concurrent
 edits to *different* services, which is the normal case for this screen rather than an edge one.
 It goes through `store_edit()`; the publish happens outside the lock, because holding an exclusive
 lock across an HTTP request to another host would make every other editor wait on that host.

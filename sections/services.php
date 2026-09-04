@@ -7,10 +7,15 @@
  *
  * TWO SCREENS, NOT ONE, AND THAT IS A HARD CONSTRAINT RATHER THAN A CHOICE.
  * PHP's max_input_vars defaults to 1000 and SILENTLY DROPS the tail of a larger
- * POST — see admin_form_truncated(), which exists because of it. The HRaaS page
- * alone is thirty-three solution cards of nine fields each, about three hundred
- * and fifty inputs; two services on one screen would be over the limit and
- * would lose data with no error at all. So:
+ * POST — see admin_form_truncated(), which exists because of it.
+ *
+ * MEASURED, not estimated. The seven screens render 308, 371, 333, 279, 276,
+ * 243 and 175 inputs — the largest is the HRaaS page, thirty-three solution
+ * cards of nine fields each. Each fits with room to spare; all of them on one
+ * screen would be about 1985, TWICE the limit, and the tail would be dropped
+ * with no error at all. Two of them would happen to fit today, which is the
+ * reason the split is by service rather than by "as many as fit": the second
+ * is a rule that stops being true the moment somebody adds cards. So:
  *
  *   ?s=services                    the index: its bands, and the list of services
  *   ?s=services&service=<slug>     one service, and only that one

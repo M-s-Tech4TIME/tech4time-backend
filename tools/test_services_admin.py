@@ -224,7 +224,8 @@ def run(client, r, site):
     print("\nit does NOT put a second service's fields on the same screen")
     r.check("the index screen carries no solution cards",
             "layers][items]" not in html,
-            "two services on one screen would exceed max_input_vars")
+            "all seven on one screen would be about twice max_input_vars, "
+            "and the tail would be dropped with no error")
 
     # ------------------------------------------------------ one service screen
     page = page_of("cybersecurity")
