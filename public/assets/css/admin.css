@@ -1453,12 +1453,20 @@
    company and contact editors, 104px on the account. One number has to clear
    the tallest of them.
 
+   The services editor made the tallest taller: 212px at 320px, with the
+   per-service screen behind it at 195px, both past the 12rem this was. A bar
+   that does not fit inside the padding puts a focused field underneath itself,
+   which is the whole fault this token exists to prevent, so the number follows
+   the tallest bar rather than the other way round. check_admin_a11y.py
+   measures every screen at 320px and fails when one outgrows this again --
+   which is how the services screens were caught, not by anyone noticing.
+
    Two numbers rather than one because the difference is 70px: padding the wide
    case to 12rem would send every in-page anchor 86px past where it was aimed
    on the screens most people are using. */
 @media (max-width: 39.99em) {
   :root {
-    --admin-bar-h: 12rem;
+    --admin-bar-h: 13.5rem;   /* 216px: clears the 212px services bar */
   }
 }
 
