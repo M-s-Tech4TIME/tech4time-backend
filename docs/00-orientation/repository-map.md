@@ -86,6 +86,8 @@ sections/
 ├── company.php         the company profile      → content/company.json
 ├── about.php           the about page editor    → content/about.json
 ├── home.php            the home page editor     → content/home.json
+├── services.php        the services editor, and each service page beneath it
+│                                                → content/services.json
 └── account.php         password, second factor, recovery codes, the log
 ```
 
@@ -99,11 +101,23 @@ The rail draws itself from `ADMIN_SECTIONS` in `lib/admin.php`:
 | `/?s=company` | `company` | `content/company.json`, then publishes |
 | `/?s=about` | `about` | `content/about.json`, then publishes |
 | `/?s=home` | `home` | `content/home.json`, then publishes |
+| `/?s=services` | `services` | `content/services.json` — the index and the list of services |
+| `/?s=services&service=<slug>` | `services` | one service page, in the same document |
 | `/?s=account` | `account` | your own password, second factor and recovery codes |
 
 `ADMIN_PAGE_SECTIONS` names the subset that edits a page of the public website
-— `careers` and `contact` — so anything counting "the pages you can edit" asks
-there rather than filtering the registry by hand.
+— everything but `overview` and `account` — so anything counting "the pages you
+can edit" asks there rather than filtering the registry by hand.
+
+**`services` is one section over two screens, and one document over seven
+pages.** `content/services.json` holds the services index *and* all six service
+pages, because a seventh service has to be addable from the editor and
+`CONTRACT_DOCUMENTS` is a constant in code — so a service is a row in a list.
+The screen is split because PHP's `max_input_vars` defaults to 1000 and
+silently drops the tail of a larger POST. Measured, the seven screens render
+308, 371, 333, 279, 276, 243 and 175 inputs: each fits with room to spare, and
+all of them together would be about **1985** — twice the limit, losing the tail
+with no error.
 
 Each file refuses to run unless `T4T_ADMIN` is defined. That guard is
 unnecessary while the document root is `public/`, and it is kept for exactly

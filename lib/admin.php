@@ -77,6 +77,12 @@ const ADMIN_SECTIONS = [
         'desc'  => 'Offices, numbers, the form',
         'view'  => '/pages/contact/',
     ],
+    'services' => [
+        'label' => 'Services',
+        'icon'  => 'layer-group',
+        'desc'  => 'The services page and the six pages under it',
+        'view'  => '/pages/services/',
+    ],
     'company' => [
         'label' => 'Company Profile',
         'icon'  => 'building',
@@ -104,7 +110,7 @@ const ADMIN_SECTIONS = [
  * account — so anything counting or listing "the pages you can edit" asks here
  * rather than filtering the registry by hand in three places.
  */
-const ADMIN_PAGE_SECTIONS = ['home', 'careers', 'contact', 'company', 'about'];
+const ADMIN_PAGE_SECTIONS = ['home', 'careers', 'contact', 'company', 'about', 'services'];
 
 /* The marker admin_form_tail() writes and admin_form_truncated() looks for. */
 const ADMIN_TAIL_FIELD = '__tail';
@@ -146,6 +152,19 @@ const ADMIN_ICONS = [
     'shield-halved', 'shield-virus', 'bug', 'search', 'crosshairs', 'desktop',
     'first-aid', 'network-wired', 'file-contract', 'laptop-code', 'boxes',
     'chalkboard-teacher', 'sitemap', 'clipboard-check', 'rocket',
+    /* The services pages: every icon a nav card, a service block, a core
+       card, a layer, a solution card, an OSSF stage or a button may carry.
+       Kept in step with SERVICES_ICONS the same way, and for the same reason.
+       It is the longest addition of all because it covers seven pages -- the
+       services index and its six detail pages -- and a hundred and
+       thirty-seven solution cards between them. */
+    'balance-scale', 'ban', 'bolt', 'brain', 'certificate', 'chart-bar',
+    'chart-line', 'check-double', 'code-branch', 'cubes', 'database',
+    'dharmachakra', 'dumbbell', 'exchange-alt', 'gavel', 'hdd', 'infinity',
+    'list-alt', 'microscope', 'money-bill-wave', 'palette', 'people-arrows',
+    'redo', 'robot', 'search-minus', 'search-plus', 'shield-cross',
+    'tachometer-alt', 'tasks', 'tools', 'user-check', 'user-ninja',
+    'user-secret', 'user-tie', 'users-cog', 'vial', 'virus', 'wrench',
 ];
 
 /* ------------------------------------------------------------------- auth */
@@ -702,6 +721,13 @@ function admin_send_picture(array $stored): string
  * with — technology[items][…] goes with technology-add. admin-forms.js finds
  * the new row by that name, and a band whose button and fields disagree adds a
  * row and leaves the focus where it was.
+ *
+ * WHEN THEY CANNOT AGREE, say so with 'rows'. A nested list has no such word:
+ * the services editor's solution cards are named
+ * service[layers][items][0][cards][…], which begins with neither the band nor
+ * anything else useful. Passing
+ * ['rows' => 'service[layers][items][0][cards]['] writes it on the button as
+ * data-rows, and admin-forms.js looks there instead of guessing.
  */
 function admin_band_head(string $legend, string $blurb = '',
                          array $add = [], array $status = []): void
@@ -712,7 +738,8 @@ function admin_band_head(string $legend, string $blurb = '',
         <span class="admin__section-title"><?= h($legend) ?></span>
 <?php if ($add): ?>
         <button class="btn btn--secondary admin__band-add" type="submit"
-                name="do" value="<?= h((string)$add['do']) ?>">
+                name="do" value="<?= h((string)$add['do']) ?>"<?=
+          isset($add['rows']) ? ' data-rows="' . h((string)$add['rows']) . '"' : '' ?>>
           <?= h((string)$add['label']) ?>
         </button>
 <?php endif; ?>

@@ -53,7 +53,7 @@ require_once __DIR__ . '/html.php';
 const CONTRACT_VERSION = 1;
 
 /** Every document that is published, by name. The endpoint refuses any other. */
-const CONTRACT_DOCUMENTS = ['careers', 'contact', 'company', 'about', 'home'];
+const CONTRACT_DOCUMENTS = ['careers', 'contact', 'company', 'about', 'home', 'services'];
 
 /**
  * Where a document's record lives, on either host.
@@ -1908,7 +1908,782 @@ function home_slug(string $name, array $taken = []): string
 }
 
 /* ==========================================================================
-   6. Revisions
+   6. Services — the shape of the services index AND its detail pages
+   ========================================================================== */
+
+/**
+ * The icons a nav card, a service block, a core card, a layer, a solution
+ * card, an OSSF stage or a button may use.
+ *
+ * Fixed for the same reason CONTACT_ICONS, COMPANY_ICONS, ABOUT_ICONS and
+ * HOME_ICONS are: tools/inject_icons.py inlines the symbols a page references
+ * by scanning it for a literal href="#name", and a name chosen at run time is
+ * invisible to that scan. Every icon offered here is therefore also listed in
+ * a comment in the frontend's pages/services/index.php and in lib/services.php,
+ * where the scanner can see it. Add one here and add it there;
+ * inject_icons.py --check says so if it is forgotten.
+ *
+ * Every name here must also be in ADMIN_ICONS in the backend's lib/admin.php,
+ * or the editor's live preview draws an empty box for it.
+ *
+ * These 74 are the ones the six pages actually use, read off the markup at the
+ * migration rather than guessed. 'check' and 'arrow-right' are deliberately
+ * NOT here: they are drawn by the renderer as furniture -- the tick beside a
+ * feature, the chevron on a button -- and are not a choice anybody makes.
+ */
+const SERVICES_ICONS = [
+    'balance-scale'     => 'Scales',
+    'ban'               => 'Prohibited',
+    'bolt'              => 'Lightning bolt',
+    'boxes'             => 'Boxes',
+    'brain'             => 'Brain',
+    'bug'               => 'Bug',
+    'building'          => 'Building',
+    'calendar-alt'      => 'Calendar',
+    'calendar-check'    => 'Calendar with a tick',
+    'certificate'       => 'Certificate',
+    'chalkboard-teacher'=> 'Teacher at a board',
+    'chart-bar'         => 'Bar chart',
+    'chart-line'        => 'Line chart',
+    'check-double'      => 'Double tick',
+    'clipboard-check'   => 'Clipboard with a tick',
+    'clock'             => 'Clock',
+    'cloud'             => 'Cloud',
+    'code'              => 'Code',
+    'code-branch'       => 'Branch',
+    'cogs'              => 'Cogs',
+    'crosshairs'        => 'Crosshairs',
+    'cubes'             => 'Cubes',
+    'database'          => 'Database',
+    'desktop'           => 'Desktop computer',
+    'dharmachakra'      => 'Ship wheel',
+    'dumbbell'          => 'Dumbbell',
+    'exchange-alt'      => 'Exchange arrows',
+    'eye'               => 'Eye',
+    'file-contract'     => 'Contract',
+    'first-aid'         => 'First aid kit',
+    'gavel'             => 'Gavel',
+    'globe'             => 'Globe',
+    'graduation-cap'    => 'Graduation cap',
+    'hdd'               => 'Hard disk',
+    'headset'           => 'Headset',
+    'infinity'          => 'Infinity',
+    'laptop-code'       => 'Laptop with code',
+    'layer-group'       => 'Stacked layers',
+    'link'              => 'Chain link',
+    'list-alt'          => 'List',
+    'lock'              => 'Padlock',
+    'microscope'        => 'Microscope',
+    'mobile-alt'        => 'Mobile phone',
+    'money-bill-wave'   => 'Banknote',
+    'network-wired'     => 'Network',
+    'palette'           => 'Palette',
+    'people-arrows'     => 'People exchanging',
+    'project-diagram'   => 'Project diagram',
+    'redo'              => 'Redo arrow',
+    'robot'             => 'Robot',
+    'rocket'            => 'Rocket',
+    'search'            => 'Magnifying glass',
+    'search-minus'      => 'Zoom out',
+    'search-plus'       => 'Zoom in',
+    'server'            => 'Server',
+    'shield-alt'        => 'Shield',
+    'shield-cross'      => 'Shield with a cross',
+    'shield-halved'     => 'Half shield',
+    'shield-virus'      => 'Shield with a virus',
+    'sitemap'           => 'Sitemap',
+    'tachometer-alt'    => 'Speedometer',
+    'tasks'             => 'Task list',
+    'tools'             => 'Tools',
+    'user-check'        => 'Person with a tick',
+    'user-lock'         => 'Person with a padlock',
+    'user-ninja'        => 'Ninja',
+    'user-secret'       => 'Person in disguise',
+    'user-shield'       => 'Person with a shield',
+    'user-tie'          => 'Person in a tie',
+    'users'             => 'People',
+    'users-cog'         => 'People with a cog',
+    'vial'              => 'Test tube',
+    'virus'             => 'Virus',
+    'wrench'            => 'Wrench',
+];
+
+/**
+ * How a group of check-items sits in a service block on the INDEX page.
+ *
+ * 'wide' spans the row and splits its list into two columns; 'normal' is one
+ * column in the grid. Authored rather than derived: the cybersecurity block
+ * and the software-development block both hold three groups and lay them out
+ * differently, so no rule over the count reproduces what is there.
+ */
+const SERVICES_GROUP_WIDTHS = [
+    'normal' => 'One column',
+    'wide'   => 'Full width, list split in two',
+];
+
+/* Free-text single-line fields of the INDEX document, by band. */
+const SERVICES_TEXT_FIELDS = [
+    'meta' => ['title', 'description', 'share_title'],
+    'hero' => ['title', 'subtitle'],
+    'nav'  => ['eyebrow', 'title', 'lead'],
+    'ossf' => ['eyebrow', 'title', 'lead'],
+    'cta'  => ['title', 'text', 'label', 'href', 'icon'],
+];
+
+/* Free-text single-line fields of ONE SERVICE, by band. */
+const SERVICES_PAGE_TEXT_FIELDS = [
+    'service' => ['name', 'slug', 'schema_type', 'schema_description'],
+    'meta'   => ['title', 'description', 'share_title'],
+    'hero'   => ['title', 'subtitle'],
+    'core'   => ['eyebrow', 'title', 'lead'],
+    'layers' => ['eyebrow', 'title', 'lead'],
+    'cta'    => ['title', 'text', 'label', 'href', 'icon'],
+];
+
+/* Every band of the INDEX that can be hidden whole, in the order it renders.
+   The hero is not here, for the reason the about page's hero is not in
+   ABOUT_BANDS: a page with no title is not a page with a section switched off,
+   it is a broken page. */
+const SERVICES_BANDS = ['nav', 'blocks', 'ossf', 'cta'];
+
+/* Every band of ONE SERVICE PAGE that can be hidden whole, in render order. */
+const SERVICES_PAGE_BANDS = ['core', 'layers', 'cta'];
+
+/**
+ * The INDEX bands that hold a list, and the function that fills one of their
+ * rows. Same contract as ABOUT_LISTS and HOME_LISTS.
+ */
+const SERVICES_LISTS = [
+    'nav'    => 'services_nav_defaults',
+    'blocks' => 'services_block_defaults',
+    'ossf'   => 'services_ossf_defaults',
+];
+
+/* What a row is called before it is called anything. Deliberately the same
+   value as ABOUT_ID_PLACEHOLDER and HOME_ID_PLACEHOLDER, and deliberately a
+   separate constant: each document owns its own id vocabulary, and one
+   changing must not move the others. See services_identify(). */
+const SERVICES_ID_PLACEHOLDER = 'row';
+
+/**
+ * The prefix every solution card's id carries.
+ *
+ * The 137 cards that shipped are all 'sol-...', and that id is load-bearing
+ * three times over: it is the card's HTML id, the fragment a link can hold it
+ * by, and the data-solution attribute the ring node uses to bring the card up.
+ * A new card is minted into the same vocabulary so the page stays one thing.
+ */
+const SERVICES_CARD_PREFIX = 'sol-';
+
+/**
+ * The prefix the renderer puts in front of a layer's id in the markup.
+ *
+ * A layer is stored bare -- 'reactive' -- and rendered as id="layer-reactive",
+ * which is what the tab links to. Stored that way, and not with the prefix in
+ * the file, for the same reason a service block is stored as 'cybersecurity'
+ * and rendered with both id="cybersecurity" and
+ * aria-labelledby="cybersecurity-heading": the id is the name of the thing,
+ * and the decorations around it belong to whoever draws it.
+ */
+const SERVICES_LAYER_PREFIX = 'layer-';
+
+/**
+ * The page as it ships, and the fallback for anything missing from the file.
+ *
+ * Every scalar the renderer reads exists here, so a truncated or hand-edited
+ * services.json degrades to the shipped headings rather than emptying the
+ * page. The lists default to empty, which is the same bargain every other
+ * document makes: the page still has a shape, it just has nothing in it.
+ *
+ * WHY ONE DOCUMENT AND NOT SEVEN. CONTRACT_DOCUMENTS is a constant in code, so
+ * a document name cannot be invented at run time -- and a seventh service has
+ * to be addable from the editor. A service is therefore a ROW IN A LIST, which
+ * puts the index and all six detail pages in one file. That is also why this
+ * section is longer than the others: it models seven pages, not one.
+ */
+function services_defaults(): array
+{
+    return [
+        'updated'  => '',
+        'revision' => 0,
+        'meta' => [
+            'title'       => 'Services — Cybersecurity, Software, Cloud & HRaaS | Tech4TIME',
+            'description' => "Software development, cybersecurity and SOC build-out, private cloud on OpenStack, HRaaS, IT equipment supply, consultancy and training — Tech4TIME's six practices.",
+            'share_title' => 'Our Comprehensive Technological Solutions',
+        ],
+        'hero' => [
+            'title'    => 'Services',
+            'subtitle' => 'Our Comprehensive Technological Solutions',
+        ],
+        'nav' => [
+            'status'  => 'shown',
+            'eyebrow' => '',
+            'title'   => '',
+            'lead'    => '',
+            'items'   => [],
+        ],
+        'blocks' => [
+            'status' => 'shown',
+            'items'  => [],
+        ],
+        'ossf' => [
+            'status'  => 'shown',
+            'eyebrow' => 'How We Work',
+            'title'   => 'Our OSSF Framework',
+            'lead'    => 'Every security engagement runs through the same eight stages, from first measuring the threat landscape to keeping the business running after an incident.',
+            'items'   => [],
+        ],
+        'cta' => [
+            'status' => 'shown',
+            'title'  => 'You want to try our service? Get in touch!',
+            'text'   => 'Tell us what you are protecting, building or running. We will come back with a scope, a timeline and a straight answer on cost.',
+            'label'  => 'Contact Us Now',
+            'href'   => '/pages/contact/',
+            'icon'   => 'calendar-check',
+        ],
+        /* The six detail pages. Not a band -- it has no heading and no place on
+           the index -- so it is not in SERVICES_BANDS and cannot be hidden as a
+           whole. A single service is hidden by its own status. */
+        'services' => [
+            'items' => [],
+        ],
+    ];
+}
+
+/**
+ * Bring a document to the current shape, whatever it arrived as.
+ *
+ * DEVIATES FROM about_normalise() AND home_normalise(), DELIBERATELY. Those
+ * walk one level: band -> items[]. This document is four deep --
+ * services[] -> layers[] -> cards[] -> tags[] -- because a service is a whole
+ * page rather than a card. The walk is written out rather than driven off a
+ * constant, because a constant that expressed this would be harder to read
+ * than the walk it replaced, and the walk is the thing that has to be right.
+ */
+function services_normalise(array $data): array
+{
+    $defaults = services_defaults();
+
+    foreach ($defaults as $key => $value) {
+        if ($key === 'revision') {
+            $data[$key] = max(0, (int)($data[$key] ?? 0));
+            continue;
+        }
+        if (!is_array($value)) {
+            $data[$key] = is_string($data[$key] ?? null) ? $data[$key] : $value;
+            continue;
+        }
+        $data[$key] = is_array($data[$key] ?? null) ? $data[$key] + $value : $value;
+    }
+
+    foreach (SERVICES_BANDS as $band) {
+        $data[$band]['status'] =
+            ($data[$band]['status'] ?? 'shown') === 'hidden' ? 'hidden' : 'shown';
+    }
+
+    foreach (SERVICES_LISTS as $band => $filler) {
+        $rows = is_array($data[$band]['items'] ?? null) ? $data[$band]['items'] : [];
+        $data[$band]['items'] = array_map(
+            $filler,
+            array_values(array_filter($rows, 'is_array'))
+        );
+    }
+
+    $services = is_array($data['services']['items'] ?? null)
+        ? $data['services']['items'] : [];
+    $data['services']['items'] = array_map(
+        'services_service_defaults',
+        array_values(array_filter($services, 'is_array'))
+    );
+
+    return services_identify($data);
+}
+
+/**
+ * One whole detail page: its own meta, hero, four bands and everything under
+ * them. Every field the renderer reads is defaulted here, so a service added
+ * by the Add button renders a real page rather than a fatal.
+ */
+function services_service_defaults(array $row): array
+{
+    $row += [
+        'id'     => '',
+        'slug'   => '',
+        'name'   => '',
+        'status' => 'shown',
+        /* The Service structured data. 'schema_type' is schema.org's word for
+           the practice and is NOT the name: the HRaaS page is 'IT Staffing'
+           and the consultancy page is 'IT Consulting', because those are the
+           terms a search engine has a definition for. The rest of the block is
+           generated -- the offer catalogue IS the layers -- so it cannot drift
+           from the page the way the home page's did before
+           home_service_schema() took it over. */
+        'schema_type'        => '',
+        'schema_description' => '',
+    ];
+
+    $row['meta'] = is_array($row['meta'] ?? null) ? $row['meta'] : [];
+    $row['meta'] += ['title' => '', 'description' => '', 'share_title' => ''];
+
+    $row['hero'] = is_array($row['hero'] ?? null) ? $row['hero'] : [];
+    $row['hero'] += ['title' => '', 'subtitle' => ''];
+
+    /* The two core cards and the note under them. */
+    $row['core'] = is_array($row['core'] ?? null) ? $row['core'] : [];
+    $row['core'] += [
+        'status' => 'shown', 'eyebrow' => '', 'title' => '', 'lead' => '',
+    ];
+    $row['core']['note'] = is_array($row['core']['note'] ?? null)
+        ? $row['core']['note'] : [];
+    $row['core']['note'] += ['text' => '', 'link_label' => '', 'link_href' => ''];
+    $core = is_array($row['core']['items'] ?? null) ? $row['core']['items'] : [];
+    $row['core']['items'] = array_map(
+        'services_core_defaults',
+        array_values(array_filter($core, 'is_array'))
+    );
+
+    /* The tabbed layers, each holding its own solution cards. */
+    $row['layers'] = is_array($row['layers'] ?? null) ? $row['layers'] : [];
+    $row['layers'] += [
+        'status' => 'shown', 'eyebrow' => '', 'title' => '', 'lead' => '',
+    ];
+    /* The two list headings a solution card shows, and the noun under a layer's
+       card count. Constant for a whole page rather than per card, which is how
+       they were authored: every card on the cloud page says "What it includes"
+       and "Technologies", every card on the equipment page says "Scope". An
+       empty features label means the page's cards have no features block at
+       all -- three of the six do not. */
+    $row['layers']['labels'] = is_array($row['layers']['labels'] ?? null)
+        ? $row['layers']['labels'] : [];
+    $row['layers']['labels'] += [
+        'purpose'    => 'Purpose',
+        'features'   => '',
+        'tags'       => '',
+        'count_one'  => 'Solution',
+        'count_many' => 'Solutions',
+    ];
+    $layers = is_array($row['layers']['items'] ?? null) ? $row['layers']['items'] : [];
+    $row['layers']['items'] = array_map(
+        'services_layer_defaults',
+        array_values(array_filter($layers, 'is_array'))
+    );
+
+    $row['cta'] = is_array($row['cta'] ?? null) ? $row['cta'] : [];
+    $row['cta'] += [
+        'status' => 'shown', 'title' => '', 'text' => '',
+        'label'  => '', 'href' => '/pages/contact/', 'icon' => 'calendar-check',
+    ];
+
+    foreach (SERVICES_PAGE_BANDS as $band) {
+        $row[$band]['status'] =
+            ($row[$band]['status'] ?? 'shown') === 'hidden' ? 'hidden' : 'shown';
+    }
+
+    return $row;
+}
+
+/** One of the two cards at the top of a detail page. */
+function services_core_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'icon' => '', 'title' => '', 'text' => '', 'status' => 'shown',
+    ];
+}
+
+/**
+ * One tab of a detail page, and the solution cards under it.
+ *
+ * 'hub_label' is the word at the centre of the ring. Stored rather than
+ * derived from the title: the ring says REACTIVE where the tab says "Reactive
+ * Response", and no rule over the title produces that.
+ */
+function services_layer_defaults(array $row): array
+{
+    $row += [
+        'id'        => '',
+        'icon'      => '',
+        'title'     => '',
+        'tab_text'  => '',
+        'text'      => '',
+        'hub_label' => '',
+        'status'    => 'shown',
+    ];
+
+    $cards = is_array($row['cards'] ?? null) ? $row['cards'] : [];
+    $row['cards'] = array_map(
+        'services_card_defaults',
+        array_values(array_filter($cards, 'is_array'))
+    );
+
+    return $row;
+}
+
+/**
+ * One solution card.
+ *
+ * 'features' and 'tags' are plain lists of short strings -- the ticked list and
+ * the pill list. Both are optional: half the pages have no features block.
+ * Nothing here is rich text; see the note on contract_sanitise().
+ */
+function services_card_defaults(array $row): array
+{
+    $row += [
+        'id'       => '',
+        'icon'     => '',
+        'name'     => '',
+        'category' => '',
+        'desc'     => '',
+        'purpose'  => '',
+        'status'   => 'shown',
+    ];
+
+    $row['features'] = services_strings($row['features'] ?? []);
+    $row['tags']     = services_strings($row['tags'] ?? []);
+
+    return $row;
+}
+
+/** A nav card at the top of the index: one per block, linking down the page. */
+function services_nav_defaults(array $row): array
+{
+    return $row + [
+        /* 'block', not 'service': this card jumps DOWN THE INDEX to a service
+           block, and the two are not the same name. The HRaaS block is
+           id="hraas" and the service it belongs to is slug "hr-solutions". */
+        'id' => '', 'block' => '', 'icon' => '',
+        'title' => '', 'text' => '', 'status' => 'shown',
+    ];
+}
+
+/**
+ * One service block on the index.
+ *
+ * 'service' names the row in services.items[] this block belongs to, which is
+ * what its buttons link to. The groups are authored here rather than derived
+ * from that service's layers: the index says "Offensive Security & Penetration
+ * Testing (Metasploit, Burp Suite)" where the detail page says "Offensive
+ * Security & Penetration Testing", and the HRaaS block lists four engagement
+ * models against the detail page's thirty-three resource types. They are two
+ * different summaries of the same practice, and flattening them into one would
+ * lose the shorter.
+ */
+function services_block_defaults(array $row): array
+{
+    $row += [
+        'id'      => '',
+        'service' => '',
+        'icon'    => '',
+        'title'   => '',
+        'intro'   => '',
+        'status'  => 'shown',
+    ];
+
+    $groups = is_array($row['groups'] ?? null) ? $row['groups'] : [];
+    $row['groups'] = array_map(
+        'services_group_defaults',
+        array_values(array_filter($groups, 'is_array'))
+    );
+
+    $buttons = is_array($row['buttons'] ?? null) ? $row['buttons'] : [];
+    $row['buttons'] = array_map(
+        'services_button_defaults',
+        array_values(array_filter($buttons, 'is_array'))
+    );
+
+    return $row;
+}
+
+/** A titled list of check-items inside a service block. */
+function services_group_defaults(array $row): array
+{
+    $row += ['id' => '', 'title' => '', 'width' => 'normal', 'status' => 'shown'];
+
+    $row['width'] = isset(SERVICES_GROUP_WIDTHS[$row['width']])
+        ? $row['width'] : 'normal';
+    $row['items'] = services_strings($row['items'] ?? []);
+
+    return $row;
+}
+
+/**
+ * A button under a service block.
+ *
+ * A list rather than one button, because the HRaaS block has two: through to
+ * the detail page, and out to the resource certification list.
+ */
+function services_button_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'label' => '', 'href' => '',
+        'icon' => '', 'style' => 'secondary', 'status' => 'shown',
+    ];
+}
+
+/** One stage of the OSSF framework. The number beside it is its position. */
+function services_ossf_defaults(array $row): array
+{
+    return $row + [
+        'id' => '', 'icon' => '', 'title' => '', 'text' => '', 'status' => 'shown',
+    ];
+}
+
+/** A list of short plain strings, holes closed and blanks dropped. */
+function services_strings(mixed $value): array
+{
+    if (!is_array($value)) {
+        return [];
+    }
+
+    $out = [];
+    foreach ($value as $item) {
+        if (is_string($item) && trim($item) !== '') {
+            $out[] = $item;
+        }
+    }
+    return $out;
+}
+
+/**
+ * Give every row an id, unique within its own list.
+ *
+ * Same contract as about_identify() and home_identify(): a row added by the
+ * Add button has nothing to be named after and gets the placeholder; once it
+ * has a name the placeholder is replaced; A REAL ID IS NEVER RE-MINTED,
+ * because it is the handle a fragment link, a ring node and a test all hold
+ * the row by.
+ *
+ * That last clause is doing more work here than anywhere else. Sixty-three of
+ * the hundred and thirty-seven solution cards that shipped carry an id that
+ * does NOT follow from the card's name -- 'sol-cloud-design-private-cloud' on
+ * a card called "Private Cloud Design & Implementation". They were written by
+ * hand. Re-minting them would break every deep link into the services pages
+ * that anyone has ever saved, so the migration stores them verbatim and this
+ * function leaves them alone.
+ */
+function services_identify(array $data): array
+{
+    foreach (SERVICES_LISTS as $band => $_filler) {
+        $taken = [];
+        foreach ($data[$band]['items'] as $i => $row) {
+            $id = services_mint((string)($row['id'] ?? ''), (string)($row['title'] ?? ''), $taken);
+            $data[$band]['items'][$i]['id'] = $id;
+            $taken[] = $id;
+        }
+    }
+
+    /* The groups and buttons of a block are numbered within that block, not
+       across the page: they are form handles, never fragment targets. */
+    foreach ($data['blocks']['items'] as $b => $block) {
+        foreach (['groups', 'buttons'] as $list) {
+            $taken = [];
+            foreach ($block[$list] as $i => $row) {
+                $name = (string)($row['title'] ?? $row['label'] ?? '');
+                $id   = services_mint((string)($row['id'] ?? ''), $name, $taken);
+                $data['blocks']['items'][$b][$list][$i]['id'] = $id;
+                $taken[] = $id;
+            }
+        }
+    }
+
+    $slugs = [];
+    foreach ($data['services']['items'] as $s => $service) {
+        $name = (string)($service['name'] ?? $service['hero']['title'] ?? '');
+
+        $id = services_mint((string)($service['id'] ?? ''), $name, $slugs);
+        $data['services']['items'][$s]['id'] = $id;
+        $slugs[] = $id;
+
+        /* The slug is the URL. It follows the id when it has never been set,
+           and is otherwise left alone: changing it moves the page. */
+        $slug = trim((string)($service['slug'] ?? ''));
+        $data['services']['items'][$s]['slug'] = $slug !== '' ? $slug : $id;
+
+        $taken = [];
+        foreach ($service['core']['items'] as $i => $row) {
+            $cid = services_mint((string)($row['id'] ?? ''), (string)($row['title'] ?? ''), $taken);
+            $data['services']['items'][$s]['core']['items'][$i]['id'] = $cid;
+            $taken[] = $cid;
+        }
+
+        /* Layer ids and card ids share one namespace per page, because both
+           end up as HTML ids on the same document. */
+        $layers = [];
+        $cards  = [];
+        foreach ($service['layers']['items'] as $l => $layer) {
+            /* A layer that arrives carrying the rendered prefix is stored
+               without it, so a hand-edited file and a published one agree. */
+            $bare = (string)($layer['id'] ?? '');
+            if (str_starts_with($bare, SERVICES_LAYER_PREFIX)) {
+                $bare = substr($bare, strlen(SERVICES_LAYER_PREFIX));
+            }
+
+            $lid = services_mint($bare, (string)($layer['title'] ?? ''), $layers);
+            $data['services']['items'][$s]['layers']['items'][$l]['id'] = $lid;
+            $layers[] = $lid;
+
+            foreach ($layer['cards'] as $c => $card) {
+                $given = trim((string)($card['id'] ?? ''));
+                $kid   = $given !== '' && !services_provisional($given)
+                    ? services_unique($given, $cards)
+                    : services_unique(
+                        SERVICES_CARD_PREFIX . $lid . '-' . services_slug((string)($card['name'] ?? '')),
+                        $cards
+                    );
+                $data['services']['items'][$s]['layers']['items'][$l]['cards'][$c]['id'] = $kid;
+                $cards[] = $kid;
+            }
+        }
+    }
+
+    return $data;
+}
+
+/** Whether an id is one this file minted as a placeholder rather than a name. */
+function services_provisional(string $id): bool
+{
+    return $id === ''
+        || preg_match('/^' . SERVICES_ID_PLACEHOLDER . '(-\d+)?$/', $id) === 1;
+}
+
+/** Keep a real id, replace a placeholder once there is a name to replace it with. */
+function services_mint(string $id, string $name, array $taken): string
+{
+    $id   = trim($id);
+    $name = trim($name);
+
+    if ((services_provisional($id) && $name !== '') || in_array($id, $taken, true)) {
+        return services_slug($name, $taken);
+    }
+    if ($id === '') {
+        return services_slug('', $taken);
+    }
+    return $id;
+}
+
+/** A URL-safe id from a name. */
+function services_slug(string $name, array $taken = []): string
+{
+    $slug = strtolower(trim($name));
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
+    $slug = trim($slug, '-') ?: SERVICES_ID_PLACEHOLDER;
+
+    return services_unique($slug, $taken);
+}
+
+/** The same id, suffixed until nothing else in the list has it. */
+function services_unique(string $slug, array $taken): string
+{
+    $base = $slug;
+    $n    = 2;
+    while (in_array($slug, $taken, true)) {
+        $slug = $base . '-' . $n++;
+    }
+    return $slug;
+}
+
+/** Only the rows of an index list a visitor should see. */
+function services_shown(array $data, string $band): array
+{
+    return array_values(array_filter(
+        $data[$band]['items'] ?? [],
+        static fn(array $row): bool => ($row['status'] ?? 'shown') !== 'hidden'
+    ));
+}
+
+/** Whether a band of the index is shown at all. */
+function services_band_shown(array $data, string $band): bool
+{
+    return ($data[$band]['status'] ?? 'shown') !== 'hidden';
+}
+
+/** Only the rows of a list a visitor should see, wherever the list is. */
+function services_rows_shown(array $rows): array
+{
+    return array_values(array_filter(
+        is_array($rows) ? $rows : [],
+        static fn($row): bool => is_array($row) && ($row['status'] ?? 'shown') !== 'hidden'
+    ));
+}
+
+/** Every service, hidden ones included. The editor lists these. */
+function services_all(array $data): array
+{
+    return is_array($data['services']['items'] ?? null) ? $data['services']['items'] : [];
+}
+
+/** One service by its slug, or null. The renderer 404s on the null. */
+function services_by_slug(array $data, string $slug): ?array
+{
+    foreach (services_all($data) as $service) {
+        if (($service['slug'] ?? '') === $slug) {
+            return $service;
+        }
+    }
+    return null;
+}
+
+/**
+ * The blocks on the index a visitor should see.
+ *
+ * A block is hidden when ITS OWN status says so, and ALSO when the service it
+ * belongs to is hidden or gone. That second rule is what stops the index
+ * advertising a page that answers 404: hiding a service has to hide the whole
+ * of it, or the only thing hiding achieves is a broken link. A block naming no
+ * service is left alone -- it may point anywhere.
+ */
+function services_blocks_visible(array $data): array
+{
+    $out = [];
+    foreach (services_shown($data, 'blocks') as $block) {
+        $slug = trim((string)($block['service'] ?? ''));
+        if ($slug !== '') {
+            $service = services_by_slug($data, $slug);
+            if ($service === null || ($service['status'] ?? 'shown') === 'hidden') {
+                continue;
+            }
+        }
+        $out[] = $block;
+    }
+    return $out;
+}
+
+/**
+ * The nav cards a visitor should see.
+ *
+ * One per block still on the page. A card whose block has gone would scroll a
+ * reader to nothing, so it goes with it.
+ */
+function services_nav_visible(array $data): array
+{
+    $blocks = [];
+    foreach (services_blocks_visible($data) as $block) {
+        $blocks[] = $block['id'];
+    }
+
+    $out = [];
+    foreach (services_shown($data, 'nav') as $row) {
+        $target = trim((string)($row['block'] ?? ''));
+        if ($target !== '' && !in_array($target, $blocks, true)) {
+            continue;
+        }
+        $out[] = $row;
+    }
+    return $out;
+}
+
+/** One service by its id, or null. */
+function services_by_id(array $data, string $id): ?array
+{
+    foreach (services_all($data) as $service) {
+        if (($service['id'] ?? '') === $id) {
+            return $service;
+        }
+    }
+    return null;
+}
+
+/* ==========================================================================
+   7. Revisions
    ========================================================================== */
 
 /**
@@ -1931,7 +2706,7 @@ function contract_next_revision(array $data): int
 }
 
 /* ==========================================================================
-   7. Normalising and re-sanitising on receipt
+   8. Normalising and re-sanitising on receipt
    ========================================================================== */
 
 /**
@@ -1952,12 +2727,13 @@ function contract_next_revision(array $data): int
 function contract_normalise(string $document, array $data): array
 {
     return match ($document) {
-        'careers' => careers_normalise($data),
-        'contact' => contact_normalise($data),
-        'company' => company_normalise($data),
-        'about'   => about_normalise($data),
-        'home'    => home_normalise($data),
-        default   => throw new RuntimeException('Unknown document: ' . $document),
+        'careers'  => careers_normalise($data),
+        'contact'  => contact_normalise($data),
+        'company'  => company_normalise($data),
+        'about'    => about_normalise($data),
+        'home'     => home_normalise($data),
+        'services' => services_normalise($data),
+        default    => throw new RuntimeException('Unknown document: ' . $document),
     };
 }
 
@@ -2031,6 +2807,17 @@ function contract_sanitise(string $document, array $data): array
        file has never heard of is a bug or an attack, and is refused; a publish
        of the home page is neither, and passes through untouched. */
     if ($document === 'home') {
+        return $data;
+    }
+
+    /* The services document has no rich text either, and for a stronger reason
+       than the home page's: it is seven pages of headings, one-line summaries
+       and short list entries, and not one of the hundred and thirty-seven
+       solution cards holds a paragraph anybody would want a link or an emphasis
+       in. The branch is still explicit, for the reason home's is -- the default
+       below is a refusal, and "nothing to sanitise" must not arrive at the same
+       line as "document I do not know". */
+    if ($document === 'services') {
         return $data;
     }
 

@@ -651,10 +651,17 @@ def region(page: str, css_class: str) -> str:
     of its own, which is how a check passes by finding the right words in the
     wrong place.
     """
-    m = re.search(r'<[a-z]+ class="[^"]*' + re.escape(css_class)
+    # The tag name is CAPTURED so that </\1> closes the element this opened.
+    # It used to be <[a-z]+ ...> with no group, which made \1 the CONTENT
+    # group and the pattern unsatisfiable -- so this function never matched at
+    # all and always fell through to the window below. That was invisible until
+    # a rail grew a seventh entry and pushed the thing being looked for past
+    # 4000 characters, at which point a passing check started failing without
+    # anything it tests having changed.
+    m = re.search(r'<([a-z]+) class="[^"]*' + re.escape(css_class)
                   + r'[^"]*"[^>]*>(.*?)</\1>', page, re.S)
     if m:
-        return m.group(1)
+        return m.group(2)
     i = page.find(css_class)
     return page[i:i + 4000] if i >= 0 else ""
 

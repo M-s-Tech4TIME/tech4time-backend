@@ -160,16 +160,39 @@ class Browser:
 
 # ------------------------------------------------------------------- main
 
+def sections() -> list[tuple[str, str]]:
+    """The editor screens, read from the rail's own registry.
+
+    This used to be a list typed out below, and it went stale the moment an
+    editor was added: the services screen existed for a while and this tool
+    would not tell you where it was. ADMIN_SECTIONS is what the rail itself is
+    built from, so reading it means the next editor appears here with nobody
+    having to remember. An empty list is not fatal — the admin's own URL is
+    printed regardless, and the rail is right there once you are in.
+    """
+    try:
+        out = subprocess.run(
+            ["php", "-r",
+             "require 'lib/admin.php'; echo json_encode(ADMIN_SECTIONS);"],
+            cwd=ROOT, capture_output=True, text=True, timeout=20, check=True,
+        ).stdout
+        return [(name, meta["label"]) for name, meta in json.loads(out).items()]
+    except Exception:
+        return []
+
+
 def banner(base: str, secret: str, drove: bool) -> None:
     print()
-    print(f"  the admin      {base}/")
-    print(f"  the overview   {base}/?s=overview")
-    print(f"  home           {base}/?s=home")
-    print(f"  company        {base}/?s=company")
-    print(f"  about          {base}/?s=about")
-    print(f"  contact        {base}/?s=contact")
-    print(f"  careers        {base}/?s=careers")
-    print(f"  your account   {base}/?s=account")
+
+    rows = sections()
+    # One column for every row, the admin's own URL included.
+    width = max([len("the admin")] + [len(label) for _, label in rows]) + 4
+
+    print(f"  {'the admin':<{width}}{base}/")
+
+    for name, label in rows:
+        print(f"  {label.lower():<{width}}{base}/?s={name}")
+
     print()
 
     if drove:
